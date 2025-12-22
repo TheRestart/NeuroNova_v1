@@ -1,0 +1,32 @@
+@startuml
+package "lis.services" {
+
+  class LabResultService <<Service>> {
+    +createOrUpdate(req: CreateLabResultDTO, actorUserId: UUID): LabResultDTO
+    +get(req: GetLabResultDTO, actorUserId: UUID): LabResultDTO
+    +search(req: SearchLabResultDTO, actorUserId: UUID): LabResultDTO  ' list
+  }
+
+  class LabStatusService <<Service>> {
+    +updateStatus(req: UpdateLabStatusDTO, actorUserId: UUID): LabResultDTO
+  }
+
+  class LabSyncService <<Service>> {
+    +sync(req: LabSyncRequestDTO, actorUserId: UUID): SyncResultDTO
+  }
+
+  class LabNormalizer <<Service>> {
+    +toLabResultDTO(rawJson: String): LabResultDTO
+  }
+
+  class LabValidator <<Service>> {
+    +validateCreate(req: CreateLabResultDTO): void
+    +validateSearch(req: SearchLabResultDTO): void
+    +validateStatusChange(fromStatus: String, toStatus: String): void
+  }
+
+  class LabStateMachine <<Service>> {
+    +allowedTransition(fromStatus: String, toStatus: String): bool
+  }
+}
+@enduml

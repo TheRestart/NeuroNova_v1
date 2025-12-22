@@ -1,0 +1,11 @@
+@startuml
+title SD-FHIR-05 ImagingStudy 매핑
+' UC Trace: UC8-3-1
+
+participant "Django CDSS\nFHIR Client (UC8)" as cli
+
+group ImagingStudy 매핑
+  cli -> cli : load study/series meta
+  cli -> cli : build ImagingStudy resource
+end group
+@enduml

@@ -1,0 +1,56 @@
+@startuml
+' File: uc8_fhir.puml
+left to right direction
+
+' FHIR Server는 단방향 호출 대상이므로 Actor에서 제거
+actor Admin as a
+
+rectangle "Django CDSS\n(UC8: FHIR Client)" {
+
+  usecase "UC8-1-1 Patient 매핑" as UC811
+  usecase "UC8-1-2 Patient 전송" as UC812
+
+  usecase "UC8-2-1 ServiceRequest 매핑" as UC821
+  usecase "UC8-2-2 ServiceRequest 전송" as UC822
+
+  usecase "UC8-3-1 ImagingStudy 매핑" as UC831
+  usecase "UC8-3-2 ImagingStudy 전송" as UC832
+
+  usecase "UC8-4-1 Observation 매핑" as UC841
+  usecase "UC8-4-2 Observation 전송" as UC842
+
+  usecase "UC8-5-1 DiagnosticReport 매핑" as UC851
+  usecase "UC8-5-2 DiagnosticReport 전송" as UC852
+
+  usecase "UC8-6-1 FHIR 요청/응답 로그" as UC861
+  usecase "UC8-6-2 FHIR 오류 재시도" as UC862
+}
+
+' 매핑 → 전송 (내부 UC include)
+UC812 ..> UC811 : <<include>>
+UC822 ..> UC821 : <<include>>
+UC832 ..> UC831 : <<include>>
+UC842 ..> UC841 : <<include>>
+UC852 ..> UC851 : <<include>>
+
+' FHIR 서버는 외부 시스템으로만 동작 (Actor 아님)
+note right of UC842
+  External FHIR Server
+  - Django CDSS가 FHIR Client로서
+    단방향 REST 호출/전송 수행
+  - FHIR 서버는 UC를 트리거하지 않으므로
+    Usecase Actor로 표현하지 않음
+end note
+
+' 로그/재시도
+UC812 ..> UC861 : <<include>>
+UC822 ..> UC861 : <<include>>
+UC832 ..> UC861 : <<include>>
+UC842 ..> UC861 : <<include>>
+UC852 ..> UC861 : <<include>>
+
+a --> UC861
+a --> UC862
+UC862 ..> UC861 : <<include>>
+
+@enduml

@@ -1,0 +1,33 @@
+@startuml
+package "ocs.services" {
+
+  class OrderService <<Service>> {
+    +create(req: CreateOrderDTO, actorUserId: UUID): OrderDTO
+    +get(req: GetOrderDTO, actorUserId: UUID): OrderDTO
+    +search(req: SearchOrderDTO, actorUserId: UUID): OrderDTO  ' list
+  }
+
+  class OrderStatusService <<Service>> {
+    +updateStatus(req: UpdateOrderStatusDTO, actorUserId: UUID): OrderDTO
+  }
+
+  class OrderSyncService <<Service>> {
+    +sync(req: OrderSyncRequestDTO, actorUserId: UUID): SyncResultDTO
+  }
+
+  class OrderMappingService <<Service>> {
+    +ensureMappingForOrder(order: Order): OrderMapping
+    +getMappingByOrderId(orderId: UUID): OrderMapping
+  }
+
+  class OrderValidator <<Service>> {
+    +validateCreate(req: CreateOrderDTO): void
+    +validateSearch(req: SearchOrderDTO): void
+    +validateStatusChange(fromStatus: String, toStatus: String): void
+  }
+
+  class OrderStateMachine <<Service>> {
+    +allowedTransition(fromStatus: String, toStatus: String): bool
+  }
+}
+@enduml

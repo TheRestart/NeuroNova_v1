@@ -1,0 +1,78 @@
+@startuml
+package "notify.dtos" {
+
+  class NotificationQueryDTO {
+    +userId: UUID            ' optional (if admin querying)
+    +from: Date              ' optional
+    +to: Date                ' optional
+    +severity: String        ' optional
+    +type: String            ' optional
+    +acked: bool             ' optional
+    +page: int               ' optional
+    +size: int               ' optional
+  }
+
+  class NotificationDTO {
+    +notificationId: UUID
+    +type: String
+    +severity: String
+    +title: String
+    +body: String
+    +targetRef: String       ' optional
+    +createdAt: DateTime
+    +acked: bool             ' optional (derived)
+  }
+
+  class UnreadCountDTO {
+    +userId: UUID
+    +unreadCount: int
+  }
+
+  class AckNotificationDTO {
+    +userId: UUID
+    +notificationId: UUID
+    +action: String          ' ACK/UNACK/ARCHIVE
+    +deviceId: String        ' optional
+  }
+
+  class AckResultDTO {
+    +userId: UUID
+    +notificationId: UUID
+    +ackedAt: DateTime       ' optional
+    +archivedAt: DateTime    ' optional
+  }
+
+  class TimelineQueryDTO {
+    +caseRef: String         ' optional
+    +patientRef: String      ' optional
+    +from: Date              ' optional
+    +to: Date                ' optional
+    +page: int               ' optional
+    +size: int               ' optional
+  }
+
+  class TimelineItemDTO {
+    +eventId: UUID
+    +eventType: String
+    +message: String
+    +caseRef: String         ' optional
+    +patientRef: String      ' optional
+    +createdAt: DateTime
+    +meta: String            ' optional json
+  }
+
+  class SaveRuleDTO {
+    +ruleId: UUID            ' optional
+    +eventType: String
+    +recipientPolicyJson: String
+    +enabled: bool
+  }
+
+  class SaveTemplateDTO {
+    +templateKey: String
+    +titleTpl: String
+    +bodyTpl: String
+    +enabled: bool
+  }
+}
+@enduml

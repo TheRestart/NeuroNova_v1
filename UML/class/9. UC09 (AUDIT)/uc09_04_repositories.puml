@@ -1,0 +1,31 @@
+@startuml
+package "audit.repositories" {
+
+  interface AuditEventRepository {
+    +append(evt: AuditEvent): void
+    +search(criteriaJson: String): AuditEvent      ' list
+  }
+
+  interface SecurityEventRepository {
+    +append(evt: SecurityEvent): void
+    +search(criteriaJson: String): SecurityEvent   ' list
+    +aggregateLoginFailures(actorUserId: UUID, ip: String): int
+  }
+
+  interface ConfigRepository {
+    +get(key: String): SystemConfig
+    +set(cfg: SystemConfig): SystemConfig
+  }
+
+  interface ConfigHistoryRepository {
+    +append(change: ConfigChange): void
+    +listByKey(key: String): ConfigChange         ' list
+  }
+
+  interface RefDataRepository {
+    +save(ref: RefData): RefData
+    +findByKey(refKey: String): RefData
+    +listByType(refType: String): RefData         ' list
+  }
+}
+@enduml

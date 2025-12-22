@@ -1,0 +1,54 @@
+@startuml
+title UC06 (AI Orchestration) - Class Diagram (Main)
+
+left to right direction
+hide empty members
+skinparam classAttributeIconSize 0
+
+!include uc06_07_domain.puml
+!include uc06_06_dtos.puml
+!include uc06_05_clients.puml
+!include uc06_04_repositories.puml
+!include uc06_03_services.puml
+!include uc06_02_controllers.puml
+
+' --- Controller -> Service
+AiJobController --> AiJobService
+AiPollingController --> AiPollingService
+AiResultController --> AiResultService
+
+AiJobController --> AuditClient
+AiPollingController --> AuditClient
+AiResultController --> AuditClient
+
+' --- Services -> Repo/Client
+AiJobService --> AiJobRepository
+AiJobService --> ModAiClient
+AiJobService --> AiValidator
+AiJobService --> AiStateMachine
+AiJobService --> Clock
+AiJobService --> AuditClient
+
+AiPollingService --> AiJobRepository
+AiPollingService --> AiEventRepository
+AiPollingService --> AiResultRepository
+AiPollingService --> AiArtifactRepository
+AiPollingService --> ModAiClient
+AiPollingService --> AiResultAssembler
+AiPollingService --> AiStateMachine
+AiPollingService --> Clock
+AiPollingService --> AuditClient
+AiPollingService --> OrthancClient
+
+AiResultService --> AiResultRepository
+AiResultService --> AiArtifactRepository
+AiResultService --> AuditClient
+
+' --- Domain relations
+AiJob "1" o-- "0..*" AiJobEvent
+AiJob "1" o-- "0..1" AiResult
+AiResult "1" o-- "0..*" AiArtifact
+
+AiSyncJob ..> AiConfig
+
+@enduml

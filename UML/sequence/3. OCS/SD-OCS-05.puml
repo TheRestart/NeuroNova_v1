@@ -1,0 +1,16 @@
+@startuml
+title SD-OCS-05 지연 오더 탐지 / 알림
+' UC Trace: UC3-5-1, UC3-5-2
+
+participant "Django CDSS\nOCS (UC3)" as ocs
+participant "Django CDSS\nAlert (UC7)" as alert
+
+group 지연 탐지
+  ocs -> ocs : SLA 초과 오더 검색
+end group
+
+group 알림 생성
+  ocs -> alert : create DELAYED_ORDER alert
+  alert -> alert : notification insert
+end group
+@enduml

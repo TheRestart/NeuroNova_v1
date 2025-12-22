@@ -1,0 +1,39 @@
+@startuml
+package "ris.services" {
+
+  class WorklistService <<Service>> {
+    +query(req: WorklistQueryDTO, actorUserId: UUID): WorklistItemDTO  ' list
+  }
+
+  class StudyLinkService <<Service>> {
+    +link(req: LinkStudyDTO, actorUserId: UUID): StudyLinkDTO
+    +unlink(req: UnlinkStudyDTO, actorUserId: UUID): void
+    +autoMatch(orderId: UUID): StudyLinkDTO   ' optional behavior
+  }
+
+  class ReadingCaseService <<Service>> {
+    +updateStatus(req: UpdateReadingStatusDTO, actorUserId: UUID): ReadingCaseDTO
+    +getCase(caseId: UUID, actorUserId: UUID): ReadingCaseDTO
+  }
+
+  class ReportService <<Service>> {
+    +saveDraft(req: SaveReportDraftDTO, actorUserId: UUID): ReportDTO
+    +finalize(req: FinalizeReportDTO, actorUserId: UUID): ReportDTO
+    +getReport(caseId: UUID, actorUserId: UUID): ReportDTO
+  }
+
+  class RisStateMachine <<Service>> {
+    +allowedTransition(fromStatus: String, toStatus: String): bool
+  }
+
+  class RisValidator <<Service>> {
+    +validateLink(orderId: UUID, orthancStudyId: String): void
+    +validateReportDraft(content: String): void
+    +validateFinalize(caseId: UUID): void
+  }
+
+  class RisNormalizer <<Service>> {
+    +toStudyLink(metaJson: String, orderId: UUID): StudyLink
+  }
+}
+@enduml

@@ -1,0 +1,48 @@
+@startuml
+title UC04 (LIS-lite / Lab Results) - Class Diagram (Main)
+
+left to right direction
+hide empty members
+skinparam classAttributeIconSize 0
+
+!include uc04_07_domain.puml
+!include uc04_06_dtos.puml
+!include uc04_05_clients.puml
+!include uc04_04_repositories.puml
+!include uc04_03_services.puml
+!include uc04_02_controllers.puml
+
+' --- Controller -> Service
+LabResultController --> LabResultService
+LabStatusController --> LabStatusService
+LabSyncController --> LabSyncService
+
+LabResultController --> AuditClient
+LabStatusController --> AuditClient
+LabSyncController --> AuditClient
+
+' --- Services -> Repo/Client
+LabResultService --> LabResultRepository
+LabResultService --> LabValidator
+LabResultService --> AuditClient
+
+LabStatusService --> LabResultRepository
+LabStatusService --> LabStatusHistoryRepository
+LabStatusService --> LabStateMachine
+LabStatusService --> Clock
+LabStatusService --> AuditClient
+
+LabSyncService --> ExternalLabClient
+LabSyncService --> LabResultRepository
+LabSyncService --> LabSyncJobRepository
+LabSyncService --> LabNormalizer
+LabSyncService --> LabMappingRepository
+LabSyncService --> Clock
+LabSyncService --> AuditClient
+
+' --- Domain relations
+LabResult "1" o-- "0..*" LabStatusHistory
+LabResult ..> LabResultStatus
+LabSyncJob ..> LisConfig
+
+@enduml

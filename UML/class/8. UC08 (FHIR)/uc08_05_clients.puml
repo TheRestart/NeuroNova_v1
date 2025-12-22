@@ -1,0 +1,24 @@
+@startuml
+package "fhir.clients" {
+
+  interface FhirRestClient {
+    +GET(url: String): String          ' json
+    +POST(url: String, payload: String): String  ' json
+    +PUT(url: String, payload: String): String   ' json
+  }
+
+  interface FhirAuthClient {
+    +getAccessToken(): String
+  }
+}
+
+package "integration.clients" {
+  interface AuditClient {
+    +emit(eventType: String, actorUserId: UUID, targetId: String, meta: String): void  ' meta=json
+  }
+
+  interface Clock {
+    +now(): DateTime
+  }
+}
+@enduml

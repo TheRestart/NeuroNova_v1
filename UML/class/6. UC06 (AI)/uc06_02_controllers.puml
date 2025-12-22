@@ -1,0 +1,18 @@
+@startuml
+package "ai.controllers" {
+
+  class AiJobController <<Controller>> {
+    +POST_create(req: CreateAiJobDTO): AiJobDTO
+    +GET_one(req: GetAiJobDTO): AiJobDTO
+    +GET_search(req: SearchAiJobDTO): AiJobDTO    ' list
+  }
+
+  class AiPollingController <<Controller>> {
+    +POST_poll(req: PollJobDTO): AiJobDTO
+  }
+
+  class AiResultController <<Controller>> {
+    +GET_result(req: GetAiResultDTO): AiResultDTO
+  }
+}
+@enduml

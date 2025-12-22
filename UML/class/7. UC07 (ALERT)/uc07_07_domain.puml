@@ -1,0 +1,72 @@
+@startuml
+package "notify.domain" {
+
+  enum NotificationType { 
+    ORDER, 
+    RIS, 
+    AI, 
+    LAB, 
+    SYSTEM, 
+    SECURITY 
+  }
+
+  enum Severity { 
+    INFO, 
+    WARNING, 
+    CRITICAL 
+  }
+
+  class Notification {
+    +notificationId: UUID
+    +type: NotificationType
+    +severity: Severity
+    +title: String
+    +body: String
+    +targetRef: String        ' optional (caseId/orderId/jobId)
+    +meta: String             ' optional json
+    +createdAt: DateTime
+  }
+
+  class UserNotificationState {
+    +id: UUID
+    +userId: UUID
+    +notificationId: UUID
+    +ackedAt: DateTime        ' optional
+    +archivedAt: DateTime     ' optional
+    +deviceId: String         ' optional
+    +updatedAt: DateTime
+  }
+
+  class TimelineEvent {
+    +eventId: UUID
+    +eventType: String
+    +message: String
+    +caseRef: String          ' optional
+    +patientRef: String       ' optional
+    +meta: String             ' optional json
+    +createdAt: DateTime
+  }
+
+  class NotificationRule {
+    +ruleId: UUID
+    +eventType: String
+    +recipientPolicy: String  ' json
+    +enabled: bool
+    +createdAt: DateTime
+  }
+
+  class NotificationTemplate {
+    +templateKey: String
+    +titleTpl: String
+    +bodyTpl: String
+    +enabled: bool
+    +updatedAt: DateTime
+  }
+
+  class NotifyConfig {
+    +pollingDefaultSec: int
+    +maxPageSize: int
+    +enablePush: bool
+  }
+}
+@enduml

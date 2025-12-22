@@ -1,0 +1,18 @@
+@startuml
+package "notify.clients" {
+
+  interface PushChannelClient {
+    +send(payloadJson: String): void
+  }
+}
+
+package "integration.clients" {
+  interface AuditClient {
+    +emit(eventType: String, actorUserId: UUID, targetId: String, meta: String): void  ' meta=json
+  }
+
+  interface Clock {
+    +now(): DateTime
+  }
+}
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+title SD-ACCT-02 권한 체크 (인가)
+' UC Trace: UC1-2-1
+
+actor User as u
+participant "CDSS UI" as ui
+participant "Django CDSS\nAccounts/Auth" as auth
+participant "Django CDSS\nAudit/Admin" as audit
+
+group 권한 체크
+  u -> ui : 보호된 기능 클릭
+  ui -> auth : POST /auth/authorize
+  auth -> auth : token 검증
+  auth -> auth : RBAC/Permission 평가
+  alt 허용
+    auth --> ui : allow
+    ui --> u : 기능 화면 표시
+  else 거부
+    auth -> audit : log_event(AUTHZ_DENIED)
+    audit -> audit : audit_logs insert
+    auth --> ui : 403
+    ui --> u : 접근 거부 안내
+  end
+end group
+@enduml

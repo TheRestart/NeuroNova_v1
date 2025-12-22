@@ -1,0 +1,68 @@
+@startuml
+' File: uc3_ocs.puml
+left to right direction
+
+actor Doctor as d
+actor Nurse as n
+actor LabTech as lt
+' OpenEMR는 단방향 백엔드 연동이므로 Actor에서 제거
+
+rectangle "Django CDSS\n(UC3: OCS / Order Workflow)" {
+
+  ' 오더 조회
+  usecase "UC3-1-1 오더 목록 조회" as UC311
+  usecase "UC3-1-2 오더 상세 조회" as UC312
+
+  ' 오더 생성
+  usecase "UC3-2-1 RAD 오더 생성" as UC321
+  usecase "UC3-2-2 LAB 오더 생성" as UC322
+  usecase "UC3-2-3 PROC 오더 생성" as UC323
+
+  ' 상태 변경
+  usecase "UC3-3-1 상태: CREATED→ACCEPTED" as UC331
+  usecase "UC3-3-2 상태: ACCEPTED→IN_PROGRESS" as UC332
+  usecase "UC3-3-3 상태: IN_PROGRESS→COMPLETED" as UC333
+  usecase "UC3-3-4 오더 취소(CANCELLED)" as UC334
+
+  ' 매핑 (내부 UC)
+  usecase "UC3-4-1 오더↔Study 매핑(RAD)" as UC341
+  usecase "UC3-4-2 오더↔LabResult 매핑(LAB)" as UC342
+  usecase "UC3-4-3 오더↔Procedure 매핑(PROC)" as UC343
+
+  ' 지연 오더 (내부 UC)
+  usecase "UC3-5-1 지연 오더 탐지" as UC351
+  usecase "UC3-5-2 지연 오더 Alert 생성" as UC352
+}
+
+' 오더 조회/생성/상태 변경
+d --> UC311
+d --> UC312
+d --> UC321
+d --> UC322
+d --> UC323
+d --> UC331
+d --> UC334
+
+n --> UC311
+n --> UC332
+n --> UC333
+
+lt --> UC332
+lt --> UC333
+
+' 목록→상세
+UC311 ..> UC312 : <<include>>
+
+' 지연 오더 탐지 → Alert 생성
+UC351 ..> UC311 : <<include>>
+UC352 ..> UC351 : <<include>>
+
+' OpenEMR는 백엔드 OCS/EMR 시스템으로만 동작 (Actor 아님)
+note right of UC321
+  External EMR/OCS System: OpenEMR
+  - Django CDSS가 REST API로 오더 동기화
+  - UC를 직접 트리거하지 않으므로
+    Usecase Actor로는 표현하지 않음
+end note
+
+@enduml

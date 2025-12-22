@@ -1,0 +1,14 @@
+@startuml
+package "audit.clients" {
+
+  interface ExternalAuditSinkClient {
+    +send(payloadJson: String): void
+  }
+}
+
+package "integration.clients" {
+  interface Clock {
+    +now(): DateTime
+  }
+}
+@enduml

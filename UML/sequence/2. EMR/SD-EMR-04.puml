@@ -1,0 +1,28 @@
+@startuml
+title SD-EMR-04 Encounter 목록 / 상세
+' UC Trace: UC2-3-1, UC2-3-2
+
+actor Doctor as d
+participant "CDSS UI" as ui
+participant "Django CDSS\nEMR Proxy (UC2)" as emr
+participant "OpenEMR API" as openemr
+
+group Encounter 목록 조회
+  d -> ui : Encounter 목록 요청
+  ui -> emr : GET /patients/{id}/encounters
+  emr -> openemr : REST /encounters?patient={id}
+  openemr --> emr : encounter list
+  emr -> emr : cache update
+  emr --> ui : encounter list DTO
+  ui --> d : 목록 표시
+end group
+
+group Encounter 상세 조회
+  d -> ui : Encounter 선택
+  ui -> emr : GET /encounters/{enc_id}
+  emr -> openemr : REST /encounters/{enc_id}
+  openemr --> emr : encounter detail
+  emr --> ui : detail DTO
+  ui --> d : 상세 화면
+end group
+@enduml

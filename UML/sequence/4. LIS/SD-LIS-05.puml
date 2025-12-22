@@ -1,0 +1,20 @@
+@startuml
+title SD-LIS-05 결과 조회
+' UC Trace: UC4-1-4, UC4-1-5
+
+actor Doctor as d
+participant "CDSS UI" as ui
+participant "Django CDSS\nLIS-lite (UC4)" as lis
+
+group 결과 목록
+  d -> ui : 결과 목록 요청
+  ui -> lis : GET /lis/results
+  lis --> ui : list DTO
+end group
+
+group 결과 상세
+  d -> ui : 결과 선택
+  ui -> lis : GET /lis/results/{id}
+  lis --> ui : detail DTO
+end group
+@enduml

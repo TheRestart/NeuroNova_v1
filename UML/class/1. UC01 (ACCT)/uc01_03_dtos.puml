@@ -1,0 +1,49 @@
+@startuml
+package "acct.dtos" {
+
+  class LoginRequestDTO {
+    +username: String
+    +password: String
+    +otp: String             ' optional
+  }
+
+  class TokenPairDTO {
+    +accessToken: String
+    +expiresInSec: int
+    +refreshToken: String    ' optional
+  }
+
+  class RefreshRequestDTO {
+    +refreshToken: String
+  }
+
+  class LogoutRequestDTO {
+    +refreshToken: String    ' optional (only if refresh is used)
+  }
+
+  class MeResponseDTO {
+    +userId: UUID
+    +username: String
+    +roles: String           ' optional json list
+    +permissions: String     ' optional json list
+  }
+
+  class UpsertRoleDTO {
+    +roleKey: String
+    +name: String
+    +permissionsJson: String ' json list
+    +enabled: bool
+  }
+
+  class AssignRoleDTO {
+    +userId: UUID
+    +roleKey: String
+  }
+
+  class RoleDTO {
+    +roleKey: String
+    +name: String
+    +enabled: bool
+  }
+}
+@enduml

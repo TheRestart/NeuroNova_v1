@@ -1,0 +1,16 @@
+@startuml
+title SD-ALERT-03 알림 읽음 처리
+' UC Trace: UC7-2-1
+
+actor User as u
+participant "CDSS UI" as ui
+participant "Django CDSS\nTimeline/Alert (UC7)" as alert
+
+group 읽음 처리
+  u -> ui : 특정 알림 클릭
+  ui -> alert : PATCH /notifications/{id} (read=true)
+  alert -> alert : update read=true, read_at=now
+  alert --> ui : ok
+  ui --> u : 읽음 반영
+end group
+@enduml

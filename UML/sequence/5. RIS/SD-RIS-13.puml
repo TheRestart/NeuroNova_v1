@@ -1,0 +1,19 @@
+@startuml
+title SD-RIS-13 Study AI 요청 생성
+' UC Trace: UC5-5-1
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+participant "Django CDSS\nAI Orchestrator (UC6)" as ai
+
+group AI 요청 생성
+  r -> ui : "AI 분석" 클릭
+  ui -> ris : POST /ris/studies/{id}/ai-requests
+  ris -> ris : validate eligible(study modality, series)
+  ris -> ai : create ai_job(study_uid, model)
+  ai --> ris : ai_job_id
+  ris --> ui : request accepted
+  ui --> r : 진행중 표시
+end group
+@enduml

@@ -1,0 +1,50 @@
+[시스템 사용자 역할 및 권한 명세]
+
+1. Admin (관리자)
+   - 권한 레벨: Full Access
+   - 데이터 접근 범위: System All
+   - 주요 업무:
+     • 시스템 전체 관리 및 설정
+     • 계정 생성/삭제 및 권한 부여
+
+2. Doctor (신경외과)
+   - 권한 레벨: All (Clinical)
+   - 데이터 접근 범위: Django, Custom, EMR
+   - 주요 업무:
+     • 환자 진료 및 처방
+     • AI 분석 결과(MRI/Omics) 최종 검증 및 확정
+
+3. RIB (방사선과)
+   - 권한 레벨: Create / Read / Update
+   - 데이터 접근 범위: DICOM
+   - 주요 업무:
+     • MRI/CT 등 의료 영상 데이터 업로드 및 관리
+     • 영상 정합성 1차 확인
+
+4. Lab (검사실)
+   - 권한 레벨: Create / Read / Update
+   - 데이터 접근 범위: Lab EMR
+   - 주요 업무:
+     • 혈액/단백질 검사 데이터 입력
+     • 검체 분석 결과 관리
+
+5. Nurse (간호)
+   - 권한 레벨: Read, Limited Create/Update
+   - 데이터 접근 범위: Vitals, Notes
+   - 주요 업무:
+     • 기초 바이탈 측정 및 입력
+     • 간호 기록(Nursing Note) 작성 (처방 불가)
+
+6. Patient (일반)
+   - 권한 레벨: Read (Self), Create/Update
+   - 데이터 접근 범위: Profile, Reservation
+   - 주요 업무:
+     • 본인 진료 내역 조회
+     • 예약 및 문진표 작성
+
+7. External (외부기관)
+   - 권한 레벨: API Access
+   - 데이터 접근 범위: Limited Scope
+   - 주요 업무:
+     • FHIR API 연동 (M2M 인증)
+     • 허용된 Scope 내 데이터 전송/조회

@@ -1,0 +1,19 @@
+@startuml
+title SD-ACCT-03 로그아웃
+' UC Trace: UC1-1-2
+
+actor User as u
+participant "CDSS UI" as ui
+participant "Django CDSS\nAccounts/Auth" as auth
+participant "Django CDSS\nAudit/Admin" as audit
+
+group 로그아웃
+  u -> ui : 로그아웃 클릭
+  ui -> auth : POST /auth/logout
+  auth -> auth : refresh token revoke
+  auth -> audit : log_event(LOGOUT)
+  audit -> audit : audit_logs insert
+  auth --> ui : 200 OK
+  ui --> u : 로그인 화면 이동
+end group
+@enduml

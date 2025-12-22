@@ -1,0 +1,61 @@
+@startuml
+title UC02 (EMR Proxy) - Class Diagram (Main)
+
+left to right direction
+hide empty members
+skinparam classAttributeIconSize 0
+
+!include uc02_7_domain.puml
+!include uc02_6_dtos.puml
+!include uc02_5_clients.puml
+!include uc02_4_repositories.puml
+!include uc02_3_services.puml
+!include uc02_2_controllers.puml
+
+' --- Controller -> Service
+EmrProxyController --> EmrProxyService
+EmrSyncController --> PatientSyncService
+EmrSyncController --> EncounterSyncService
+EmrMappingController --> EmrMappingService
+
+EmrProxyController --> AuditClient
+EmrSyncController --> AuditClient
+EmrMappingController --> AuditClient
+
+' --- Services -> Repos/Clients
+EmrProxyService --> EmrPatientCacheRepository
+EmrProxyService --> EmrEncounterCacheRepository
+EmrProxyService --> OpenEmrClient
+EmrProxyService --> EmrDataNormalizer
+EmrProxyService --> EmrResilienceService
+EmrProxyService --> AuditClient
+EmrProxyService --> EmrMappingService
+
+PatientSyncService --> EmrPatientCacheRepository
+PatientSyncService --> EmrSyncJobRepository
+PatientSyncService --> OpenEmrClient
+PatientSyncService --> EmrDataNormalizer
+PatientSyncService --> EmrResilienceService
+PatientSyncService --> AuditClient
+PatientSyncService --> EmrMappingService
+
+EncounterSyncService --> EmrEncounterCacheRepository
+EncounterSyncService --> EmrSyncJobRepository
+EncounterSyncService --> OpenEmrClient
+EncounterSyncService --> EmrDataNormalizer
+EncounterSyncService --> EmrResilienceService
+EncounterSyncService --> AuditClient
+
+EmrMappingService --> EmrMappingRepository
+EmrMappingService --> AuditClient
+
+EmrResilienceService --> Clock
+
+OpenEmrClient --> OpenEmrAuthClient
+
+' --- Domain relations
+EmrPatientCache "1" o-- "0..*" EmrEncounterCache : emrPatientId
+EmrIdMapping "1" o-- "1" EmrPatientCache : emrPatientId
+EmrSyncJob ..> EmrConfig
+
+@enduml

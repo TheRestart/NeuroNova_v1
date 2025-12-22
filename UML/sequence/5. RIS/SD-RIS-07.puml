@@ -1,0 +1,17 @@
+@startuml
+title SD-RIS-07 Report Final 확정
+' UC Trace: UC5-3-3
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+
+group Final 확정
+  r -> ui : "Final 확정" 클릭
+  ui -> ris : POST /ris/reports/{id}/finalize
+  ris -> ris : validate completeness
+  ris -> ris : report.status=FINAL
+  ris --> ui : finalized DTO
+  ui --> r : Final 표시
+end group
+@enduml

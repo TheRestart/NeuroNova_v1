@@ -1,0 +1,16 @@
+@startuml
+title SD-RIS-01 Worklist 조회
+' UC Trace: UC5-1-1
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+
+group Worklist 조회
+  r -> ui : Worklist 메뉴 클릭
+  ui -> ris : GET /ris/worklist
+  ris -> ris : query pending studies/orders
+  ris --> ui : worklist DTO
+  ui --> r : 목록 표시
+end group
+@enduml

@@ -1,0 +1,71 @@
+@startuml
+' File: uc2_emr_proxy.puml
+left to right direction
+
+actor Doctor as d
+actor Nurse as n
+' OpenEMR는 단방향 데이터 소스이므로 Actor 제거
+
+rectangle "Django CDSS\n(UC2: EMR Proxy)" {
+
+  ' 환자 검색/목록
+  usecase "UC2-1-1 환자 검색" as UC211
+  usecase "UC2-1-2 환자 목록 페이지 조회" as UC212
+
+  ' 환자 요약
+  usecase "UC2-2-1 환자 기본 정보 조회" as UC221
+  usecase "UC2-2-2 주요 진단/Problem 조회" as UC222
+  usecase "UC2-2-3 환자 요약 카드 조회" as UC223
+
+  ' Encounter
+  usecase "UC2-3-1 Encounter 목록 조회" as UC231
+  usecase "UC2-3-2 Encounter 상세 조회" as UC232
+
+  ' EMR Pull / 캐시  (내부 UC)
+  usecase "UC2-4-1 EMR 환자 Pull" as UC241
+  usecase "UC2-4-2 EMR Encounter Pull" as UC242
+  usecase "UC2-4-3 Pull 결과 캐시 저장" as UC243
+
+  ' 집계 (내부 UC)
+  usecase "UC2-5-1 오더 집계" as UC251
+  usecase "UC2-5-2 Study 집계" as UC252
+  usecase "UC2-5-3 검사결과 집계" as UC253
+  usecase "UC2-5-4 AI/Report/Timeline 집계" as UC254
+}
+
+' 사용자 액터
+d --> UC211
+d --> UC212
+d --> UC221
+d --> UC222
+d --> UC223
+d --> UC231
+d --> UC232
+
+n --> UC211
+n --> UC212
+n --> UC221
+n --> UC231
+
+' 내부 UC include 관계 (Actor 없음)
+UC241 ..> UC243 : <<include>>
+UC242 ..> UC243 : <<include>>
+
+' 환자 기본정보/Encounter 조회 시 EMR Pull 포함
+UC221 ..> UC241 : <<include>>
+UC231 ..> UC242 : <<include>>
+
+' 환자 요약 카드는 여러 집계 UC 포함
+UC223 ..> UC251 : <<include>>
+UC223 ..> UC252 : <<include>>
+UC223 ..> UC253 : <<include>>
+UC223 ..> UC254 : <<include>>
+
+' EMR은 외부 데이터 소스로만 설명
+note right of UC241
+  External EMR System: OpenEMR
+  - Django가 REST API를 통해 단방향 Pull
+  - UC를 트리거하지 않으므로 Actor 아님
+end note
+
+@enduml

@@ -1,0 +1,14 @@
+@startuml
+title SD-AI-04 PACS 업로드 (DICOM SEG)
+' UC Trace: UC6-3-1(연계)
+
+participant "Django CDSS\nAI Orchestrator (UC6)" as ai
+participant "Orthanc PACS" as pacs
+
+group DICOM SEG 업로드
+  ai -> ai : build DICOM SEG(or SR) payload
+  ai -> pacs : POST /instances (SEG)
+  pacs --> ai : 200 OK (instance id)
+  ai -> ai : update ai_results(seg_instance_id)
+end group
+@enduml

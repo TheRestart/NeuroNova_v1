@@ -1,0 +1,21 @@
+@startuml
+title SD-LIS-01 결과 수신 / 저장
+' UC Trace: UC4-1-1~3
+
+actor LabTech as lt
+participant "CDSS UI" as ui
+participant "Django CDSS\nLIS-lite (UC4)" as lis
+
+group 결과 수신
+  lt -> ui : 결과 업로드
+  ui -> lis : POST /lis/results/raw
+end group
+
+group 파싱/정규화
+  lis -> lis : parse & normalize
+end group
+
+group 저장
+  lis -> lis : insert lab_results
+end group
+@enduml

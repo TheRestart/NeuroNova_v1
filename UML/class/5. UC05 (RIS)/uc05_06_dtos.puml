@@ -1,0 +1,94 @@
+@startuml
+package "ris.dtos" {
+
+  class WorklistQueryDTO {
+    +status: String          ' optional
+    +assignedTo: String      ' optional
+    +from: Date              ' optional
+    +to: Date                ' optional
+    +modality: String        ' optional
+    +priority: String        ' optional
+    +q: String               ' optional
+  }
+
+  class WorklistItemDTO {
+    +caseId: UUID
+    +orderId: UUID
+    +patientRef: String
+    +status: String
+    +orthancStudyId: String  ' optional
+    +modality: String        ' optional
+    +scheduledAt: DateTime   ' optional
+    +summary: String         ' optional
+  }
+
+  class LinkStudyDTO {
+    +orderId: UUID
+    +orthancStudyId: String
+    +matchedBy: String       ' optional
+  }
+
+  class UnlinkStudyDTO {
+    +orderId: UUID
+  }
+
+  class StudyLinkDTO {
+    +orderId: UUID
+    +orthancStudyId: String
+    +linkedAt: DateTime
+    +matchedBy: String
+  }
+
+  class UpdateReadingStatusDTO {
+    +caseId: UUID
+    +toStatus: String
+    +assignedTo: UUID        ' optional
+    +reason: String          ' optional
+  }
+
+  class ReadingCaseDTO {
+    +caseId: UUID
+    +orderId: UUID
+    +patientRef: String
+    +status: String
+    +assignedTo: UUID        ' optional
+    +createdAt: DateTime
+    +updatedAt: DateTime     ' optional
+  }
+
+  class SaveReportDraftDTO {
+    +caseId: UUID
+    +content: String
+    +templateId: String      ' optional
+  }
+
+  class FinalizeReportDTO {
+    +caseId: UUID
+    +content: String         ' optional (if finalize includes content)
+    +finalizeNote: String    ' optional
+  }
+
+  class ReportDTO {
+    +reportId: UUID
+    +caseId: UUID
+    +status: String
+    +content: String
+    +authoredBy: UUID
+    +authoredAt: DateTime
+    +correctedFrom: UUID     ' optional
+  }
+
+  class RisSyncRequestDTO {
+    +from: Date              ' optional
+    +to: Date                ' optional
+    +force: bool             ' optional
+  }
+
+  class SyncResultDTO {
+    +jobId: UUID
+    +status: String
+    +updatedCount: int
+    +message: String         ' optional
+  }
+}
+@enduml

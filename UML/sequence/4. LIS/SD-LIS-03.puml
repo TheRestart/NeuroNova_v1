@@ -1,0 +1,15 @@
+@startuml
+title SD-LIS-03 Alert 트리거
+' UC Trace: UC4-3-1, UC4-3-2
+
+participant "Django CDSS\nLIS-lite (UC4)" as lis
+participant "Django CDSS\nAlert (UC7)" as alert
+
+group Abnormal Alert
+  lis -> alert : create ABNORMAL_RESULT
+end group
+
+group Critical Alert
+  lis -> alert : create CRITICAL_RESULT
+end group
+@enduml

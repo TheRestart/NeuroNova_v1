@@ -1,0 +1,56 @@
+@startuml
+title UC03 (OCS / Orders) - Class Diagram (Main)
+
+left to right direction
+hide empty members
+skinparam classAttributeIconSize 0
+
+!include uc03_7_domain.puml
+!include uc03_6_dtos.puml
+!include uc03_5_clients.puml
+!include uc03_4_repositories.puml
+!include uc03_3_services.puml
+!include uc03_2_controllers.puml
+
+' --- Controller -> Service
+OrderController --> OrderService
+OrderStatusController --> OrderStatusService
+OrderSyncController --> OrderSyncService
+
+OrderController --> AuditClient
+OrderStatusController --> AuditClient
+OrderSyncController --> AuditClient
+
+' --- Services -> Repos/Clients
+OrderService --> OrderRepository
+OrderService --> OrderMappingService
+OrderService --> OrderValidator
+OrderService --> AuditClient
+
+OrderStatusService --> OrderRepository
+OrderStatusService --> OrderStatusHistoryRepository
+OrderStatusService --> OrderStateMachine
+OrderStatusService --> AuditClient
+
+OrderSyncService --> OpenEmrOrderClient
+OrderSyncService --> OrderRepository
+OrderSyncService --> OrderMappingService
+OrderSyncService --> OrderSyncJobRepository
+OrderSyncService --> OrderValidator
+OrderSyncService --> AuditClient
+
+OrderMappingService --> OrderMappingRepository
+OrderMappingService --> AuditClient
+
+OrderSyncService --> Clock
+OrderStatusService --> Clock
+
+OpenEmrOrderClient --> OpenEmrAuthClient
+
+' --- Domain relations
+Order "1" o-- "0..*" OrderStatusHistory
+Order "1" o-- "0..1" OrderMapping
+
+OrderSyncJob ..> OcsConfig
+
+@enduml

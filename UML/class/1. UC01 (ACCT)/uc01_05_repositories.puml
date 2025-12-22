@@ -1,0 +1,31 @@
+@startuml
+package "acct.repositories" {
+
+  interface UserRepository {
+    +findByUsername(username: String): User
+    +findById(userId: UUID): User
+    +save(user: User): User
+  }
+
+  interface RoleRepository {
+    +findByKey(roleKey: String): Role
+    +save(role: Role): Role
+  }
+
+  interface PermissionRepository {
+    +findByKey(permKey: String): Permission
+    +listAllEnabled(): Permission   ' list
+  }
+
+  interface UserRoleRepository {
+    +listRolesByUser(userId: UUID): Role   ' list
+    +assign(userId: UUID, roleKey: String): void
+  }
+
+  interface RefreshTokenRepository {
+    +save(token: RefreshToken): RefreshToken
+    +findByHash(tokenHash: String): RefreshToken
+    +revoke(tokenId: UUID): void
+  }
+}
+@enduml

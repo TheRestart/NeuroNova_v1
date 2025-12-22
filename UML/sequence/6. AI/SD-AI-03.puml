@@ -1,0 +1,14 @@
+@startuml
+title SD-AI-03 결과 수신 / 저장
+' UC Trace: UC6-3-1
+
+participant "Django CDSS\nAI Orchestrator (UC6)" as ai
+participant "Flask-ModAI API" as modai
+
+group 결과 수신 및 저장
+  ai -> modai : GET /jobs/{job_id}/result
+  modai --> ai : result(mask_uri, score, class, meta)
+  ai -> ai : insert ai_results
+  ai -> ai : update ai_jobs(status=COMPLETED)
+end group
+@enduml

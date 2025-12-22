@@ -1,0 +1,33 @@
+@startuml
+package "ai.repositories" {
+
+  interface AiJobRepository {
+    +findById(jobId: UUID): AiJob
+    +save(job: AiJob): AiJob
+    +search(criteriaJson: String): AiJob      ' list
+    +updateStatus(jobId: UUID, status: String): void
+  }
+
+  interface AiResultRepository {
+    +findByJobId(jobId: UUID): AiResult
+    +findByStudy(studyId: String, seriesId: String): AiResult   ' optional series
+    +upsert(result: AiResult): AiResult
+  }
+
+  interface AiArtifactRepository {
+    +save(artifact: AiArtifact): AiArtifact
+    +findByResultId(resultId: UUID): AiArtifact    ' list
+  }
+
+  interface AiEventRepository {
+    +append(eventObj: AiJobEvent): void
+    +listByJobId(jobId: UUID): AiJobEvent          ' list
+  }
+
+  interface AiSyncJobRepository {
+    +create(job: AiSyncJob): AiSyncJob
+    +updateStatus(syncJobId: UUID, status: String, updatedCount: int, errorMessage: String): void
+    +listRecent(limit: int): AiSyncJob             ' list
+  }
+}
+@enduml

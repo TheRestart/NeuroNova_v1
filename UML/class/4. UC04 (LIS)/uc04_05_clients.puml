@@ -1,0 +1,18 @@
+@startuml
+package "lis.clients" {
+
+  interface ExternalLabClient {
+    +fetchResults(scopeJson: String): String   ' json list
+  }
+}
+
+package "integration.clients" {
+  interface AuditClient {
+    +emit(eventType: String, actorUserId: UUID, targetId: String, meta: String): void  ' meta=json
+  }
+
+  interface Clock {
+    +now(): DateTime
+  }
+}
+@enduml

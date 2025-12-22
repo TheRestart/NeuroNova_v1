@@ -1,0 +1,28 @@
+@startuml
+package "ocs.repositories" {
+
+  interface OrderRepository {
+    +findById(orderId: UUID): Order
+    +findByEmrOrderId(emrOrderId: String): Order
+    +save(order: Order): Order
+    +search(criteriaJson: String): Order  ' list
+  }
+
+  interface OrderStatusHistoryRepository {
+    +append(history: OrderStatusHistory): void
+    +listByOrderId(orderId: UUID): OrderStatusHistory  ' list
+  }
+
+  interface OrderMappingRepository {
+    +findByCdssOrderId(orderId: UUID): OrderMapping
+    +findByEmrOrderId(emrOrderId: String): OrderMapping
+    +save(mapping: OrderMapping): OrderMapping
+  }
+
+  interface OrderSyncJobRepository {
+    +create(job: OrderSyncJob): OrderSyncJob
+    +updateStatus(jobId: UUID, status: String, updatedCount: int, errorMessage: String): void
+    +listRecent(limit: int): OrderSyncJob  ' list
+  }
+}
+@enduml

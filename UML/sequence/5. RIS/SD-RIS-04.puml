@@ -1,0 +1,19 @@
+@startuml
+title SD-RIS-04 Orthanc Study 메타 Sync
+' UC Trace: UC5-2-2
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+participant "Orthanc PACS" as pacs
+
+group Orthanc 메타 Sync
+  r -> ui : Study 열기(또는 Sync 버튼)
+  ui -> ris : POST /ris/studies/{id}/sync
+  ris -> pacs : REST /studies/{StudyUID}
+  pacs --> ris : study/series/instance meta JSON
+  ris -> ris : update local meta cache
+  ris --> ui : synced study DTO
+  ui --> r : 메타 갱신 표시
+end group
+@enduml

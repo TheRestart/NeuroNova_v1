@@ -1,0 +1,23 @@
+@startuml
+title SD-RIS-12 판독 Lock / Unlock
+' UC Trace: UC5-4-4
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+
+group Lock
+  r -> ui : "Lock" 클릭
+  ui -> ris : POST /ris/studies/{id}/lock
+  ris -> ris : set lock=true, locked_by=r
+  ris --> ui : ok
+end group
+
+group Unlock
+  r -> ui : "Unlock" 클릭
+  ui -> ris : POST /ris/studies/{id}/unlock
+  ris -> ris : validate locked_by == r (or admin)
+  ris -> ris : set lock=false
+  ris --> ui : ok
+end group
+@enduml

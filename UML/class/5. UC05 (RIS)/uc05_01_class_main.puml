@@ -1,0 +1,56 @@
+@startuml
+title UC05 (RIS) - Class Diagram (Main)
+
+left to right direction
+hide empty members
+skinparam classAttributeIconSize 0
+
+!include uc05_07_domain.puml
+!include uc05_06_dtos.puml
+!include uc05_05_clients.puml
+!include uc05_04_repositories.puml
+!include uc05_03_services.puml
+!include uc05_02_controllers.puml
+
+' --- Controller -> Service
+WorklistController --> WorklistService
+StudyLinkController --> StudyLinkService
+ReadingStatusController --> ReadingCaseService
+ReportController --> ReportService
+
+WorklistController --> AuditClient
+StudyLinkController --> AuditClient
+ReadingStatusController --> AuditClient
+ReportController --> AuditClient
+
+' --- Services -> Repo/Client
+WorklistService --> ReadingCaseRepository
+WorklistService --> StudyLinkRepository
+WorklistService --> ReportRepository
+WorklistService --> AuditClient
+
+StudyLinkService --> OrthancClient
+StudyLinkService --> StudyLinkRepository
+StudyLinkService --> RisNormalizer
+StudyLinkService --> AuditClient
+
+ReadingCaseService --> ReadingCaseRepository
+ReadingCaseService --> ReadingStatusHistoryRepository
+ReadingCaseService --> RisStateMachine
+ReadingCaseService --> Clock
+ReadingCaseService --> AuditClient
+
+ReportService --> ReportRepository
+ReportService --> ReadingCaseRepository
+ReportService --> RisValidator
+ReportService --> Clock
+ReportService --> AuditClient
+
+' --- Domain relations
+ReadingCase "1" o-- "0..*" ReadingStatusHistory
+ReadingCase "1" o-- "0..1" StudyLink
+ReadingCase "1" o-- "0..1" RadiologyReport
+
+RisSyncJob ..> RisConfig
+
+@enduml

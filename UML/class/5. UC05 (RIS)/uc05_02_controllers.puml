@@ -1,0 +1,24 @@
+@startuml
+package "ris.controllers" {
+
+  class WorklistController <<Controller>> {
+    +GET_worklist(req: WorklistQueryDTO): WorklistItemDTO  ' list
+  }
+
+  class StudyLinkController <<Controller>> {
+    +POST_link(req: LinkStudyDTO): StudyLinkDTO
+    +POST_unlink(req: UnlinkStudyDTO): void
+  }
+
+  class ReadingStatusController <<Controller>> {
+    +PATCH_status(req: UpdateReadingStatusDTO): ReadingCaseDTO
+    +GET_case(caseId: UUID): ReadingCaseDTO
+  }
+
+  class ReportController <<Controller>> {
+    +POST_save_draft(req: SaveReportDraftDTO): ReportDTO
+    +POST_finalize(req: FinalizeReportDTO): ReportDTO
+    +GET_report(caseId: UUID): ReportDTO
+  }
+}
+@enduml

@@ -1,0 +1,43 @@
+@startuml
+package "fhir.services" {
+
+  class FhirPatientService <<Service>> {
+    +push(req: FhirPatientRequestDTO, actorUserId: UUID): FhirPushResultDTO
+  }
+
+  class FhirServiceRequestService <<Service>> {
+    +push(req: FhirServiceRequestDTO, actorUserId: UUID): FhirPushResultDTO
+  }
+
+  class FhirImagingStudyService <<Service>> {
+    +push(req: FhirImagingStudyDTO, actorUserId: UUID): FhirPushResultDTO
+  }
+
+  class FhirObservationService <<Service>> {
+    +push(req: FhirObservationDTO, actorUserId: UUID): FhirPushResultDTO
+  }
+
+  class FhirDiagnosticReportService <<Service>> {
+    +push(req: FhirDiagnosticReportDTO, actorUserId: UUID): FhirPushResultDTO
+  }
+
+  class FhirMappingService <<Service>> {
+    +getOrCreate(localType: String, localId: String, fhirType: String): FhirIdMapping
+    +save(mapping: FhirIdMapping): FhirIdMapping
+  }
+
+  class FhirRequestService <<Service>> {
+    +upsert(resourceType: String, fhirId: String, payloadJson: String): String   ' returns fhirId
+    +create(resourceType: String, payloadJson: String): String                   ' returns fhirId
+    +search(resourceType: String, query: String): String                         ' json
+  }
+
+  class FhirResourceBuilder <<Service>> {
+    +buildPatient(localJson: String): String             ' fhir json
+    +buildServiceRequest(localJson: String): String      ' fhir json
+    +buildImagingStudy(localJson: String): String        ' fhir json
+    +buildObservation(localJson: String): String         ' fhir json
+    +buildDiagnosticReport(localJson: String): String    ' fhir json
+  }
+}
+@enduml

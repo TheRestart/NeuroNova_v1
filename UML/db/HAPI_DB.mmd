@@ -1,0 +1,50 @@
+%%{init: {
+  "theme": "default",
+  "themeVariables": {
+    "background": "#ffffff",
+    "primaryColor": "#ffffff",
+    "secondaryColor": "#ffffff",
+    "tertiaryColor": "#ffffff",
+    "primaryTextColor": "#000000",
+    "lineColor": "#000000",
+    "entityBackground": "#ffffff",
+    "entityBorder": "#000000"
+  }
+}}%%
+erDiagram
+  %% =========================
+  %% Relationships
+  %% =========================
+  HFJ_RESOURCE ||--o{ HFJ_RES_VER : has_versions
+  HFJ_RESOURCE ||--o{ HFJ_RES_TAG : tagged_with
+  HFJ_TAG_DEF  ||--o{ HFJ_RES_TAG : defines
+
+  %% =========================
+  %% Entities
+  %% =========================
+  HFJ_RESOURCE {
+    long   res_id PK
+    string res_type
+    string logical_id
+    datetime updated_at
+  }
+
+  HFJ_RES_VER {
+    long   res_ver_id PK
+    long   res_id FK
+    int    version_id
+    string resource_json
+    datetime created_at
+  }
+
+  HFJ_TAG_DEF {
+    long   tag_id PK
+    string system
+    string code
+    string display
+  }
+
+  HFJ_RES_TAG {
+    long res_id FK
+    long tag_id FK
+  }

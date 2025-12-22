@@ -1,0 +1,13 @@
+@startuml
+title SD-FHIR-08 Observation 전송
+' UC Trace: UC8-4-2
+
+participant "Django CDSS\nFHIR Client (UC8)" as cli
+participant "FHIR Server" as fhir
+
+group Observation 전송
+  cli -> fhir : POST /Observation
+  fhir --> cli : 201 Created (Observation/id)
+  cli -> cli : store mapping(local_result_id ↔ obs_id)
+end group
+@enduml

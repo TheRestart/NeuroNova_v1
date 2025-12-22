@@ -1,0 +1,57 @@
+@startuml
+package "ocs.dtos" {
+
+  class CreateOrderDTO {
+    +patientEmrId: String
+    +orderType: String
+    +code: String
+    +description: String    ' optional
+    +priority: String       ' optional
+    +requestedAt: DateTime  ' optional
+  }
+
+  class GetOrderDTO {
+    +orderId: UUID
+  }
+
+  class SearchOrderDTO {
+    +patientEmrId: String   ' optional
+    +status: String         ' optional
+    +orderType: String      ' optional
+    +from: Date             ' optional
+    +to: Date               ' optional
+  }
+
+  class UpdateOrderStatusDTO {
+    +orderId: UUID
+    +toStatus: String
+    +reason: String         ' optional
+  }
+
+  class OrderSyncRequestDTO {
+    +patientEmrId: String   ' optional
+    +from: Date             ' optional
+    +to: Date               ' optional
+    +force: bool            ' optional
+  }
+
+  class SyncResultDTO {
+    +jobId: UUID
+    +status: String
+    +updatedCount: int
+    +message: String        ' optional
+  }
+
+  class OrderDTO {
+    +orderId: UUID
+    +patientRef: String
+    +orderType: String
+    +code: String
+    +description: String    ' optional
+    +priority: String       ' optional
+    +status: String
+    +requestedAt: DateTime
+    +externalRefs: String   ' optional json
+  }
+}
+@enduml

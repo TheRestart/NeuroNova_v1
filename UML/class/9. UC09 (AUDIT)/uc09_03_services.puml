@@ -1,0 +1,36 @@
+@startuml
+package "audit.services" {
+
+  class AuditIngestService <<Service>> {
+    +ingest(req: AuditEventIngestDTO): IngestResultDTO
+  }
+
+  class AuditQueryService <<Service>> {
+    +query(req: AuditQueryDTO, actorUserId: UUID): AuditEventDTO     ' list
+  }
+
+  class SecurityEventService <<Service>> {
+    +record(category: String, severity: String, actorUserId: UUID, ip: String, detail: String): void
+    +query(req: SecurityQueryDTO, actorUserId: UUID): SecurityEventDTO  ' list
+  }
+
+  class AdminConfigService <<Service>> {
+    +update(req: UpdateConfigDTO, actorUserId: UUID): ConfigDTO
+    +get(key: String, actorUserId: UUID): ConfigDTO
+  }
+
+  class AdminRefDataService <<Service>> {
+    +save(req: SaveRefDataDTO, actorUserId: UUID): RefDataDTO
+    +get(refKey: String, actorUserId: UUID): RefDataDTO
+    +list(refType: String, actorUserId: UUID): RefDataDTO            ' list
+  }
+
+  class AuditValidator <<Service>> {
+    +validateIngest(req: AuditEventIngestDTO): void
+  }
+
+  class AuditNormalizer <<Service>> {
+    +normalizeMeta(metaJson: String): String
+  }
+}
+@enduml

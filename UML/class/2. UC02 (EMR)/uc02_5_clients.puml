@@ -1,0 +1,23 @@
+@startuml
+package "emr_proxy.clients" {
+
+  interface OpenEmrClient {
+    +getPatient(emrPatientId: String): Map
+    +listEncounters(emrPatientId: String, from: Date?, to: Date?): Map[*]
+  }
+
+  interface OpenEmrAuthClient {
+    +getAccessToken(): String
+  }
+}
+
+package "integration.clients" {
+  interface AuditClient {
+    +emit(eventType: String, actorUserId: UUID?, targetId: String?, meta: Map): void
+  }
+
+  interface Clock {
+    +now(): DateTime
+  }
+}
+@enduml

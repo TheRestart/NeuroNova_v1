@@ -1,0 +1,34 @@
+@startuml
+title SD-OCS-03 오더 상태 변경
+' UC Trace: UC3-3-1~4
+
+actor Doctor as d
+actor Nurse as n
+actor LabTech as lt
+participant "CDSS UI" as ui
+participant "Django CDSS\nOCS (UC3)" as ocs
+
+group CREATED → ACCEPTED
+  d -> ui : 승인
+  ui -> ocs : POST /accept
+  ocs -> ocs : ACCEPTED
+end group
+
+group ACCEPTED → IN_PROGRESS
+  n -> ui : 시작
+  ui -> ocs : POST /start
+  ocs -> ocs : IN_PROGRESS
+end group
+
+group IN_PROGRESS → COMPLETED
+  lt -> ui : 완료
+  ui -> ocs : POST /complete
+  ocs -> ocs : COMPLETED
+end group
+
+group 오더 취소
+  d -> ui : 취소
+  ui -> ocs : POST /cancel
+  ocs -> ocs : CANCELLED
+end group
+@enduml

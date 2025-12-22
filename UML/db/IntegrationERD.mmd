@@ -1,0 +1,133 @@
+%%{init: {
+  "theme": "default",
+  "themeVariables": {
+    "background": "#ffffff",
+    "primaryColor": "#ffffff",
+    "secondaryColor": "#ffffff",
+    "tertiaryColor": "#ffffff",
+    "primaryTextColor": "#000000",
+    "lineColor": "#000000"
+  }
+}}%%
+flowchart LR
+  %% =============== UI ===============
+  UI["UI Client"]
+
+  %% =============== CDSS Server Boundary (Single Entry) ===============
+  subgraph CDSS_SERVER["Django CDSS Server (Single Entry: UI -> CDSS)"]
+    %% --- Django App / Modules (logical) ---
+    subgraph CDSS_APP["CDSS Django App (Modules)"]
+
+      subgraph UC01["acct (UC01 Accounts/Auth)"]
+        ACCT_CTL["Controllers (API)"]
+        ACCT_SVC["Services"]
+        ACCT_REPO["Repositories"]
+      end
+
+      subgraph UC02["emr_proxy (UC02 EMR Proxy)"]
+        EMR_CTL["Controllers (API)"]
+        EMR_SVC["Services (Sync/Mapping)"]
+        EMR_CLIENT["Clients (OpenEMR API)"]
+        EMR_REPO["Repositories"]
+      end
+
+      subgraph UC03["ocs (UC03 OCS)"]
+        OCS_CTL["Controllers (API)"]
+        OCS_SVC["Services"]
+        OCS_CLIENT["Clients (OpenEMR API)"]
+        OCS_REPO["Repositories"]
+      end
+
+      subgraph UC05["ris (UC05 RIS)"]
+        RIS_CTL["Controllers (API)"]
+        RIS_SVC["Services"]
+        RIS_REPO["Repositories"]
+      end
+
+      subgraph UC06["ai_orch (UC06 AI Orchestration)"]
+        AI_CTL["Controllers (API)"]
+        AI_SVC["Services (Job Orchestration)"]
+        MODAI_CLIENT["Clients (ModAI API)"]
+        AI_REPO["Repositories"]
+      end
+
+      subgraph UC08["fhir_client (UC08 FHIR Client)"]
+        FHIR_CTL["Controllers (API)"]
+        FHIR_SVC["Services (Mapping/Tx)"]
+        FHIR_CLIENT["Clients (FHIR API)"]
+        FHIR_REPO["Repositories"]
+      end
+
+      subgraph UC09["audit_admin (UC09 Audit/Admin)"]
+        AUDIT_CTL["Controllers (API)"]
+        AUDIT_SVC["Services"]
+        AUDIT_REPO["Repositories"]
+      end
+
+    end
+
+    %% --- CDSS DB is owned/used by CDSS server ---
+    CDSS_DB[("CDSS DB")]
+  end
+
+  %% =============== External Participants (Servers) ===============
+  subgraph OPENEMR["OpenEMR Server (External Participant)"]
+    EMR_API["OpenEMR REST API"]
+    EMR_DB[("OpenEMR DB")]
+  end
+
+  subgraph ORTHANC["Orthanc PACS Server (External Participant)"]
+    ORTHANC_API["Orthanc REST API"]
+    ORTHANC_DB[("Orthanc DB")]
+  end
+
+  subgraph MODAI["ModAI Inference Server (External Participant)"]
+    MODAI_API["ModAI REST API"]
+  end
+
+  subgraph HAPI["HAPI FHIR Server (External Participant)"]
+    FHIR_API["FHIR REST API"]
+    FHIR_DB[("HAPI FHIR DB")]
+  end
+
+  %% =============== Single Entry: UI -> CDSS Server (only) ===============
+  UI --> ACCT_CTL
+  UI --> EMR_CTL
+  UI --> OCS_CTL
+  UI --> RIS_CTL
+  UI --> AI_CTL
+  UI --> FHIR_CTL
+  UI --> AUDIT_CTL
+
+  %% =============== Controller -> Service (internal) ===============
+  ACCT_CTL --> ACCT_SVC
+  EMR_CTL --> EMR_SVC
+  OCS_CTL --> OCS_SVC
+  RIS_CTL --> RIS_SVC
+  AI_CTL --> AI_SVC
+  FHIR_CTL --> FHIR_SVC
+  AUDIT_CTL --> AUDIT_SVC
+
+  %% =============== Service -> Repo -> CDSS DB (internal persistence) ===============
+  ACCT_SVC --> ACCT_REPO --> CDSS_DB
+  EMR_SVC --> EMR_REPO --> CDSS_DB
+  OCS_SVC --> OCS_REPO --> CDSS_DB
+  RIS_SVC --> RIS_REPO --> CDSS_DB
+  AI_SVC --> AI_REPO --> CDSS_DB
+  FHIR_SVC --> FHIR_REPO --> CDSS_DB
+  AUDIT_SVC --> AUDIT_REPO --> CDSS_DB
+
+  %% =============== Service -> Client -> External API (CDSS server is the caller) ===============
+  EMR_SVC --> EMR_CLIENT --> EMR_API
+  OCS_SVC --> OCS_CLIENT --> EMR_API
+  AI_SVC --> MODAI_CLIENT --> MODAI_API
+  FHIR_SVC --> FHIR_CLIENT --> FHIR_API
+
+  %% =============== Orthanc access paths (CDSS Service calls Orthanc API) ===============
+  RIS_SVC -. "REST query worklist Study Series" .-> ORTHANC_API
+  AI_SVC  -. "REST pull DICOM for inference" .-> ORTHANC_API
+
+  %% =============== External API -> External DB (owned by external servers) ===============
+  EMR_API --> EMR_DB
+  ORTHANC_API --> ORTHANC_DB
+  FHIR_API --> FHIR_DB

@@ -1,0 +1,41 @@
+@startuml
+' File: uc9_audit_admin.puml
+left to right direction
+
+actor Admin as a
+actor "Auditor/QA" as qa
+
+rectangle "Django CDSS\n(UC9: Audit & Admin)" {
+
+  ' Audit 로그
+  usecase "UC9-1-1 활동 로그 저장" as UC911
+  usecase "UC9-1-2 환자 접근 로그 조회" as UC912
+  usecase "UC9-1-3 모듈별 로그 조회" as UC913
+
+  ' 모니터링
+  usecase "UC9-2-1 Worker 상태 조회" as UC921
+  usecase "UC9-2-2 Redis/DB 상태 조회" as UC922
+  usecase "UC9-2-3 외부 시스템 Health Check" as UC923
+
+  ' 설정/권한 관리
+  usecase "UC9-3-1 Role/Permission 관리" as UC931
+  usecase "UC9-3-2 시스템 설정 관리" as UC932
+}
+
+' 로그 조회
+a --> UC912
+a --> UC913
+qa --> UC912
+qa --> UC913
+
+' 모니터링
+a --> UC921
+a --> UC922
+a --> UC923
+
+' 설정 관리
+a --> UC931
+a --> UC932
+
+' UC911(활동 로그 저장)은 각 모듈 UC에서 공통 include로 사용 가능
+@enduml

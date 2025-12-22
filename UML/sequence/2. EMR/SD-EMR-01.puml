@@ -1,0 +1,22 @@
+@startuml
+title SD-EMR-01 환자 검색 / 목록
+' UC Trace: UC2-1-1, UC2-1-2
+
+actor Doctor as d
+participant "CDSS UI" as ui
+participant "Django CDSS\nEMR Proxy (UC2)" as emr
+participant "OpenEMR API" as openemr
+
+group 환자 검색
+  d -> ui : 이름/ID 입력
+  ui -> emr : GET /patients?query=...
+  emr -> openemr : REST /patients/search
+  openemr --> emr : patient list
+  emr -> emr : cache upsert
+  emr --> ui : patient list DTO
+end group
+
+group 환자 목록 표시
+  ui --> d : 환자 목록 화면 렌더링
+end group
+@enduml

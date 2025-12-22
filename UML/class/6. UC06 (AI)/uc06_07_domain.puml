@@ -1,0 +1,81 @@
+@startuml
+package "ai.domain" {
+
+  enum AiJobStatus { 
+    CREATED, 
+    SUBMITTED, 
+    PENDING, 
+    RUNNING, 
+    SUCCEEDED, 
+    FAILED, 
+    CANCELED 
+  }
+
+  enum SyncJobStatus { 
+    PENDING, 
+    RUNNING, 
+    SUCCESS, 
+    FAILED 
+  }
+
+  class AiJob {
+    +jobId: UUID
+    +modelKey: String
+    +status: AiJobStatus
+    +patientRef: String
+    +studyId: String
+    +seriesId: String         ' optional (model-dependent)
+    +params: String           ' optional json
+    +priority: String         ' optional
+    +externalJobId: String    ' optional (modai job id)
+    +createdAt: DateTime
+    +updatedAt: DateTime      ' optional
+  }
+
+  class AiResult {
+    +resultId: UUID
+    +jobId: UUID
+    +summary: String
+    +tumorClass: String       ' optional
+    +metrics: String          ' optional json
+    +rawOutput: String        ' optional json (full response)
+    +createdAt: DateTime
+  }
+
+  class AiArtifact {
+    +artifactId: UUID
+    +resultId: UUID
+    +type: String             ' mask/overlay/report/thumbnail
+    +uri: String              ' file path or url
+    +mime: String
+    +sizeBytes: int           ' optional
+    +meta: String             ' optional json
+    +createdAt: DateTime
+  }
+
+  class AiJobEvent {
+    +eventId: UUID
+    +jobId: UUID
+    +fromStatus: AiJobStatus
+    +toStatus: AiJobStatus
+    +at: DateTime
+    +message: String          ' optional
+  }
+
+  class AiSyncJob {
+    +syncJobId: UUID
+    +status: SyncJobStatus
+    +scope: String            ' optional json (job ids/date range)
+    +startedAt: DateTime
+    +finishedAt: DateTime     ' optional
+    +updatedCount: int
+    +errorMessage: String     ' optional
+  }
+
+  class AiConfig {
+    +pollingIntervalSec: int
+    +timeoutSec: int
+    +retryCount: int
+  }
+}
+@enduml

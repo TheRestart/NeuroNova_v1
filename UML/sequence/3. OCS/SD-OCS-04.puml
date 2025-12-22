@@ -1,0 +1,24 @@
+@startuml
+title SD-OCS-04 오더 매핑
+' UC Trace: UC3-4-1~3
+
+participant "Django CDSS\nOCS (UC3)" as ocs
+participant "Django CDSS\nRIS (UC5)" as ris
+participant "Django CDSS\nLIS (UC4)" as lis
+
+group RAD 오더 ↔ Study
+  ocs -> ris : study_id 조회
+  ris --> ocs : study_id
+  ocs -> ocs : mapping 저장
+end group
+
+group LAB 오더 ↔ Result
+  ocs -> lis : result_id 조회
+  lis --> ocs : result_id
+  ocs -> ocs : mapping 저장
+end group
+
+group PROC 오더 ↔ Procedure
+  ocs -> ocs : procedure mapping 저장
+end group
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+title SD-FHIR-12 FHIR 오류 재시도
+' UC Trace: UC8-6-2
+
+actor Admin as a
+participant "Admin UI" as ui
+participant "Django CDSS\nFHIR Client (UC8)" as cli
+participant "FHIR Server" as fhir
+
+group 오류 목록 조회
+  a -> ui : FHIR ERROR 로그 화면
+  ui -> cli : GET /fhir/logs?status=ERROR
+  cli --> ui : error list
+end group
+
+group 재시도
+  a -> ui : 특정 로그 retry 클릭
+  ui -> cli : POST /fhir/logs/{id}/retry
+  cli -> cli : load original request
+  cli -> fhir : resend request
+  fhir --> cli : response
+  cli -> cli : update fhir_logs(status/result)
+  cli --> ui : retry result
+end group
+@enduml

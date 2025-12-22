@@ -1,0 +1,14 @@
+@startuml
+title SD-AI-01 Job 등록
+' UC Trace: UC6-1-1
+
+participant "Django CDSS\nAI Orchestrator (UC6)" as ai
+participant "Flask-ModAI API" as modai
+
+group Job 등록
+  ai -> ai : insert ai_jobs(status=PENDING)
+  ai -> modai : POST /jobs (study_uid, model, params)
+  modai --> ai : job_id, status=PENDING
+  ai -> ai : update ai_jobs(job_id)
+end group
+@enduml

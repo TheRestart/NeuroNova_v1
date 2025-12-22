@@ -1,0 +1,22 @@
+@startuml
+title SD-LIS-02 해석 파이프라인
+' UC Trace: UC4-2-1~4
+
+participant "Django CDSS\nLIS-lite (UC4)" as lis
+
+group 기준치 로딩
+  lis -> lis : load reference
+end group
+
+group 비정상 판단
+  lis -> lis : abnormal flag
+end group
+
+group Critical 판단
+  lis -> lis : critical flag
+end group
+
+group Interpretation 생성
+  lis -> lis : interpretation text
+end group
+@enduml

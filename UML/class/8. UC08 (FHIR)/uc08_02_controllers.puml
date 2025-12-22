@@ -1,0 +1,28 @@
+@startuml
+package "fhir.controllers" {
+
+  class FhirPatientController <<Controller>> {
+    +POST_push_patient(req: FhirPatientRequestDTO): FhirPushResultDTO
+  }
+
+  class FhirServiceRequestController <<Controller>> {
+    +POST_push_service_request(req: FhirServiceRequestDTO): FhirPushResultDTO
+  }
+
+  class FhirImagingStudyController <<Controller>> {
+    +POST_push_imaging_study(req: FhirImagingStudyDTO): FhirPushResultDTO
+  }
+
+  class FhirObservationController <<Controller>> {
+    +POST_push_observation(req: FhirObservationDTO): FhirPushResultDTO
+  }
+
+  class FhirDiagnosticReportController <<Controller>> {
+    +POST_push_diagnostic_report(req: FhirDiagnosticReportDTO): FhirPushResultDTO
+  }
+
+  class FhirSyncController <<Controller>> {
+    +GET_search(req: FhirSyncRequestDTO): String     ' json
+  }
+}
+@enduml

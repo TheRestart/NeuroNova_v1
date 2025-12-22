@@ -1,0 +1,12 @@
+@startuml
+title SD-ALERT-01 알림 생성
+' UC Trace: UC7-1-1
+
+participant "Any CDSS Module" as mod
+participant "Django CDSS\nTimeline/Alert (UC7)" as alert
+
+group 알림 생성
+  mod -> alert : createNotification(type, user, payload)
+  alert -> alert : insert notifications(read=false)
+end group
+@enduml

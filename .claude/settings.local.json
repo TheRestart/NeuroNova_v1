@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /B /S \"c:\\Users\\302-28\\Downloads\\UML\")",
+      "Bash(dir /B)",
+      "Bash(python -m venv:*)",
+      "Bash(source venv/bin/activate)",
+      "Bash(pip install:*)",
+      "Bash(venv\\\\Scripts\\\\activate.bat)",
+      "Bash(./venv/Scripts/pip:*)",
+      "Bash(./venv/Scripts/django-admin:*)",
+      "Bash(./venv/Scripts/python:*)",
+      "Bash(mysql:*)"
+    ]
+  }
+}

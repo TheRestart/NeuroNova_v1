@@ -1,0 +1,56 @@
+@startuml
+title UC07 (Timeline / Alert) - Class Diagram (Main)
+
+left to right direction
+hide empty members
+skinparam classAttributeIconSize 0
+
+!include uc07_07_domain.puml
+!include uc07_06_dtos.puml
+!include uc07_05_clients.puml
+!include uc07_04_repositories.puml
+!include uc07_03_services.puml
+!include uc07_02_controllers.puml
+
+' --- Controller -> Service
+NotificationQueryController --> NotificationQueryService
+NotificationAckController --> NotificationAckService
+TimelineController --> TimelineService
+NotificationAdminController --> NotificationService
+
+NotificationQueryController --> AuditClient
+NotificationAckController --> AuditClient
+TimelineController --> AuditClient
+NotificationAdminController --> AuditClient
+
+' --- Services -> Repo/Client
+NotificationService --> NotificationRepository
+NotificationService --> UserNotificationStateRepository
+NotificationService --> TimelineEventRepository
+NotificationService --> NotificationRuleRepository
+NotificationService --> NotificationTemplateRepository
+NotificationService --> RecipientResolver
+NotificationService --> TemplateRenderer
+NotificationService --> NotificationValidator
+NotificationService --> Clock
+NotificationService --> AuditClient
+NotificationService --> PushChannelClient
+
+NotificationQueryService --> NotificationRepository
+NotificationQueryService --> UserNotificationStateRepository
+NotificationQueryService --> Clock
+NotificationQueryService --> AuditClient
+
+NotificationAckService --> UserNotificationStateRepository
+NotificationAckService --> Clock
+NotificationAckService --> AuditClient
+
+TimelineService --> TimelineEventRepository
+TimelineService --> Clock
+TimelineService --> AuditClient
+
+' --- Domain relations
+Notification "1" o-- "0..*" UserNotificationState : per-user state
+TimelineEvent ..> NotificationType
+
+@enduml

@@ -1,0 +1,61 @@
+@startuml
+package "lis.dtos" {
+
+  class CreateLabResultDTO {
+    +patientRef: String
+    +orderRef: String        ' optional
+    +testCode: String
+    +value: String
+    +unit: String            ' optional
+    +refRange: String        ' optional
+    +observedAt: DateTime    ' optional
+    +source: String          ' optional
+  }
+
+  class GetLabResultDTO {
+    +resultId: UUID
+  }
+
+  class SearchLabResultDTO {
+    +patientRef: String      ' optional
+    +orderRef: String        ' optional
+    +testCode: String        ' optional
+    +status: String          ' optional
+    +from: Date              ' optional
+    +to: Date                ' optional
+  }
+
+  class UpdateLabStatusDTO {
+    +resultId: UUID
+    +toStatus: String
+    +reason: String          ' optional
+  }
+
+  class LabSyncRequestDTO {
+    +patientRef: String      ' optional
+    +from: Date              ' optional
+    +to: Date                ' optional
+    +force: bool             ' optional
+  }
+
+  class SyncResultDTO {
+    +jobId: UUID
+    +status: String
+    +updatedCount: int
+    +message: String         ' optional
+  }
+
+  class LabResultDTO {
+    +resultId: UUID
+    +patientRef: String
+    +orderRef: String        ' optional
+    +testCode: String
+    +value: String
+    +unit: String            ' optional
+    +refRange: String        ' optional
+    +status: String
+    +observedAt: DateTime
+    +externalRefs: String    ' optional json
+  }
+}
+@enduml

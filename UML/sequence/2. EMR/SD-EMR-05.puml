@@ -1,0 +1,21 @@
+@startuml
+title SD-EMR-05 환자 요약 카드 집계
+' UC Trace: UC2-2-3, UC2-5-1, UC2-5-2, UC2-5-3, UC2-5-4
+
+actor Doctor as d
+participant "CDSS UI" as ui
+participant "Django CDSS\nEMR Proxy (UC2)" as emr
+
+group 환자 요약 카드 조회
+  d -> ui : 요약 카드 클릭
+  ui -> emr : GET /patients/{id}/summary
+
+  emr -> emr : aggregate orders
+  emr -> emr : aggregate studies
+  emr -> emr : aggregate lab results
+  emr -> emr : aggregate AI / reports / alerts
+
+  emr --> ui : summary DTO
+  ui --> d : 요약 카드 표시
+end group
+@enduml

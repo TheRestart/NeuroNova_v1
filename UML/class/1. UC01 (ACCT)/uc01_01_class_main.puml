@@ -1,0 +1,59 @@
+@startuml
+title UC01 (Accounts/Auth) - Stateless JWT - Class Diagram (Main)
+
+left to right direction
+hide empty members
+skinparam classAttributeIconSize 0
+
+!include uc01_02_domain.puml
+!include uc01_03_dtos.puml
+!include uc01_04_clients.puml
+!include uc01_05_repositories.puml
+!include uc01_06_services.puml
+!include uc01_07_controllers.puml
+
+' Controller -> Service
+AuthController --> AuthService
+AuthController --> JwtService
+AuthController --> RefreshTokenService
+AuthController --> AuditClient
+
+MeController --> JwtService
+MeController --> AccessPolicyService
+MeController --> AuditClient
+
+RoleAdminController --> AccessPolicyService
+RoleAdminController --> RoleRepository
+RoleAdminController --> PermissionRepository
+RoleAdminController --> UserRoleRepository
+RoleAdminController --> AuditClient
+
+' Services -> Repo/Clients
+AuthService --> UserRepository
+AuthService --> PasswordService
+AuthService --> LoginDefenseService
+AuthService --> JwtService
+AuthService --> RefreshTokenService
+AuthService --> Clock
+AuthService --> AuditClient
+
+JwtService --> Clock
+
+RefreshTokenService --> RefreshTokenRepository
+RefreshTokenService --> Clock
+
+AccessPolicyService --> RoleRepository
+AccessPolicyService --> PermissionRepository
+AccessPolicyService --> UserRoleRepository
+
+LoginDefenseService --> UserRepository
+LoginDefenseService --> Clock
+
+' Domain relations
+User "1" o-- "0..*" UserRole
+Role "1" o-- "0..*" UserRole
+Role "1" o-- "0..*" RolePermission
+Permission "1" o-- "0..*" RolePermission
+User "1" o-- "0..*" RefreshToken
+
+@enduml

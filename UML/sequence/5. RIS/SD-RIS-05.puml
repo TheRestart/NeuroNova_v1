@@ -1,0 +1,16 @@
+@startuml
+title SD-RIS-05 Report Draft 생성
+' UC Trace: UC5-3-1
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+
+group Draft 생성
+  r -> ui : "Draft 생성" 클릭
+  ui -> ris : POST /ris/studies/{id}/reports (status=DRAFT)
+  ris -> ris : insert report(status=DRAFT)
+  ris --> ui : report DTO
+  ui --> r : 편집 화면 표시
+end group
+@enduml

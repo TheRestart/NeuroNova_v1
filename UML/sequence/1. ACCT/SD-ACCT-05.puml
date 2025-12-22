@@ -1,0 +1,12 @@
+@startuml
+title SD-ACCT-05 인증 감사로그
+' UC Trace: UC9-1-1
+
+participant "Any CDSS Module" as mod
+participant "Django CDSS\nAudit/Admin" as audit
+
+group 감사로그 기록
+  mod -> audit : log_event(type, user, detail)
+  audit -> audit : audit_logs insert
+end group
+@enduml

@@ -1,0 +1,66 @@
+@startuml
+package "emr_proxy.dtos" {
+
+  class PatientGetRequestDTO {
+    +emrPatientId: String
+    +noCache: bool?
+  }
+
+  class PatientDTO {
+    +emrPatientId: String
+    +name: String
+    +dob: Date
+    +sex: String
+    +phone: String?
+    +address: String?
+    +lastSyncedAt: DateTime
+  }
+
+  class EncounterListRequestDTO {
+    +emrPatientId: String
+    +from: Date?
+    +to: Date?
+    +noCache: bool?
+  }
+
+  class EncounterDTO {
+    +emrEncounterId: String
+    +emrPatientId: String
+    +startAt: DateTime?
+    +endAt: DateTime?
+    +dept: String?
+    +provider: String?
+    +summary: String?
+    +lastSyncedAt: DateTime
+  }
+
+  class PatientSyncRequestDTO {
+    +emrPatientId: String
+    +force: bool?
+  }
+
+  class EncounterSyncRequestDTO {
+    +emrPatientId: String
+    +from: Date?
+    +to: Date?
+    +force: bool?
+  }
+
+  class SyncResultDTO {
+    +jobId: UUID
+    +status: String
+    +updatedCount: int
+    +message: String?
+  }
+
+  class MappingQueryDTO {
+    +emrPatientId: String
+  }
+
+  class EmrMappingDTO {
+    +emrPatientId: String
+    +cdssPatientId: UUID
+    +fhirPatientId: String?
+  }
+}
+@enduml

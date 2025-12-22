@@ -1,0 +1,18 @@
+@startuml
+package "emr_proxy.controllers" {
+
+  class EmrProxyController <<Controller>> {
+    +GET_patient(req: PatientGetRequestDTO): PatientDTO
+    +GET_encounters(req: EncounterListRequestDTO): EncounterDTO[*]
+  }
+
+  class EmrSyncController <<Controller>> {
+    +POST_sync_patient(req: PatientSyncRequestDTO): SyncResultDTO
+    +POST_sync_encounters(req: EncounterSyncRequestDTO): SyncResultDTO
+  }
+
+  class EmrMappingController <<Controller>> {
+    +GET_mapping(req: MappingQueryDTO): EmrMappingDTO
+  }
+}
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+package "lis.repositories" {
+
+  interface LabResultRepository {
+    +findById(resultId: UUID): LabResult
+    +save(result: LabResult): LabResult
+    +search(criteriaJson: String): LabResult  ' list
+  }
+
+  interface LabStatusHistoryRepository {
+    +append(history: LabStatusHistory): void
+    +listByResultId(resultId: UUID): LabStatusHistory  ' list
+  }
+
+  interface LabMappingRepository {
+    +findByExternalCode(externalCode: String): LabCodeMapping
+    +save(mapping: LabCodeMapping): LabCodeMapping
+  }
+
+  interface LabSyncJobRepository {
+    +create(job: LabSyncJob): LabSyncJob
+    +updateStatus(jobId: UUID, status: String, updatedCount: int, errorMessage: String): void
+    +listRecent(limit: int): LabSyncJob  ' list
+  }
+}
+@enduml

@@ -1,0 +1,38 @@
+@startuml
+left to right direction
+
+actor Doctor as d
+actor Nurse as n
+actor Admin as a
+actor "내부 모듈(UC4/UC5/UC6/UC3)" as sys
+
+rectangle "Django CDSS\n(UC7: Timeline & Alert)" {
+
+  usecase "UC7-1-1 Timeline 이벤트 생성" as UC711
+  usecase "UC7-1-2 이벤트 필드 매핑" as UC712
+  usecase "UC7-1-3 Timeline 조회" as UC713
+  usecase "UC7-1-4 Timeline 필터링" as UC714
+
+  usecase "UC7-2-1 Alert 생성" as UC721
+  usecase "UC7-2-2 Alert 리스트 조회" as UC722
+  usecase "UC7-2-3 Alert 확인/해제" as UC723
+  usecase "UC7-2-4 Alert 이력 조회" as UC724
+}
+
+sys --> UC711
+sys --> UC721
+
+UC711 ..> UC712 : <<include>>
+
+d --> UC713
+d --> UC714
+d --> UC722
+d --> UC723
+
+n --> UC713
+n --> UC722
+n --> UC723
+
+a --> UC724
+
+@enduml

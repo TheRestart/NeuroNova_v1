@@ -1,0 +1,22 @@
+@startuml
+package "notify.controllers" {
+
+  class NotificationQueryController <<Controller>> {
+    +GET_notifications(req: NotificationQueryDTO): NotificationDTO   ' list
+    +GET_unread_count(userId: UUID): UnreadCountDTO
+  }
+
+  class NotificationAckController <<Controller>> {
+    +POST_ack(req: AckNotificationDTO): AckResultDTO
+  }
+
+  class TimelineController <<Controller>> {
+    +GET_timeline(req: TimelineQueryDTO): TimelineItemDTO            ' list
+  }
+
+  class NotificationAdminController <<Controller>> {
+    +POST_save_rule(req: SaveRuleDTO): void
+    +POST_save_template(req: SaveTemplateDTO): void
+  }
+}
+@enduml

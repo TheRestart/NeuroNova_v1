@@ -1,0 +1,66 @@
+@startuml
+package "emr_proxy.domain" {
+
+  enum SyncJobType {
+    PATIENT
+    ENCOUNTER
+  }
+
+  enum SyncJobStatus {
+    PENDING
+    RUNNING
+    SUCCESS
+    FAILED
+  }
+
+  class EmrPatientCache {
+    +id: UUID
+    +emrPatientId: String
+    +name: String
+    +dob: Date
+    +sex: String
+    +phone: String
+    +address: String
+    +lastSyncedAt: DateTime
+  }
+
+  class EmrEncounterCache {
+    +id: UUID
+    +emrEncounterId: String
+    +emrPatientId: String
+    +startAt: DateTime
+    +endAt: DateTime
+    +dept: String
+    +provider: String
+    +summary: String
+    +lastSyncedAt: DateTime
+  }
+
+  class EmrIdMapping {
+    +id: UUID
+    +emrPatientId: String
+    +cdssPatientId: UUID
+    +fhirPatientId: String
+    +createdAt: DateTime
+    +updatedAt: DateTime
+  }
+
+  class EmrSyncJob {
+    +jobId: UUID
+    +type: SyncJobType
+    +status: SyncJobStatus
+    +targetEmrPatientId: String
+    +startedAt: DateTime
+    +finishedAt: DateTime
+    +updatedCount: int
+    +errorMessage: String
+  }
+
+  class EmrConfig {
+    +baseUrl: String
+    +timeoutMs: int
+    +retryCount: int
+    +cacheTtlMin: int
+  }
+}
+@enduml

@@ -1,0 +1,16 @@
+@startuml
+title SD-ALERT-02 알림 목록 조회
+' UC Trace: UC7-2-1
+
+actor User as u
+participant "CDSS UI" as ui
+participant "Django CDSS\nTimeline/Alert (UC7)" as alert
+
+group 알림 목록 조회
+  u -> ui : 알림 아이콘 클릭
+  ui -> alert : GET /notifications?user=u
+  alert -> alert : query recent + unread
+  alert --> ui : list DTO
+  ui --> u : 목록 표시
+end group
+@enduml

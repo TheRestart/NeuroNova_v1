@@ -1,0 +1,37 @@
+@startuml
+package "notify.services" {
+
+  class NotificationService <<Service>> {
+    +publish(eventType: String, metaJson: String, actorUserId: UUID): NotificationDTO
+    +saveRule(req: SaveRuleDTO, actorUserId: UUID): void
+    +saveTemplate(req: SaveTemplateDTO, actorUserId: UUID): void
+  }
+
+  class NotificationQueryService <<Service>> {
+    +query(req: NotificationQueryDTO, actorUserId: UUID): NotificationDTO   ' list
+    +unreadCount(userId: UUID, actorUserId: UUID): UnreadCountDTO
+  }
+
+  class NotificationAckService <<Service>> {
+    +apply(req: AckNotificationDTO, actorUserId: UUID): AckResultDTO
+  }
+
+  class TimelineService <<Service>> {
+    +query(req: TimelineQueryDTO, actorUserId: UUID): TimelineItemDTO       ' list
+  }
+
+  class RecipientResolver <<Service>> {
+    +resolveRecipients(eventType: String, metaJson: String): String         ' json list of userIds
+  }
+
+  class TemplateRenderer <<Service>> {
+    +renderTitle(templateKey: String, metaJson: String): String
+    +renderBody(templateKey: String, metaJson: String): String
+  }
+
+  class NotificationValidator <<Service>> {
+    +validatePublish(eventType: String, metaJson: String): void
+    +validateAck(action: String): void
+  }
+}
+@enduml

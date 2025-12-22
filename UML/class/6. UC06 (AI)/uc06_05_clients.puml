@@ -1,0 +1,26 @@
+@startuml
+package "ai.clients" {
+
+  interface ModAiClient {
+    +submitJob(payloadJson: String): String        ' json (contains external job id)
+    +getJobStatus(externalJobId: String): String   ' json
+    +getJobResult(externalJobId: String): String   ' json
+  }
+
+  interface OrthancClient {
+    +getStudyMeta(studyId: String): String         ' json
+    +getSeriesMeta(seriesId: String): String       ' json
+    +uploadResult(payloadJson: String): String     ' optional behavior
+  }
+}
+
+package "integration.clients" {
+  interface AuditClient {
+    +emit(eventType: String, actorUserId: UUID, targetId: String, meta: String): void  ' meta=json
+  }
+
+  interface Clock {
+    +now(): DateTime
+  }
+}
+@enduml

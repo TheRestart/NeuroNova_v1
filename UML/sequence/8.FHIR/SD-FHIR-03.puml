@@ -1,0 +1,11 @@
+@startuml
+title SD-FHIR-03 ServiceRequest 매핑
+' UC Trace: UC8-2-1
+
+participant "Django CDSS\nFHIR Client (UC8)" as cli
+
+group ServiceRequest 매핑
+  cli -> cli : load order (RAD/LAB/PROC)
+  cli -> cli : build ServiceRequest resource
+end group
+@enduml

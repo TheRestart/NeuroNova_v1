@@ -1,0 +1,22 @@
+@startuml
+title SD-OCS-01 오더 목록 / 상세
+' UC Trace: UC3-1-1, UC3-1-2
+
+actor Doctor as d
+participant "CDSS UI" as ui
+participant "Django CDSS\nOCS (UC3)" as ocs
+
+group 오더 목록
+  d -> ui : 오더 메뉴
+  ui -> ocs : GET /orders
+  ocs --> ui : order list DTO
+  ui --> d : 목록 표시
+end group
+
+group 오더 상세
+  d -> ui : 오더 선택
+  ui -> ocs : GET /orders/{id}
+  ocs --> ui : order detail DTO
+  ui --> d : 상세 표시
+end group
+@enduml

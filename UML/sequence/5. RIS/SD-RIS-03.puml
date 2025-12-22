@@ -1,0 +1,16 @@
+@startuml
+title SD-RIS-03 Study 기본 정보 조회
+' UC Trace: UC5-2-1
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+
+group Study 기본 정보 조회
+  r -> ui : Study 선택
+  ui -> ris : GET /ris/studies/{id}
+  ris -> ris : read radiology_studies / mapping
+  ris --> ui : study DTO
+  ui --> r : Study 상세 표시
+end group
+@enduml

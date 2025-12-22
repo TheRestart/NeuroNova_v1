@@ -1,0 +1,18 @@
+@startuml
+package "ocs.controllers" {
+
+  class OrderController <<Controller>> {
+    +POST_create(req: CreateOrderDTO): OrderDTO
+    +GET_one(req: GetOrderDTO): OrderDTO
+    +GET_search(req: SearchOrderDTO): OrderDTO  ' list
+  }
+
+  class OrderStatusController <<Controller>> {
+    +PATCH_status(req: UpdateOrderStatusDTO): OrderDTO
+  }
+
+  class OrderSyncController <<Controller>> {
+    +POST_sync(req: OrderSyncRequestDTO): SyncResultDTO
+  }
+}
+@enduml

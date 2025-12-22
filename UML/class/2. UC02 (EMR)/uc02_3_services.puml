@@ -1,0 +1,31 @@
+@startuml
+package "emr_proxy.services" {
+
+  class EmrProxyService <<Service>> {
+    +getPatient(req: PatientGetRequestDTO): PatientDTO
+    +listEncounters(req: EncounterListRequestDTO): EncounterDTO[*]
+  }
+
+  class PatientSyncService <<Service>> {
+    +syncOne(req: PatientSyncRequestDTO): SyncResultDTO
+  }
+
+  class EncounterSyncService <<Service>> {
+    +syncForPatient(req: EncounterSyncRequestDTO): SyncResultDTO
+  }
+
+  class EmrMappingService <<Service>> {
+    +getMapping(req: MappingQueryDTO): EmrMappingDTO
+    +ensureMapping(emrPatientId: String): EmrIdMapping
+  }
+
+  class EmrResilienceService <<Service>> {
+    +withPolicy(fn: Callable): Any
+  }
+
+  class EmrDataNormalizer <<Service>> {
+    +toPatientDTO(raw: Map): PatientDTO
+    +toEncounterDTOs(rawList: Map[*]): EncounterDTO[*]
+  }
+}
+@enduml

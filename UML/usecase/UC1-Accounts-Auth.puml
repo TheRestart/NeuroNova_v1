@@ -1,0 +1,77 @@
+@startuml
+' File: uc1_accounts.puml
+left to right direction
+
+actor Doctor as d
+actor Nurse as n
+actor Admin as a
+
+rectangle "Django CDSS\n(UC1: Accounts/Auth)" {
+
+  ' 로그인
+  usecase "UC1-1-1 자격증명 제출" as UC111
+  usecase "UC1-1-2 자격증명 검증" as UC112
+  usecase "UC1-1-3 세션/JWT 발급" as UC113
+
+  ' 로그아웃
+  usecase "UC1-2-1 로그아웃(세션 무효화)" as UC121
+
+  ' 비밀번호
+  usecase "UC1-3-1 비밀번호 변경" as UC131
+  usecase "UC1-3-2 비밀번호 초기화 토큰 발급" as UC132
+  usecase "UC1-3-3 초기화 토큰으로 재설정" as UC133
+
+  ' 프로필
+  usecase "UC1-4-1 내 프로필 조회" as UC141
+  usecase "UC1-4-2 내 프로필 수정" as UC142
+
+  ' 권한
+  usecase "UC1-5-1 권한 체크 미들웨어" as UC151
+  usecase "UC1-5-2 Permission 매핑 로딩" as UC152
+
+  ' 계정 관리
+  usecase "UC1-6-1 사용자 계정 생성" as UC161
+  usecase "UC1-6-2 역할(Role) 할당/변경" as UC162
+  usecase "UC1-6-3 계정 활성/비활성" as UC163
+}
+
+' 로그인 플로우
+d --> UC111
+n --> UC111
+a --> UC111
+
+UC111 ..> UC112 : <<include>>
+UC112 ..> UC113 : <<include>>
+
+' 로그아웃
+d --> UC121
+n --> UC121
+a --> UC121
+
+' 비밀번호/프로필
+d --> UC131
+d --> UC141
+d --> UC142
+
+n --> UC131
+n --> UC141
+n --> UC142
+
+a --> UC131
+a --> UC141
+a --> UC142
+
+' Admin 전용 계정 관리
+a --> UC161
+a --> UC162
+a --> UC163
+
+' 권한 체크는 공통 서브 UC로 사용
+UC151 ..> UC152 : <<include>>
+UC161 ..> UC151 : <<include>>
+UC162 ..> UC151 : <<include>>
+UC163 ..> UC151 : <<include>>
+UC141 ..> UC151 : <<include>>
+UC142 ..> UC151 : <<include>>
+
+@enduml

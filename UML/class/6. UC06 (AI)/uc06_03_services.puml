@@ -1,0 +1,34 @@
+@startuml
+package "ai.services" {
+
+  class AiJobService <<Service>> {
+    +create(req: CreateAiJobDTO, actorUserId: UUID): AiJobDTO
+    +get(req: GetAiJobDTO, actorUserId: UUID): AiJobDTO
+    +search(req: SearchAiJobDTO, actorUserId: UUID): AiJobDTO   ' list
+  }
+
+  class AiPollingService <<Service>> {
+    +pollOnce(req: PollJobDTO, actorUserId: UUID): AiJobDTO
+    +pollDueJobs(): int     ' used by scheduler
+  }
+
+  class AiResultService <<Service>> {
+    +get(req: GetAiResultDTO, actorUserId: UUID): AiResultDTO
+    +summarize(jobId: UUID): String
+  }
+
+  class AiResultAssembler <<Service>> {
+    +fromModAiResult(rawJson: String): AiResult
+    +extractArtifacts(rawJson: String): String     ' json list
+  }
+
+  class AiValidator <<Service>> {
+    +validateCreate(req: CreateAiJobDTO): void
+    +validatePoll(job: AiJob): void
+  }
+
+  class AiStateMachine <<Service>> {
+    +allowedTransition(fromStatus: String, toStatus: String): bool
+  }
+}
+@enduml

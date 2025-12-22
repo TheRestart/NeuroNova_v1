@@ -1,0 +1,88 @@
+@startuml
+package "audit.dtos" {
+
+  class AuditEventIngestDTO {
+    +eventType: String
+    +actorUserId: UUID        ' optional
+    +targetId: String         ' optional
+    +outcome: String
+    +ip: String               ' optional
+    +userAgent: String        ' optional
+    +metaJson: String         ' optional json
+  }
+
+  class IngestResultDTO {
+    +eventId: UUID
+    +status: String
+    +message: String          ' optional
+  }
+
+  class AuditQueryDTO {
+    +eventType: String        ' optional
+    +actorUserId: UUID        ' optional
+    +targetId: String         ' optional
+    +outcome: String          ' optional
+    +from: Date               ' optional
+    +to: Date                 ' optional
+    +page: int                ' optional
+    +size: int                ' optional
+  }
+
+  class AuditEventDTO {
+    +eventId: UUID
+    +eventType: String
+    +actorUserId: UUID        ' optional
+    +targetId: String         ' optional
+    +outcome: String
+    +createdAt: DateTime
+    +metaJson: String         ' optional json
+  }
+
+  class SecurityQueryDTO {
+    +category: String         ' optional
+    +severity: String         ' optional
+    +actorUserId: UUID        ' optional
+    +ip: String               ' optional
+    +from: Date               ' optional
+    +to: Date                 ' optional
+    +page: int                ' optional
+    +size: int                ' optional
+  }
+
+  class SecurityEventDTO {
+    +securityEventId: UUID
+    +category: String
+    +severity: String
+    +actorUserId: UUID        ' optional
+    +ip: String               ' optional
+    +detail: String
+    +createdAt: DateTime
+  }
+
+  class UpdateConfigDTO {
+    +key: String
+    +valueJson: String
+    +reason: String           ' optional
+  }
+
+  class ConfigDTO {
+    +key: String
+    +valueJson: String
+    +updatedAt: DateTime
+  }
+
+  class SaveRefDataDTO {
+    +refKey: String
+    +refType: String
+    +payloadJson: String
+    +enabled: bool
+  }
+
+  class RefDataDTO {
+    +refKey: String
+    +refType: String
+    +payloadJson: String
+    +enabled: bool
+  }
+}
+@enduml

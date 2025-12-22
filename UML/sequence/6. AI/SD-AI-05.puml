@@ -1,0 +1,12 @@
+@startuml
+title SD-AI-05 AI 완료 알림 생성
+' UC Trace: UC7-1-1(연계)
+
+participant "Django CDSS\nAI Orchestrator (UC6)" as ai
+participant "Django CDSS\nAlert (UC7)" as alert
+
+group AI 완료 알림
+  ai -> alert : createNotification(AI_RESULT_READY, user, study_id)
+  alert -> alert : insert notifications(read=false)
+end group
+@enduml

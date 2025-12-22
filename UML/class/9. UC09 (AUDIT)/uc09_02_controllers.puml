@@ -1,0 +1,27 @@
+@startuml
+package "audit.controllers" {
+
+  class AuditIngestController <<Controller>> {
+    +POST_ingest(req: AuditEventIngestDTO): IngestResultDTO
+  }
+
+  class AuditQueryController <<Controller>> {
+    +GET_audit(req: AuditQueryDTO): AuditEventDTO           ' list
+  }
+
+  class SecurityEventController <<Controller>> {
+    +GET_security(req: SecurityQueryDTO): SecurityEventDTO  ' list
+  }
+
+  class AdminConfigController <<Controller>> {
+    +GET_config(key: String): ConfigDTO
+    +POST_update_config(req: UpdateConfigDTO): ConfigDTO
+  }
+
+  class AdminRefDataController <<Controller>> {
+    +GET_ref(refKey: String): RefDataDTO
+    +GET_list(refType: String): RefDataDTO                  ' list
+    +POST_save(req: SaveRefDataDTO): RefDataDTO
+  }
+}
+@enduml

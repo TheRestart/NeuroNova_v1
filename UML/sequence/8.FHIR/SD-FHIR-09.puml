@@ -1,0 +1,11 @@
+@startuml
+title SD-FHIR-09 DiagnosticReport 매핑
+' UC Trace: UC8-5-1
+
+participant "Django CDSS\nFHIR Client (UC8)" as cli
+
+group DiagnosticReport 매핑
+  cli -> cli : load RIS report(FINAL)
+  cli -> cli : build DiagnosticReport resource
+end group
+@enduml

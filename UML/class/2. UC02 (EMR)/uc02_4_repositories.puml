@@ -1,0 +1,25 @@
+@startuml
+package "emr_proxy.repositories" {
+
+  interface EmrPatientCacheRepository {
+    +findByEmrPatientId(emrPatientId: String): EmrPatientCache?
+    +upsert(cache: EmrPatientCache): EmrPatientCache
+  }
+
+  interface EmrEncounterCacheRepository {
+    +listByEmrPatientId(emrPatientId: String, from: Date?, to: Date?): EmrEncounterCache[*]
+    +upsertBatch(items: EmrEncounterCache[*]): int
+  }
+
+  interface EmrMappingRepository {
+    +findByEmrPatientId(emrPatientId: String): EmrIdMapping?
+    +save(mapping: EmrIdMapping): EmrIdMapping
+  }
+
+  interface EmrSyncJobRepository {
+    +create(job: EmrSyncJob): EmrSyncJob
+    +updateStatus(jobId: UUID, status: String, updatedCount: int, errorMessage: String?): void
+    +listRecent(limit: int): EmrSyncJob[*]
+  }
+}
+@enduml

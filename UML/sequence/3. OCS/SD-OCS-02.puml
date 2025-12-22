@@ -1,0 +1,26 @@
+@startuml
+title SD-OCS-02 오더 생성
+' UC Trace: UC3-2-1, UC3-2-2, UC3-2-3
+
+actor Doctor as d
+participant "CDSS UI" as ui
+participant "Django CDSS\nOCS (UC3)" as ocs
+
+group RAD 오더 생성
+  d -> ui : 영상 오더 입력
+  ui -> ocs : POST /orders(type=RAD)
+  ocs -> ocs : status=CREATED
+end group
+
+group LAB 오더 생성
+  d -> ui : 검사 오더 입력
+  ui -> ocs : POST /orders(type=LAB)
+  ocs -> ocs : status=CREATED
+end group
+
+group PROC 오더 생성
+  d -> ui : 처치 오더 입력
+  ui -> ocs : POST /orders(type=PROC)
+  ocs -> ocs : status=CREATED
+end group
+@enduml

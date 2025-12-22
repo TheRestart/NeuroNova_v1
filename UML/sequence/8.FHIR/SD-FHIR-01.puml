@@ -1,0 +1,11 @@
+@startuml
+title SD-FHIR-01 Patient 매핑
+' UC Trace: UC8-1-1
+
+participant "Django CDSS\nFHIR Client (UC8)" as cli
+
+group Patient 매핑
+  cli -> cli : read CDSS patient cache
+  cli -> cli : build Patient resource JSON
+end group
+@enduml

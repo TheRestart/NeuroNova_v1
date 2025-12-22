@@ -1,0 +1,37 @@
+@startuml
+package "acct.services" {
+
+  class AuthService <<Service>> {
+    +login(req: LoginRequestDTO): TokenPairDTO
+    +refresh(req: RefreshRequestDTO): TokenPairDTO
+    +logout(req: LogoutRequestDTO): void
+  }
+
+  class JwtService <<Service>> {
+    +issueAccessToken(user: User, rolesJson: String, permissionsJson: String): String
+    +verifyAccessToken(token: String): String     ' returns claims json
+  }
+
+  class RefreshTokenService <<Service>> {
+    +issueRefreshToken(userId: UUID, deviceId: String): String
+    +rotate(refreshToken: String): String
+    +revoke(refreshToken: String): void
+  }
+
+  class PasswordService <<Service>> {
+    +verify(password: String, hash: String): bool
+    +hash(password: String): String
+  }
+
+  class AccessPolicyService <<Service>> {
+    +getRolesJson(userId: UUID): String
+    +getPermissionsJson(userId: UUID): String
+    +checkPermission(userId: UUID, permKey: String): bool
+  }
+
+  class LoginDefenseService <<Service>> {
+    +onLoginFailed(user: User): void
+    +canAttempt(user: User): bool
+  }
+}
+@enduml

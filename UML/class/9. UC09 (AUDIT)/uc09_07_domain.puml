@@ -1,0 +1,56 @@
+@startuml
+package "audit.domain" {
+
+  enum Outcome { 
+    SUCCESS, 
+    FAIL, 
+    DENY 
+  }
+
+  class AuditEvent {
+    +eventId: UUID
+    +eventType: String
+    +actorUserId: UUID        ' optional
+    +targetId: String         ' optional
+    +outcome: Outcome
+    +ip: String               ' optional
+    +userAgent: String        ' optional
+    +metaJson: String         ' optional json
+    +createdAt: DateTime
+  }
+
+  class SecurityEvent {
+    +securityEventId: UUID
+    +category: String         ' login_failed/access_denied/suspicious
+    +severity: String         ' INFO/WARN/CRITICAL
+    +actorUserId: UUID        ' optional
+    +ip: String               ' optional
+    +detail: String
+    +createdAt: DateTime
+  }
+
+  class SystemConfig {
+    +key: String
+    +valueJson: String        ' json
+    +updatedAt: DateTime
+  }
+
+  class ConfigChange {
+    +changeId: UUID
+    +key: String
+    +oldValueJson: String     ' optional json
+    +newValueJson: String     ' json
+    +reason: String           ' optional
+    +changedBy: UUID
+    +changedAt: DateTime
+  }
+
+  class RefData {
+    +refKey: String
+    +refType: String          ' codeset/template/policy
+    +payloadJson: String      ' json
+    +enabled: bool
+    +updatedAt: DateTime
+  }
+}
+@enduml

@@ -1,0 +1,85 @@
+@startuml
+package "ris.domain" {
+
+  enum ReadingStatus { 
+    NEW, 
+    ASSIGNED, 
+    IN_REVIEW, 
+    DRAFTED, 
+    FINAL, 
+    CORRECTED, 
+    CANCELED 
+  }
+
+  enum ReportStatus { 
+    DRAFT, 
+    FINAL, 
+    CORRECTED 
+  }
+
+  enum SyncJobStatus { 
+    PENDING, 
+    RUNNING, 
+    SUCCESS, 
+    FAILED 
+  }
+
+  class ReadingCase {
+    +caseId: UUID
+    +orderId: UUID
+    +patientRef: String
+    +status: ReadingStatus
+    +assignedTo: UUID        ' optional
+    +createdAt: DateTime
+    +updatedAt: DateTime     ' optional
+    +summary: String         ' optional
+  }
+
+  class StudyLink {
+    +id: UUID
+    +orderId: UUID
+    +orthancStudyId: String
+    +orthancPatientId: String   ' optional
+    +modality: String           ' optional
+    +studyDate: Date            ' optional
+    +matchedBy: String          ' optional (AUTO/MANUAL/RULE)
+    +linkedAt: DateTime
+  }
+
+  class RadiologyReport {
+    +reportId: UUID
+    +caseId: UUID
+    +status: ReportStatus
+    +content: String
+    +authoredBy: UUID
+    +authoredAt: DateTime
+    +correctedFrom: UUID     ' optional (reportId)
+  }
+
+  class ReadingStatusHistory {
+    +id: UUID
+    +caseId: UUID
+    +fromStatus: ReadingStatus
+    +toStatus: ReadingStatus
+    +changedBy: UUID
+    +changedAt: DateTime
+    +reason: String          ' optional
+  }
+
+  class RisSyncJob {
+    +jobId: UUID
+    +status: SyncJobStatus
+    +scope: String           ' optional json
+    +startedAt: DateTime
+    +finishedAt: DateTime    ' optional
+    +updatedCount: int
+    +errorMessage: String    ' optional
+  }
+
+  class RisConfig {
+    +enableAutoMatch: bool
+    +timeoutMs: int
+    +retryCount: int
+  }
+}
+@enduml

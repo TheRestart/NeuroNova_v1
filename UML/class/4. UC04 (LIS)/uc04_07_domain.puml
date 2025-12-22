@@ -1,0 +1,68 @@
+@startuml
+package "lis.domain" {
+
+  enum LabResultStatus {
+    PENDING
+    PRELIM
+    FINAL
+    CORRECTED
+    CANCELED
+  }
+
+  enum SyncJobStatus {
+    PENDING
+    RUNNING
+    SUCCESS
+    FAILED
+  }
+
+  class LabResult {
+    +resultId: UUID
+    +patientRef: String
+    +orderRef: String         ' optional (cdssOrderId or emrOrderId)
+    +testCode: String
+    +value: String            ' may be numeric/string
+    +unit: String             ' optional
+    +refRange: String         ' optional
+    +status: LabResultStatus
+    +observedAt: DateTime
+    +source: String           ' optional (manual/device/external)
+    +externalRefs: String     ' optional json
+  }
+
+  class LabStatusHistory {
+    +id: UUID
+    +resultId: UUID
+    +fromStatus: LabResultStatus
+    +toStatus: LabResultStatus
+    +changedBy: UUID
+    +changedAt: DateTime
+    +reason: String           ' optional
+  }
+
+  class LabCodeMapping {
+    +id: UUID
+    +externalCode: String
+    +standardCode: String
+    +displayName: String      ' optional
+    +unit: String             ' optional
+    +refRange: String         ' optional
+  }
+
+  class LabSyncJob {
+    +jobId: UUID
+    +status: SyncJobStatus
+    +scope: String            ' optional json (patient/date-range)
+    +startedAt: DateTime
+    +finishedAt: DateTime     ' optional
+    +updatedCount: int
+    +errorMessage: String     ' optional
+  }
+
+  class LisConfig {
+    +enableExternalSync: bool
+    +timeoutMs: int
+    +retryCount: int
+  }
+}
+@enduml

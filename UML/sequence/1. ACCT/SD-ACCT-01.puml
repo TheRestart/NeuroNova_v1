@@ -1,0 +1,22 @@
+@startuml
+title SD-ACCT-01 로그인 (성공)
+' UC Trace: UC1-1-1
+
+actor User as u
+participant "CDSS UI" as ui
+participant "Django CDSS\nAccounts/Auth" as auth
+participant "Django CDSS\nAudit/Admin" as audit
+
+group 로그인 인증
+  u -> ui : ID / PW 입력
+  ui -> auth : POST /auth/login
+  auth -> auth : 사용자 조회
+  auth -> auth : 비밀번호 검증
+  auth -> auth : role/permission 로딩
+  auth -> auth : access/refresh token 발급
+  auth -> audit : log_event(LOGIN_SUCCESS)
+  audit -> audit : audit_logs insert
+  auth --> ui : 200 OK (tokens, profile)
+  ui --> u : 메인 화면 진입
+end group
+@enduml

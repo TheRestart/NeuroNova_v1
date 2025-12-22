@@ -1,0 +1,31 @@
+@startuml
+package "notify.repositories" {
+
+  interface NotificationRepository {
+    +save(noti: Notification): Notification
+    +findById(notificationId: UUID): Notification
+    +searchByUser(criteriaJson: String): Notification   ' list
+  }
+
+  interface UserNotificationStateRepository {
+    +upsertState(userId: UUID, notificationId: UUID, action: String, deviceId: String): UserNotificationState
+    +getState(userId: UUID, notificationId: UUID): UserNotificationState
+    +unreadCount(userId: UUID): int
+  }
+
+  interface TimelineEventRepository {
+    +append(evt: TimelineEvent): void
+    +search(criteriaJson: String): TimelineEvent        ' list
+  }
+
+  interface NotificationRuleRepository {
+    +save(rule: NotificationRule): NotificationRule
+    +findActiveByEventType(eventType: String): NotificationRule  ' list
+  }
+
+  interface NotificationTemplateRepository {
+    +save(tpl: NotificationTemplate): NotificationTemplate
+    +findByKey(templateKey: String): NotificationTemplate
+  }
+}
+@enduml

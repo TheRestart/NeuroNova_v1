@@ -1,0 +1,42 @@
+@startuml
+left to right direction
+
+actor Doctor as d
+actor Radiologist as r
+actor "Flask-ModAI" as ai
+
+rectangle "Django CDSS\n(UC6: AI Orchestration)" {
+
+  usecase "UC6-1-1 AI Job 생성 요청" as UC611
+  usecase "UC6-1-2 Study/DICOM 정보 전송" as UC612
+  usecase "UC6-1-3 Job ID 저장" as UC613
+
+  usecase "UC6-2-1 Job 상태 Polling" as UC621
+  usecase "UC6-2-2 실패 Job 재시도" as UC622
+
+  usecase "UC6-3-1 AI 결과 수신" as UC631
+  usecase "UC6-3-2 결과 파일 저장경로 기록" as UC632
+  usecase "UC6-3-3 AI 결과 DB 저장" as UC633
+
+  usecase "UC6-4-1 Triage Score 계산" as UC641
+  usecase "UC6-4-2 High-Risk Alert 트리거" as UC642
+  usecase "UC6-4-3 Timeline 이벤트 기록" as UC643
+}
+
+d --> UC611
+r --> UC611
+
+UC611 ..> UC612 : <<include>>
+UC612 ..> UC613 : <<include>>
+
+ai --> UC631
+
+UC621 ..> UC613 : <<include>>
+UC631 ..> UC632 : <<include>>
+UC632 ..> UC633 : <<include>>
+
+UC641 ..> UC633 : <<include>>
+UC642 ..> UC641 : <<include>>
+UC643 ..> UC633 : <<include>>
+
+@enduml

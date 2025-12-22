@@ -1,0 +1,17 @@
+@startuml
+title SD-RIS-10 상태 Reading→Finalized
+' UC Trace: UC5-4-2
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+
+group Reading→Finalized
+  r -> ui : "Finalized 처리" 클릭
+  ui -> ris : POST /ris/studies/{id}/status/finalized
+  ris -> ris : validate transition(READING->FINALIZED)
+  ris -> ris : update study.status=FINALIZED
+  ris --> ui : ok
+  ui --> r : 상태 표시 갱신
+end group
+@enduml

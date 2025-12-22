@@ -1,0 +1,48 @@
+@startuml
+package "fhir.domain" {
+
+  enum SyncJobStatus { 
+    PENDING, 
+    RUNNING, 
+    SUCCESS, 
+    FAILED 
+  }
+
+  class FhirIdMapping {
+    +mappingId: UUID
+    +localType: String       ' Patient/Order/Case/Report/Job etc.
+    +localId: String
+    +fhirType: String        ' Patient/ServiceRequest/ImagingStudy/Observation/DiagnosticReport
+    +fhirId: String
+    +createdAt: DateTime
+    +updatedAt: DateTime     ' optional
+  }
+
+  class FhirTxLog {
+    +txId: UUID
+    +resourceType: String
+    +method: String
+    +url: String
+    +requestJson: String     ' optional json
+    +responseJson: String    ' optional json
+    +statusCode: int
+    +createdAt: DateTime
+  }
+
+  class FhirSyncJob {
+    +jobId: UUID
+    +status: SyncJobStatus
+    +scopeJson: String       ' optional json
+    +startedAt: DateTime
+    +finishedAt: DateTime    ' optional
+    +updatedCount: int
+    +errorMessage: String    ' optional
+  }
+
+  class FhirConfig {
+    +baseUrl: String
+    +timeoutMs: int
+    +retryCount: int
+  }
+}
+@enduml

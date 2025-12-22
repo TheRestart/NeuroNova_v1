@@ -1,0 +1,23 @@
+@startuml
+title SD-RIS-14 AI 결과 연동 표시
+' UC Trace: UC5-5-2
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+participant "Django CDSS\nAI Orchestrator (UC6)" as ai
+participant "Orthanc PACS" as pacs
+
+group AI 결과 표시
+  r -> ui : Study 화면(또는 AI 탭) 열기
+  ui -> ris : GET /ris/studies/{id}?include_ai=true
+  ris -> ai : GET /ai/results?study_id={id}
+  ai --> ris : ai result DTO (score, seg_uid, links)
+  alt 오버레이 필요
+    ris -> pacs : REST get viewer/seg reference
+    pacs --> ris : viewer overlay info
+  end
+  ris --> ui : Study+AI merged DTO
+  ui --> r : overlay/summary 표시
+end group
+@enduml

@@ -1,0 +1,16 @@
+@startuml
+title SD-AUDIT-02 감사로그 조회(Admin)
+' UC Trace: UC9-1-2
+
+actor Admin as a
+participant "Admin UI" as ui
+participant "Django CDSS\nAudit/Admin (UC9)" as audit
+
+group 감사로그 조회
+  a -> ui : 감사로그 화면
+  ui -> audit : GET /audit-logs?filter=...
+  audit -> audit : query audit_logs (time/user/type)
+  audit --> ui : list DTO
+  ui --> a : 테이블 표시
+end group
+@enduml

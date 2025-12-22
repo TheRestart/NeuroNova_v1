@@ -1,0 +1,45 @@
+@startuml
+title UC09 (Audit / Admin) - Class Diagram (Main)
+
+left to right direction
+hide empty members
+skinparam classAttributeIconSize 0
+
+!include uc09_07_domain.puml
+!include uc09_06_dtos.puml
+!include uc09_05_clients.puml
+!include uc09_04_repositories.puml
+!include uc09_03_services.puml
+!include uc09_02_controllers.puml
+
+' --- Controller -> Service
+AuditIngestController --> AuditIngestService
+AuditQueryController --> AuditQueryService
+SecurityEventController --> SecurityEventService
+AdminConfigController --> AdminConfigService
+AdminRefDataController --> AdminRefDataService
+
+' --- Services -> Repo/Client
+AuditIngestService --> AuditEventRepository
+AuditIngestService --> AuditValidator
+AuditIngestService --> AuditNormalizer
+AuditIngestService --> Clock
+AuditIngestService --> ExternalAuditSinkClient
+
+AuditQueryService --> AuditEventRepository
+AuditQueryService --> Clock
+
+SecurityEventService --> SecurityEventRepository
+SecurityEventService --> Clock
+
+AdminConfigService --> ConfigRepository
+AdminConfigService --> ConfigHistoryRepository
+AdminConfigService --> Clock
+
+AdminRefDataService --> RefDataRepository
+AdminRefDataService --> Clock
+
+' --- Domain relations
+SystemConfig "1" o-- "0..*" ConfigChange
+
+@enduml

@@ -1,0 +1,94 @@
+@startuml
+package "ocs.domain" {
+
+  enum OrderType {
+    RADIOLOGY
+    LAB
+    OTHER
+  }
+
+  enum OrderStatus {
+    CREATED
+    SCHEDULED
+    IN_PROGRESS
+    COMPLETED
+    CANCELED
+  }
+
+  enum SyncJobStatus {
+    PENDING
+    RUNNING
+    SUCCESS
+    FAILED
+  }
+
+  class Order {
+    +orderId: UUID
+    +patientRef: String
+    +orderType: OrderType
+    +code: String
+    +description: String
+    +priority: String
+    +status: OrderStatus
+    +requestedAt: DateTime
+    +externalRefs: String
+  }
+
+  note right of Order
+    patientRef:
+    emrPatientId 또는 cdssPatientId (정책에 따라 결정)
+
+    description, priority, externalRefs:
+    optional field
+  end note
+
+  class OrderStatusHistory {
+    +id: UUID
+    +orderId: UUID
+    +fromStatus: OrderStatus
+    +toStatus: OrderStatus
+    +changedBy: UUID
+    +changedAt: DateTime
+    +reason: String
+  }
+
+  note right of OrderStatusHistory
+    reason: optional
+  end note
+
+  class OrderMapping {
+    +id: UUID
+    +cdssOrderId: UUID
+    +emrOrderId: String
+    +fhirServiceRequestId: String
+    +createdAt: DateTime
+    +updatedAt: DateTime
+  }
+
+  note right of OrderMapping
+    emrOrderId, fhirServiceRequestId:
+    optional mapping
+  end note
+
+  class OrderSyncJob {
+    +jobId: UUID
+    +status: SyncJobStatus
+    +scope: String
+    +startedAt: DateTime
+    +finishedAt: DateTime
+    +updatedCount: int
+    +errorMessage: String
+  }
+
+  note right of OrderSyncJob
+    scope, finishedAt, errorMessage:
+    optional
+  end note
+
+  class OcsConfig {
+    +enablePushToEmr: Boolean
+    +timeoutMs: int
+    +retryCount: int
+  }
+}
+@enduml

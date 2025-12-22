@@ -1,0 +1,58 @@
+@startuml
+package "ai.dtos" {
+
+  class CreateAiJobDTO {
+    +modelKey: String
+    +patientRef: String
+    +studyId: String
+    +seriesId: String         ' optional
+    +params: String           ' optional json
+    +priority: String         ' optional
+  }
+
+  class GetAiJobDTO {
+    +jobId: UUID
+  }
+
+  class SearchAiJobDTO {
+    +patientRef: String       ' optional
+    +status: String           ' optional
+    +modelKey: String         ' optional
+    +from: Date               ' optional
+    +to: Date                 ' optional
+  }
+
+  class PollJobDTO {
+    +jobId: UUID
+    +force: bool              ' optional
+  }
+
+  class GetAiResultDTO {
+    +jobId: UUID              ' optional
+    +studyId: String          ' optional
+    +seriesId: String         ' optional
+  }
+
+  class AiJobDTO {
+    +jobId: UUID
+    +modelKey: String
+    +status: String
+    +patientRef: String
+    +studyId: String
+    +seriesId: String         ' optional
+    +createdAt: DateTime
+    +updatedAt: DateTime      ' optional
+    +externalRefs: String     ' optional json
+  }
+
+  class AiResultDTO {
+    +resultId: UUID
+    +jobId: UUID
+    +summary: String
+    +tumorClass: String       ' optional
+    +metrics: String          ' optional json
+    +artifacts: String        ' optional json list
+    +createdAt: DateTime
+  }
+}
+@enduml

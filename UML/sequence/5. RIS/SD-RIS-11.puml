@@ -1,0 +1,12 @@
+@startuml
+title SD-RIS-11 Final 시 상태 자동변경
+' UC Trace: UC5-4-3 (triggered by UC5-3-3)
+
+participant "Django CDSS\nRIS (UC5)" as ris
+
+group Final 시 상태 자동변경
+  ris -> ris : onReportFinalized(report_id)
+  ris -> ris : study.status = FINALIZED
+  ris -> ris : persist change
+end group
+@enduml

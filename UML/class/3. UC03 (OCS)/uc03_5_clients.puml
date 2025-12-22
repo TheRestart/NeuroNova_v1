@@ -1,0 +1,24 @@
+@startuml
+package "ocs.clients" {
+
+  interface OpenEmrOrderClient {
+    +listOrders(scopeJson: String): String   ' json list
+    +getOrder(emrOrderId: String): String   ' json
+    +createOrder(payloadJson: String): String  ' json
+  }
+
+  interface OpenEmrAuthClient {
+    +getAccessToken(): String
+  }
+}
+
+package "integration.clients" {
+  interface AuditClient {
+    +emit(eventType: String, actorUserId: UUID, targetId: String, meta: String): void  ' meta=json
+  }
+
+  interface Clock {
+    +now(): DateTime
+  }
+}
+@enduml

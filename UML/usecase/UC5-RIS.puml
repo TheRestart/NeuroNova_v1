@@ -1,0 +1,74 @@
+@startuml
+' File: uc5_ris.puml
+left to right direction
+
+actor Radiologist as r
+actor Doctor as d
+actor Nurse as n
+' actor "Orthanc PACS" as pacs   ' 단방향이므로 Actor에서 제거
+
+rectangle "Django CDSS\n(UC5: RIS)" {
+
+  ' Worklist
+  usecase "UC5-1-1 Worklist 조회" as UC511
+  usecase "UC5-1-2 Worklist 할당/해제" as UC512
+
+  ' Study
+  usecase "UC5-2-1 Study 기본 정보 조회" as UC521
+  usecase "UC5-2-2 Orthanc Study 메타 Sync" as UC522
+
+  ' Report
+  usecase "UC5-3-1 Report Draft 생성" as UC531
+  usecase "UC5-3-2 Report Draft 수정" as UC532
+  usecase "UC5-3-3 Report Final 확정" as UC533
+  usecase "UC5-3-4 Final 이후 수정 차단" as UC534
+
+  ' 상태 관리
+  usecase "UC5-4-1 상태: Pending→Reading" as UC541
+  usecase "UC5-4-2 상태: Reading→Finalized" as UC542
+  usecase "UC5-4-3 Report Final 시 상태자동변경" as UC543
+  usecase "UC5-4-4 판독 Lock/Unlock" as UC544
+
+  ' AI 연동
+  usecase "UC5-5-1 Study AI 요청 생성" as UC551
+  usecase "UC5-5-2 AI 결과 연동 표시" as UC552
+}
+
+' Worklist
+r --> UC511
+r --> UC512
+d --> UC511
+n --> UC511
+
+' Study
+d --> UC521
+r --> UC521
+
+' 내부적으로 Orthanc 메타 정보를 동기화하는 포함 UC
+UC521 ..> UC522 : <<include>>
+
+' Report / 상태
+r --> UC531
+r --> UC532
+r --> UC533
+r --> UC541
+
+UC533 ..> UC534 : <<include>>
+UC533 ..> UC542 : <<include>>
+UC543 ..> UC533 : <<extend>>
+
+' AI
+r --> UC551
+d --> UC551
+d --> UC552
+r --> UC552
+
+' Orthanc PACS는 외부 PACS 서버로만 동작 (Actor 아님)
+note right of UC522
+  External PACS System: Orthanc
+  - Django CDSS가 Study/Series 메타를 Pull하여 Sync
+  - Orthanc이 UC를 트리거하지 않음
+  - 단방향 연동이므로 Actor로 표현되지 않음
+end note
+
+@enduml

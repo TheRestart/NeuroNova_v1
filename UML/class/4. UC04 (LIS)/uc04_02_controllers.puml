@@ -1,0 +1,18 @@
+@startuml
+package "lis.controllers" {
+
+  class LabResultController <<Controller>> {
+    +POST_create(req: CreateLabResultDTO): LabResultDTO
+    +GET_one(req: GetLabResultDTO): LabResultDTO
+    +GET_search(req: SearchLabResultDTO): LabResultDTO  ' list
+  }
+
+  class LabStatusController <<Controller>> {
+    +PATCH_status(req: UpdateLabStatusDTO): LabResultDTO
+  }
+
+  class LabSyncController <<Controller>> {
+    +POST_sync(req: LabSyncRequestDTO): SyncResultDTO
+  }
+}
+@enduml

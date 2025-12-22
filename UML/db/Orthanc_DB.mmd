@@ -1,0 +1,62 @@
+%%{init: {
+  "theme": "default",
+  "themeVariables": {
+    "background": "#ffffff",
+    "primaryColor": "#ffffff",
+    "secondaryColor": "#ffffff",
+    "tertiaryColor": "#ffffff",
+    "primaryTextColor": "#000000",
+    "lineColor": "#000000",
+    "entityBackground": "#ffffff",
+    "entityBorder": "#000000"
+  }
+}}%%
+erDiagram
+  %% =========================
+  %% Relationships
+  %% =========================
+  ORTHANC_PATIENTS ||--o{ ORTHANC_STUDIES : has
+  ORTHANC_STUDIES ||--o{ ORTHANC_SERIES : has
+  ORTHANC_SERIES  ||--o{ ORTHANC_INSTANCES : has
+  ORTHANC_INSTANCES ||--o{ ORTHANC_ATTACHMENTS : has
+
+  %% =========================
+  %% Entities
+  %% =========================
+  ORTHANC_PATIENTS {
+    string patient_id PK
+    string patient_name
+    string patient_birth_date
+    string patient_sex
+  }
+
+  ORTHANC_STUDIES {
+    string study_id PK
+    string patient_id FK
+    string study_instance_uid
+    date   study_date
+    string accession_number
+  }
+
+  ORTHANC_SERIES {
+    string series_id PK
+    string study_id FK
+    string series_instance_uid
+    string modality
+    string body_part
+  }
+
+  ORTHANC_INSTANCES {
+    string instance_id PK
+    string series_id FK
+    string sop_instance_uid
+    int    instance_number
+  }
+
+  ORTHANC_ATTACHMENTS {
+    string attachment_id PK
+    string instance_id FK
+    string attachment_type
+    string content_uri
+    string checksum
+  }

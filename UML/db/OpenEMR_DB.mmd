@@ -1,0 +1,61 @@
+%%{init: {
+  "theme": "default",
+  "themeVariables": {
+    "background": "#ffffff",
+    "primaryColor": "#ffffff",
+    "secondaryColor": "#ffffff",
+    "tertiaryColor": "#ffffff",
+    "primaryTextColor": "#000000",
+    "lineColor": "#000000",
+    "entityBackground": "#ffffff",
+    "entityBorder": "#000000"
+  }
+}}%%
+erDiagram
+  %% =========================
+  %% Relationships
+  %% =========================
+  PATIENT_DATA ||--o{ FORM_ENCOUNTER : has
+  FORM_ENCOUNTER ||--o{ PROCEDURE_ORDER : creates
+  PROCEDURE_ORDER ||--o{ PROCEDURE_ORDER_CODE : includes
+  USERS ||--o{ PROCEDURE_ORDER : author
+
+  %% =========================
+  %% Entities
+  %% =========================
+  PATIENT_DATA {
+    int pid PK
+    string fname
+    string lname
+    date dob
+    string sex
+  }
+
+  FORM_ENCOUNTER {
+    int encounter_id PK
+    int pid FK
+    datetime encounter_date
+    string reason
+  }
+
+  PROCEDURE_ORDER {
+    int proc_order_id PK
+    int pid FK
+    int encounter_id FK
+    int ordered_by_user_id FK
+    datetime date_ordered
+    string status
+  }
+
+  PROCEDURE_ORDER_CODE {
+    int proc_order_code_id PK
+    int proc_order_id FK
+    string code
+    string description
+  }
+
+  USERS {
+    int id PK
+    string username
+    string facility
+  }

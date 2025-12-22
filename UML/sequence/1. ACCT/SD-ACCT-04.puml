@@ -1,0 +1,25 @@
+@startuml
+title SD-ACCT-04 실패 로그인 및 계정 락
+' UC Trace: UC1-1-1 (extend)
+
+actor User as u
+participant "CDSS UI" as ui
+participant "Django CDSS\nAccounts/Auth" as auth
+participant "Django CDSS\nAudit/Admin" as audit
+
+group 실패 로그인 방어
+  u -> ui : 잘못된 PW 입력
+  ui -> auth : POST /auth/login
+  auth -> auth : 비밀번호 검증 실패
+  auth -> auth : 실패 카운트 증가
+  alt 임계치 미도달
+    auth -> audit : log_event(LOGIN_FAILED)
+    auth --> ui : 401
+  else 임계치 도달
+    auth -> auth : account_locked=true
+    auth -> audit : log_event(ACCOUNT_LOCKED)
+    auth --> ui : 423 Locked
+  end
+  ui --> u : 오류/락 안내
+end group
+@enduml

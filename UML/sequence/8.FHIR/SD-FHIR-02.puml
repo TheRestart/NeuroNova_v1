@@ -1,0 +1,13 @@
+@startuml
+title SD-FHIR-02 Patient 전송
+' UC Trace: UC8-1-2
+
+participant "Django CDSS\nFHIR Client (UC8)" as cli
+participant "FHIR Server" as fhir
+
+group Patient 전송
+  cli -> fhir : POST /Patient
+  fhir --> cli : 201 Created (Patient/id)
+  cli -> cli : store mapping (local_patient_id ↔ fhir_patient_id)
+end group
+@enduml

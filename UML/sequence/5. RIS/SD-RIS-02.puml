@@ -1,0 +1,22 @@
+@startuml
+title SD-RIS-02 Worklist 할당/해제
+' UC Trace: UC5-1-2
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+
+group 할당
+  r -> ui : "내게 할당" 클릭
+  ui -> ris : POST /ris/studies/{id}/assign
+  ris -> ris : set assignee=r, status=READING(optional)
+  ris --> ui : ok
+end group
+
+group 해제
+  r -> ui : "할당 해제" 클릭
+  ui -> ris : POST /ris/studies/{id}/unassign
+  ris -> ris : clear assignee
+  ris --> ui : ok
+end group
+@enduml

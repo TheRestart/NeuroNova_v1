@@ -1,0 +1,34 @@
+@startuml
+package "ris.repositories" {
+
+  interface ReadingCaseRepository {
+    +findById(caseId: UUID): ReadingCase
+    +findByOrderId(orderId: UUID): ReadingCase
+    +save(caseObj: ReadingCase): ReadingCase
+    +search(criteriaJson: String): ReadingCase  ' list
+  }
+
+  interface StudyLinkRepository {
+    +findByOrderId(orderId: UUID): StudyLink
+    +save(link: StudyLink): StudyLink
+    +unlink(orderId: UUID): void
+  }
+
+  interface ReportRepository {
+    +findByCaseId(caseId: UUID): RadiologyReport
+    +saveDraft(report: RadiologyReport): RadiologyReport
+    +finalizeReport(reportId: UUID): RadiologyReport
+  }
+
+  interface ReadingStatusHistoryRepository {
+    +append(history: ReadingStatusHistory): void
+    +listByCaseId(caseId: UUID): ReadingStatusHistory  ' list
+  }
+
+  interface RisSyncJobRepository {
+    +create(job: RisSyncJob): RisSyncJob
+    +updateStatus(jobId: UUID, status: String, updatedCount: int, errorMessage: String): void
+    +listRecent(limit: int): RisSyncJob  ' list
+  }
+}
+@enduml

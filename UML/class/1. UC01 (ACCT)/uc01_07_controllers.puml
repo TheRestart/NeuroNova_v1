@@ -1,0 +1,19 @@
+@startuml
+package "acct.controllers" {
+
+  class AuthController <<Controller>> {
+    +POST_login(req: LoginRequestDTO): TokenPairDTO
+    +POST_refresh(req: RefreshRequestDTO): TokenPairDTO
+    +POST_logout(req: LogoutRequestDTO): void
+  }
+
+  class MeController <<Controller>> {
+    +GET_me(): MeResponseDTO
+  }
+
+  class RoleAdminController <<Controller>> {
+    +POST_upsert_role(req: UpsertRoleDTO): RoleDTO
+    +POST_assign_role(req: AssignRoleDTO): void
+  }
+}
+@enduml

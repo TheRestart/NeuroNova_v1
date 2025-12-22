@@ -1,0 +1,240 @@
+%%{init: {
+  "theme": "default",
+  "themeVariables": {
+    "background": "#ffffff",
+    "primaryColor": "#ffffff",
+    "secondaryColor": "#ffffff",
+    "tertiaryColor": "#ffffff",
+    "primaryTextColor": "#000000",
+    "lineColor": "#000000",
+    "entityBackground": "#ffffff",
+    "entityBorder": "#000000"
+  }
+}}%%
+erDiagram
+  %% =========================
+  %% Core Relationships
+  %% =========================
+  ACCT_USERS ||--o{ ACCT_USER_ROLES : has
+  ACCT_ROLES ||--o{ ACCT_USER_ROLES : assigned
+  ACCT_ROLES ||--o{ ACCT_ROLE_PERMS : grants
+  ACCT_PERMISSIONS ||--o{ ACCT_ROLE_PERMS : included
+  ACCT_USERS ||--o{ ACCT_REFRESH_TOKENS : owns
+  ACCT_USERS ||--o{ ACCT_MFA_SECRETS : secures
+
+  EMR_PATIENT_CACHE ||--o{ EMR_ENCOUNTER_CACHE : has
+  EMR_PATIENT_CACHE ||--o{ RADIOLOGY_ORDERS : orders
+  RADIOLOGY_ORDERS ||--o{ RADIOLOGY_STUDIES : results
+  RADIOLOGY_STUDIES ||--o{ RADIOLOGY_SERIES : contains
+  RADIOLOGY_STUDIES ||--o{ RADIOLOGY_REPORTS : has
+  ACCT_USERS ||--o{ RADIOLOGY_REPORTS : writes
+
+  RADIOLOGY_STUDIES ||--o{ AI_JOBS : triggers
+  AI_JOBS ||--o{ AI_JOB_POLLING : polledBy
+  AI_JOBS ||--|| AI_RESULTS : produces
+  AI_RESULTS ||--o{ AI_ARTIFACTS : stores
+
+  TIMELINE_EVENTS ||--o{ USER_NOTIFICATIONS : notifies
+  ACCT_USERS ||--o{ USER_NOTIFICATIONS : receives
+  ACCT_USERS ||--o{ TIMELINE_EVENTS : acts
+  ACCT_USERS ||--o{ AUDIT_LOGS : acts
+  ACCT_USERS ||--o{ SECURITY_EVENTS : acts
+
+  %% =========================
+  %% Added Missing Relationships
+  %% =========================
+  EMR_PATIENT_CACHE ||--o{ EMR_SYNC_JOBS : syncs
+  EMR_PATIENT_CACHE ||--o{ EMR_ID_MAP : maps
+
+  EMR_PATIENT_CACHE ||--o{ FHIR_RESOURCE_MAP : fhirMaps
+  RADIOLOGY_ORDERS  ||--o{ FHIR_RESOURCE_MAP : fhirMaps
+  RADIOLOGY_STUDIES ||--o{ FHIR_RESOURCE_MAP : fhirMaps
+  AI_RESULTS        ||--o{ FHIR_RESOURCE_MAP : fhirMaps
+
+  FHIR_TX_QUEUE ||--o{ FHIR_RESOURCE_MAP : drives
+
+  REF_DATA ||--o{ FHIR_TX_QUEUE : configFor
+  REF_DATA ||--o{ SECURITY_EVENTS : policyRef
+
+  %% =========================
+  %% Entities
+  %% =========================
+  ACCT_USERS {
+    string   user_id PK
+    string   username
+    string   password_hash
+    string   status
+    datetime created_at
+  }
+  ACCT_ROLES {
+    string role_id PK
+    string name
+  }
+  ACCT_PERMISSIONS {
+    string perm_id PK
+    string code
+  }
+  ACCT_USER_ROLES {
+    string user_id FK
+    string role_id FK
+  }
+  ACCT_ROLE_PERMS {
+    string role_id FK
+    string perm_id FK
+  }
+  ACCT_REFRESH_TOKENS {
+    string   token_id PK
+    string   user_id FK
+    string   token_hash
+    datetime expires_at
+    datetime revoked_at
+  }
+  ACCT_MFA_SECRETS {
+    string  mfa_id PK
+    string  user_id FK
+    string  secret_enc
+    boolean enabled
+  }
+
+  EMR_PATIENT_CACHE {
+    string   cdss_patient_id PK
+    string   emr_patient_id
+    string   name
+    date     dob
+    string   sex
+    datetime updated_at
+  }
+  EMR_ENCOUNTER_CACHE {
+    string   cdss_encounter_id PK
+    string   emr_encounter_id
+    string   cdss_patient_id FK
+    datetime started_at
+  }
+  EMR_SYNC_JOBS {
+    string   job_id PK
+    string   job_type
+    string   status
+    datetime started_at
+    datetime finished_at
+    string   last_error
+  }
+  EMR_ID_MAP {
+    string map_id PK
+    string system
+    string resource_type
+    string external_id
+    string internal_id
+  }
+
+  RADIOLOGY_ORDERS {
+    string   order_id PK
+    string   cdss_patient_id FK
+    string   emr_order_id
+    string   modality
+    string   status
+    datetime ordered_at
+  }
+  RADIOLOGY_STUDIES {
+    string   study_id PK
+    string   order_id FK
+    string   orthanc_study_uid
+    string   status
+    datetime acquired_at
+  }
+  RADIOLOGY_SERIES {
+    string series_id PK
+    string study_id FK
+    string orthanc_series_uid
+    string body_part
+  }
+  RADIOLOGY_REPORTS {
+    string   report_id PK
+    string   study_id FK
+    string   author_user_id FK
+    string   status
+    string   content
+    datetime updated_at
+  }
+
+  AI_JOBS {
+    string   ai_job_id PK
+    string   study_id FK
+    string   model_key
+    string   status
+    datetime submitted_at
+  }
+  AI_JOB_POLLING {
+    string   poll_id PK
+    string   ai_job_id FK
+    datetime next_poll_at
+    string   last_status
+  }
+  AI_RESULTS {
+    string   result_id PK
+    string   ai_job_id FK
+    string   tumor_class
+    string   metrics_json
+    datetime created_at
+  }
+  AI_ARTIFACTS {
+    string artifact_id PK
+    string result_id FK
+    string kind
+    string storage_uri
+    string checksum
+  }
+
+  TIMELINE_EVENTS {
+    string   event_id PK
+    string   actor_user_id FK
+    string   event_type
+    string   ref_type
+    string   ref_id
+    datetime created_at
+  }
+  USER_NOTIFICATIONS {
+    string   noti_id PK
+    string   user_id FK
+    string   event_id FK
+    datetime read_at
+  }
+  AUDIT_LOGS {
+    string   audit_id PK
+    string   actor_user_id FK
+    string   action
+    string   target_type
+    string   target_id
+    string   ip
+    string   created_at
+  }
+  SECURITY_EVENTS {
+    string   sec_id PK
+    string   category
+    string   severity
+    string   actor_user_id FK
+    string   ip
+    string   detail
+    datetime created_at
+  }
+  REF_DATA {
+    string  ref_id PK
+    string  ref_key
+    string  ref_type
+    string  payload_json
+    boolean enabled
+  }
+  FHIR_RESOURCE_MAP {
+    string   map_id PK
+    string   resource_type
+    string   cdss_ref_type
+    string   cdss_ref_id
+    string   fhir_id
+    datetime last_synced_at
+  }
+  FHIR_TX_QUEUE {
+    string tx_id PK
+    string resource_type
+    string payload_json
+    string status
+    int    retry_count
+  }

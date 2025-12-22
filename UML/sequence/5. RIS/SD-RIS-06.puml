@@ -1,0 +1,17 @@
+@startuml
+title SD-RIS-06 Report Draft 수정
+' UC Trace: UC5-3-2
+
+actor Radiologist as r
+participant "CDSS UI" as ui
+participant "Django CDSS\nRIS (UC5)" as ris
+
+group Draft 수정
+  r -> ui : 내용 수정 후 저장
+  ui -> ris : PUT /ris/reports/{report_id}
+  ris -> ris : validate editable(status=DRAFT)
+  ris -> ris : update report content
+  ris --> ui : updated DTO
+  ui --> r : 저장 완료 표시
+end group
+@enduml

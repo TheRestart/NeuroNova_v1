@@ -1,0 +1,11 @@
+@startuml
+title SD-FHIR-11 FHIR 요청/응답 로그
+' UC Trace: UC8-6-1
+
+participant "Django CDSS\nFHIR Client (UC8)" as cli
+
+group 요청/응답 로그
+  cli -> cli : insert fhir_logs(method, url, request_body)
+  cli -> cli : update fhir_logs(status, response_body)
+end group
+@enduml

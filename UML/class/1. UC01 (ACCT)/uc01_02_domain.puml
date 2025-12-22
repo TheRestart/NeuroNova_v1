@@ -1,0 +1,65 @@
+@startuml
+package "acct.domain" {
+
+  enum UserStatus { 
+    ACTIVE, 
+    LOCKED, 
+    DISABLED 
+  }
+  enum RefreshTokenStatus { 
+    ACTIVE, 
+    REVOKED, 
+    EXPIRED 
+  }
+
+  class User {
+    +userId: UUID
+    +username: String
+    +passwordHash: String
+    +status: UserStatus
+    +failedLoginCount: int
+    +lastFailedAt: DateTime     ' optional
+    +lockedUntil: DateTime      ' optional
+    +createdAt: DateTime
+    +updatedAt: DateTime        ' optional
+  }
+
+  class Role {
+    +roleKey: String
+    +name: String
+    +enabled: bool
+    +updatedAt: DateTime
+  }
+
+  class Permission {
+    +permKey: String
+    +description: String
+    +enabled: bool
+  }
+
+  class UserRole {
+    +id: UUID
+    +userId: UUID
+    +roleKey: String
+    +assignedAt: DateTime
+  }
+
+  class RolePermission {
+    +id: UUID
+    +roleKey: String
+    +permKey: String
+  }
+
+  class RefreshToken {
+    +tokenId: UUID
+    +userId: UUID
+    +tokenHash: String
+    +status: RefreshTokenStatus
+    +issuedAt: DateTime
+    +expiresAt: DateTime
+    +revokedAt: DateTime       ' optional
+    +rotatedFrom: UUID         ' optional (tokenId)
+    +deviceId: String          ' optional
+  }
+}
+@enduml

@@ -1,0 +1,71 @@
+@startuml
+title UC08 (FHIR Client) - Class Diagram (Main)
+
+left to right direction
+hide empty members
+skinparam classAttributeIconSize 0
+
+!include uc08_07_domain.puml
+!include uc08_06_dtos.puml
+!include uc08_05_clients.puml
+!include uc08_04_repositories.puml
+!include uc08_03_services.puml
+!include uc08_02_controllers.puml
+
+' --- Controller -> Service
+FhirPatientController --> FhirPatientService
+FhirServiceRequestController --> FhirServiceRequestService
+FhirImagingStudyController --> FhirImagingStudyService
+FhirObservationController --> FhirObservationService
+FhirDiagnosticReportController --> FhirDiagnosticReportService
+FhirSyncController --> FhirRequestService
+
+FhirPatientController --> AuditClient
+FhirServiceRequestController --> AuditClient
+FhirImagingStudyController --> AuditClient
+FhirObservationController --> AuditClient
+FhirDiagnosticReportController --> AuditClient
+FhirSyncController --> AuditClient
+
+' --- Services -> Repo/Client
+FhirPatientService --> FhirRequestService
+FhirPatientService --> FhirMappingService
+FhirPatientService --> FhirResourceBuilder
+FhirPatientService --> FhirTxLogRepository
+FhirPatientService --> AuditClient
+
+FhirServiceRequestService --> FhirRequestService
+FhirServiceRequestService --> FhirMappingService
+FhirServiceRequestService --> FhirResourceBuilder
+FhirServiceRequestService --> FhirTxLogRepository
+FhirServiceRequestService --> AuditClient
+
+FhirImagingStudyService --> FhirRequestService
+FhirImagingStudyService --> FhirMappingService
+FhirImagingStudyService --> FhirResourceBuilder
+FhirImagingStudyService --> FhirTxLogRepository
+FhirImagingStudyService --> AuditClient
+
+FhirObservationService --> FhirRequestService
+FhirObservationService --> FhirMappingService
+FhirObservationService --> FhirResourceBuilder
+FhirObservationService --> FhirTxLogRepository
+FhirObservationService --> AuditClient
+
+FhirDiagnosticReportService --> FhirRequestService
+FhirDiagnosticReportService --> FhirMappingService
+FhirDiagnosticReportService --> FhirResourceBuilder
+FhirDiagnosticReportService --> FhirTxLogRepository
+FhirDiagnosticReportService --> AuditClient
+
+FhirMappingService --> FhirMappingRepository
+
+FhirRequestService --> FhirRestClient
+FhirRequestService --> FhirAuthClient
+FhirRequestService --> Clock
+
+' --- Domain relations
+FhirTxLog ..> FhirConfig
+FhirSyncJob ..> FhirConfig
+
+@enduml

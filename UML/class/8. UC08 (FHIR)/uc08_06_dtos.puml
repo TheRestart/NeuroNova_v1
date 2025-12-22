@@ -1,0 +1,54 @@
+@startuml
+package "fhir.dtos" {
+
+  class FhirPatientRequestDTO {
+    +patientLocalRef: String
+    +mode: String            ' optional (UPSERT/CREATE)
+  }
+
+  class FhirServiceRequestDTO {
+    +orderId: UUID
+    +mode: String            ' optional
+  }
+
+  class FhirImagingStudyDTO {
+    +orderId: UUID           ' optional
+    +orthancStudyId: String
+    +mode: String            ' optional
+  }
+
+  class FhirObservationDTO {
+    +jobId: UUID             ' optional
+    +labResultId: UUID       ' optional
+    +mode: String            ' optional
+  }
+
+  class FhirDiagnosticReportDTO {
+    +caseId: UUID
+    +reportId: UUID          ' optional
+    +mode: String            ' optional
+  }
+
+  class FhirPushResultDTO {
+    +resourceType: String
+    +localRef: String
+    +fhirId: String
+    +status: String
+    +message: String         ' optional
+  }
+
+  class FhirSyncRequestDTO {
+    +resourceType: String
+    +from: Date              ' optional
+    +to: Date                ' optional
+    +queryJson: String       ' optional json
+  }
+
+  class SyncResultDTO {
+    +jobId: UUID
+    +status: String
+    +updatedCount: int
+    +message: String         ' optional
+  }
+}
+@enduml

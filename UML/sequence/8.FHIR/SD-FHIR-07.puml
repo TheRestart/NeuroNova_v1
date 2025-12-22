@@ -1,0 +1,11 @@
+@startuml
+title SD-FHIR-07 Observation 매핑
+' UC Trace: UC8-4-1
+
+participant "Django CDSS\nFHIR Client (UC8)" as cli
+
+group Observation 매핑
+  cli -> cli : load lab result or AI metric
+  cli -> cli : build Observation resource
+end group
+@enduml
