@@ -20,7 +20,19 @@
       "Bash(ping:*)",
       "Bash(timeout:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(.venvScriptspip install django djangorestframework django-cors-headers requests python-dotenv)",
+      "Bash(venv/Scripts/pip install:*)",
+      "Bash(python -m pip install:*)",
+      "Bash(django-admin startproject:*)",
+      "Bash(python manage.py startapp:*)",
+      "Bash(venv/Scripts/python:*)",
+      "Bash(venvScriptspip install django djangorestframework django-cors-headers requests python-dotenv)",
+      "Bash(start cmd /k \"cd /d d:\\\\1222\\\\NeuroNova_v1\\\\NeuroNova_02_back_end\\\\01_django_server && ./venv/Scripts/python manage.py runserver\")"
     ]
   }
 }
