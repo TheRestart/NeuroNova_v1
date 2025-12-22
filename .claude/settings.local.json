@@ -18,7 +18,9 @@
       "Bash(start emr-test-ui.html)",
       "Bash(taskkill /F /FI \"WINDOWTITLE eq ./venv/Scripts/python manage.py runserver*\")",
       "Bash(ping:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
