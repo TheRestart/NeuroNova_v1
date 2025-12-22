@@ -1,0 +1,12 @@
+# Ignore sub-repositories to avoid conflicts
+02_back_end/
+03_front_end_react/
+04_front_end_flutter/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

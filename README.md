@@ -75,30 +75,20 @@
 
 ### 📁 프로젝트 문서
 ```
-UML/
-├── README.md                    # [이 파일] 프로젝트 개요
-├── CLAUDE_CONTEXT.md            # Claude AI 온보딩 문서
-├── 이용법.md                     # 사용자 가이드
-│
-├── 01_권한7.txt                  # 역할 기반 권한 정의
-├── 업무계획서.md                 # 전체 업무 계획 (v1.3)
-├── 02_세부 계획서.md             # 인프라 & DevOps 상세
-│
-├── 03_개발_작업_순서.md          # [중요] Claude 1달 작업 순서
-├── 04_수정_지침서.md             # [중요] 사용자 수정 요청 가이드
-├── 05_기술스택_상세.md           # 기술 스택 상세 설명
-├── 06_환경설정_가이드.md         # 가상환경 및 의존성 관리
-├── 07_일일_체크리스트.md         # 일일 개발 체크리스트
-├── 08_API_명세서.md              # REST API 명세서
-├── 09_데이터베이스_스키마.md     # DB 스키마 및 ERD
-├── 10_테스트_시나리오.md         # 테스트 시나리오
-├── 11_배포_가이드.md             # Docker 배포 가이드
-│
-└── UML/                         # UML 설계 파일
-    ├── usecase/                 # Use Case Diagrams
-    ├── sequence/                # Sequence Diagrams
-    ├── class/                   # Class Diagrams
-    └── db/                      # ERD (Mermaid)
+00_UML/                        # UML 설계 파일
+01_doc/                          # 프로젝트 문서 및 스크립트
+├── 01_권한7.txt                 # ...
+├── ... (기타 문서)
+├── GIT_SETUP_GUIDE.md           # Git 설정 가이드
+└── ...
+02_back_end/                     # 백엔드 서버 (Django + OpenEMR)
+├── 01_django_server/            # Django 메인 서버
+└── 02_openemr_server/           # OpenEMR Docker 구성
+03_front_end_react/              # React 클라이언트 저장소
+└── 01_react_client/             # React 웹 애플리케이션
+04_front_end_flutter/            # Flutter 클라이언트 저장소
+└── (Flutter App)                # Flutter 모바일 애플리케이션
+README.md                        # [이 파일] 프로젝트 개요
 ```
 
 ### 📄 주요 문서 설명
@@ -168,14 +158,14 @@ git clone <repository-url>
 cd UML
 
 # Backend 환경 설정
-cd cdss-backend
+cd 02_back_end/01_django_server
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env  # .env 파일 수정 필요
 
 # Frontend 환경 설정
-cd ../cdss-frontend-react
+cd ../../03_front_end_react/01_react_client
 npm install
 cp .env.example .env  # .env 파일 수정 필요
 ```
@@ -302,18 +292,18 @@ UC1의 JWT 토큰 만료 시간을 30분으로 변경해줘.
 - [Mermaid ERD 문법](https://mermaid.js.org/syntax/entityRelationshipDiagram.html)
 
 ### 내부 문서
-- [CLAUDE_CONTEXT.md](CLAUDE_CONTEXT.md): Claude AI 온보딩
-- [업무계획서.md](업무계획서.md): 전체 업무 계획
-- [02_세부 계획서.md](02_세부 계획서.md): 인프라 상세
-- [03_개발_작업_순서.md](03_개발_작업_순서.md): 1달 작업 계획
-- [04_수정_지침서.md](04_수정_지침서.md): 수정 요청 가이드
-- [05_기술스택_상세.md](05_기술스택_상세.md): 기술 스택 상세
-- [06_환경설정_가이드.md](06_환경설정_가이드.md): 환경 설정
-- [07_일일_체크리스트.md](07_일일_체크리스트.md): 일일 체크리스트
-- [08_API_명세서.md](08_API_명세서.md): API 명세서
-- [09_데이터베이스_스키마.md](09_데이터베이스_스키마.md): DB 스키마
-- [10_테스트_시나리오.md](10_테스트_시나리오.md): 테스트 시나리오
-- [11_배포_가이드.md](11_배포_가이드.md): 배포 가이드
+- [CLAUDE_CONTEXT.md](01_doc/CLAUDE_CONTEXT.md): Claude AI 온보딩
+- [업무계획서.md](01_doc/업무계획서.md): 전체 업무 계획
+- [02_세부 계획서.md](01_doc/02_세부 계획서.md): 인프라 상세
+- [03_개발_작업_순서.md](01_doc/03_개발_작업_순서.md): 1달 작업 계획
+- [04_수정_지침서.md](01_doc/04_수정_지침서.md): 수정 요청 가이드
+- [05_기술스택_상세.md](01_doc/05_기술스택_상세.md): 기술 스택 상세
+- [06_환경설정_가이드.md](01_doc/06_환경설정_가이드.md): 환경 설정
+- [07_일일_체크리스트.md](01_doc/07_일일_체크리스트.md): 일일 체크리스트
+- [08_API_명세서.md](01_doc/08_API_명세서.md): API 명세서
+- [09_데이터베이스_스키마.md](01_doc/09_데이터베이스_스키마.md): DB 스키마
+- [10_테스트_시나리오.md](01_doc/10_테스트_시나리오.md): 테스트 시나리오
+- [11_배포_가이드.md](01_doc/11_배포_가이드.md): 배포 가이드
 
 ---
 
