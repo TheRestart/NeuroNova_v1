@@ -215,6 +215,7 @@ curl -X GET http://localhost:8000/api/acct/me/ \
 4. ✅ **확장 가능한 구조**: Week 2-4 작업을 위한 기반 마련
 5. ✅ **문서화 완료**: 설치/사용/테스트 가이드 제공
 6. ✅ **보안 아키텍처 설계**: Django 중앙 인증 정책 수립
+7. ✅ **개발 모드 구현**: 보안/권한 토글 기능으로 개발 편의성 향상
 
 ## 🔒 보안 아키텍처
 
@@ -244,7 +245,39 @@ Client → Nginx → Django (인증/권한) → HAPI FHIR
 - ✅ `settings.py`에 외부 시스템 URL 설정 (내부 네트워크)
 - ✅ `permissions.py`에 역할별 권한 클래스 준비
 - ✅ `AuditClient`로 감사 로그 인프라 완성
+- ✅ `ENABLE_SECURITY` 토글로 개발/프로덕션 모드 전환 가능
 - 🔜 Week 2-3: 각 UC별 Client 클래스 구현 (OpenEMRClient, OrthancClient, HAPIClient)
+
+### 🔓 개발 모드 (보안 토글)
+
+**현재 설정**: `ENABLE_SECURITY=False` (개발 모드 활성화)
+
+개발 편의성을 위해 보안/권한 기능을 선택적으로 활성화할 수 있습니다:
+
+```python
+# .env 파일
+ENABLE_SECURITY=False  # 개발 모드 (기본값)
+# ENABLE_SECURITY=True  # 프로덕션 모드
+```
+
+**개발 모드 효과:**
+- ✅ 인증 없이 모든 API 접근 가능
+- ✅ 권한 검증 우회 (IsAdmin, IsDoctor 등 무시)
+- ✅ 빠른 테스트 및 디버깅
+- ⚠️ 감사 로그는 LOGIN/LOGOUT만 기록
+
+**프로덕션 모드로 전환:**
+```bash
+# .env 파일 수정
+ENABLE_SECURITY=True
+
+# Django 재시작
+python manage.py runserver
+```
+
+**관련 문서:**
+- [개발모드_가이드.md](cdss-backend/개발모드_가이드.md) - 상세 사용 가이드
+- [개발모드_설정완료.md](개발모드_설정완료.md) - 설정 완료 요약
 
 ---
 

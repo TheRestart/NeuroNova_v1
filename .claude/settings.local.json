@@ -10,7 +10,15 @@
       "Bash(./venv/Scripts/pip:*)",
       "Bash(./venv/Scripts/django-admin:*)",
       "Bash(./venv/Scripts/python:*)",
-      "Bash(mysql:*)"
+      "Bash(mysql:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(start cmd /k \"./venv/Scripts/python manage.py runserver\")",
+      "Bash(timeout /t 3)",
+      "Bash(curl:*)",
+      "Bash(start emr-test-ui.html)",
+      "Bash(taskkill /F /FI \"WINDOWTITLE eq ./venv/Scripts/python manage.py runserver*\")",
+      "Bash(ping:*)",
+      "Bash(timeout:*)"
     ]
   }
 }

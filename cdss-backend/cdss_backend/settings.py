@@ -88,24 +88,33 @@ WSGI_APPLICATION = "cdss_backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# 개발/테스트용: SQLite 사용
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("DB_NAME", "cdss_db"),
-        "USER": os.getenv("DB_USER", "cdss_user"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "cdss_password"),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "3306"),
-        "OPTIONS": {
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-            "charset": "utf8mb4",
-        },
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
-# Use PyMySQL as MySQLdb
-import pymysql
-pymysql.install_as_MySQLdb()
+# 프로덕션용: MySQL 설정 (주석 처리)
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": os.getenv("DB_NAME", "cdss_db"),
+#         "USER": os.getenv("DB_USER", "cdss_user"),
+#         "PASSWORD": os.getenv("DB_PASSWORD", "cdss_password"),
+#         "HOST": os.getenv("DB_HOST", "localhost"),
+#         "PORT": os.getenv("DB_PORT", "3306"),
+#         "OPTIONS": {
+#             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+#             "charset": "utf8mb4",
+#         },
+#     }
+# }
+
+# Use PyMySQL as MySQLdb (MySQL 사용 시 필요)
+# import pymysql
+# pymysql.install_as_MySQLdb()
 
 
 # Password validation

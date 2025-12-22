@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDSS EMR 테스트 페이지</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+        }
+
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+        }
+
+        .button:hover {
+            background: #5568d3;
+        }
+
+        .button.secondary {
+            background: #764ba2;
+        }
+
+        .button.secondary:hover {
+            background: #633991;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        #response {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 CDSS EMR 테스트 페이지</h1>
+            <p>Django + OpenEMR 연동 테스트</p>
+        </div>
+
+        <div class="card">
+            <h2>1️⃣ 서버 상태 확인</h2>
+            <button class="button" onclick="checkHealth()">Health Check</button>
+            <div id="healthStatus"></div>
+            <p style="color: #666; font-size: 14px; margin-top: 10px;">
+                ℹ️ OpenEMR 인증은 Django에서 자동 처리됩니다 (보안 정책 준수)
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>2️⃣ 환자 검색</h2>
+            <div class="grid">
+                <div class="input-group">
+                    <label>First Name</label>
+                    <input type="text" id="fname" placeholder="예: John">
+                </div>
+                <div class="input-group">
+                    <label>Last Name</label>
+                    <input type="text" id="lname" placeholder="예: Doe">
+                </div>
+                <div class="input-group">
+                    <label>Date of Birth</label>
+                    <input type="date" id="dob">
+                </div>
+            </div>
+            <button class="button" onclick="searchPatients()">환자 검색</button>
+            <button class="button secondary" onclick="clearSearch()">검색 초기화</button>
+        </div>
+
+        <div class="card">
+            <h2>3️⃣ 환자 상세 조회</h2>
+            <div class="input-group">
+                <label>Patient ID</label>
+                <input type="text" id="patientId" placeholder="예: 1">
+            </div>
+            <button class="button" onclick="getPatientDetail()">환자 정보</button>
+            <button class="button" onclick="getPatientEncounters()">진료 기록</button>
+            <button class="button" onclick="getPatientVitals()">바이탈 사인</button>
+        </div>
+
+        <div class="card">
+            <h2>4️⃣ 캐시된 데이터</h2>
+            <button class="button" onclick="getCachedPatients()">캐시된 환자 목록</button>
+            <button class="button" onclick="getCachedEncounters()">캐시된 진료 기록</button>
+        </div>
+
+        <div class="card">
+            <h2>📊 API 응답</h2>
+            <div id="response">API를 호출하면 여기에 응답이 표시됩니다.</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/emr';
+
+        function displayResponse(data, isError = false) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.innerHTML = JSON.stringify(data, null, 2);
+            responseDiv.style.color = isError ? '#721c24' : '#155724';
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('healthStatus');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function checkHealth() {
+            try {
+                showStatus('서버 상태 확인 중...', 'info');
+                const response = await fetch(`${API_BASE}/health/`);
+                const data = await response.json();
+                displayResponse(data);
+
+                if (data.status === 'healthy') {
+                    showStatus('✅ OpenEMR 서버 연결 성공!', 'success');
+                } else {
+                    showStatus('⚠️ OpenEMR 서버 연결 실패', 'error');
+                }
+            } catch (error) {
+                displayResponse({ error: error.message }, true);
+                showStatus('❌ Django 서버 연결 실패', 'error');
+            }
+        }
+
+        async function searchPatients() {
+            const fname = document.getElementById('fname').value;
+            const lname = document.getElementById('lname').value;
+            const dob = document.getElementById('dob').value;
+
+            const params = new URLSearchParams();
+            if (fname) params.append('fname', fname);
+            if (lname) params.append('lname', lname);
+            if (dob) params.append('dob', dob);
+
+            try {
+                const response = await fetch(`${API_BASE}/patients/search/?${params}`);
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: error.message }, true);
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('fname').value = '';
+            document.getElementById('lname').value = '';
+            document.getElementById('dob').value = '';
+        }
+
+        async function getPatientDetail() {
+            const patientId = document.getElementById('patientId').value;
+            if (!patientId) {
+                alert('Patient ID를 입력하세요');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/patients/${patientId}/`);
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: error.message }, true);
+            }
+        }
+
+        async function getPatientEncounters() {
+            const patientId = document.getElementById('patientId').value;
+            if (!patientId) {
+                alert('Patient ID를 입력하세요');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/patients/${patientId}/encounters/`);
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: error.message }, true);
+            }
+        }
+
+        async function getPatientVitals() {
+            const patientId = document.getElementById('patientId').value;
+            if (!patientId) {
+                alert('Patient ID를 입력하세요');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/patients/${patientId}/vitals/`);
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: error.message }, true);
+            }
+        }
+
+        async function getCachedPatients() {
+            try {
+                const response = await fetch(`${API_BASE}/cached/patients/`);
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: error.message }, true);
+            }
+        }
+
+        async function getCachedEncounters() {
+            try {
+                const response = await fetch(`${API_BASE}/cached/encounters/`);
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                displayResponse({ error: error.message }, true);
+            }
+        }
+
+        // 페이지 로드 시 자동으로 health check 실행
+        window.addEventListener('load', () => {
+            setTimeout(checkHealth, 1000);
+        });
+    </script>
+</body>
+</html>

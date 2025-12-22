@@ -73,16 +73,16 @@ def print_security_status():
     """서버 시작 시 보안 모드 출력"""
     if ENABLE_SECURITY:
         print("=" * 50)
-        print("🔒 SECURITY MODE: ENABLED")
+        print("SECURITY MODE: ENABLED")
         print("   - Authentication: REQUIRED")
         print("   - Permissions: ENFORCED")
         print("   - Audit Log: ENABLED")
         print("=" * 50)
     else:
         print("=" * 50)
-        print("⚠️  SECURITY MODE: DISABLED (DEVELOPMENT)")
+        print("WARNING: SECURITY MODE: DISABLED (DEVELOPMENT)")
         print("   - Authentication: BYPASSED")
         print("   - Permissions: BYPASSED")
         print("   - Audit Log: PARTIAL")
-        print("   ⚠️  DO NOT USE IN PRODUCTION!")
+        print("   WARNING: DO NOT USE IN PRODUCTION!")
         print("=" * 50)
