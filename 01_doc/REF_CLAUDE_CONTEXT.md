@@ -120,64 +120,65 @@ c:\Users\302-28\Downloads\UML\
 
 ## 4. UC별 상세 분석
 
-### 4.1 UC01 (ACCT) - 인증/권한 시스템
+### 4.1 UC01 (ACCT) - 인증/권한 시스템 ✅ 구현 완료
 
 #### 핵심 컴포넌트
 ```
-AuthController
+AuthController (views.py)
   ├─→ AuthService (로그인/로그아웃)
-  │     ├─→ UserRepository
-  │     ├─→ PasswordService (bcrypt)
-  │     ├─→ LoginDefenseService (무차별 대입 방어)
-  │     ├─→ JwtService (액세스 토큰)
-  │     ├─→ RefreshTokenService (리프레시 토큰)
-  │     └─→ AuditClient (로그인 이벤트 기록)
+  │     ├─→ UserService (사용자 관리)
+  │     ├─→ JWT (djangorestframework-simplejwt)
+  │     └─→ Django Auth (비밀번호 검증)
   │
-  ├─→ MeController (내 프로필)
-  │     ├─→ JwtService
-  │     └─→ AccessPolicyService (권한 체크)
-  │
-  └─→ RoleAdminController (역할 관리)
-        ├─→ RoleRepository
-        ├─→ PermissionRepository
-        └─→ UserRoleRepository
+  ├─→ login() - POST /api/acct/login/
+  ├─→ logout() - POST /api/acct/logout/
+  ├─→ me() - GET /api/acct/me/
+  └─→ UserViewSet
+        ├─→ register() - POST /api/acct/users/register/
+        └─→ CRUD (Admin only)
+
+Permission Classes (permissions.py)
+  ├─→ IsAdmin, IsDoctor, IsRIB, IsLab, IsNurse
+  ├─→ IsDoctorOrRIB, IsDoctorOrNurse
+  ├─→ IsSelfOrAdmin (Patient용)
+  └─→ IsAdminOrReadOnly, IsStaffRole
 ```
 
-#### 도메인 모델 (uc01_02_domain.puml)
+**구현 상태:**
+- ✅ Custom User 모델 (AUTH_USER_MODEL = 'acct.User')
+- ✅ JWT 토큰 인증 (Access + Refresh)
+- ✅ 7개 역할 시스템 (admin, doctor, rib, lab, nurse, patient, external)
+- ✅ Service 레이어 패턴
+- ✅ 10개 Permission 클래스
+
+#### 도메인 모델 (실제 구현: acct/models.py)
+```python
+User (AbstractBaseUser, PermissionsMixin)
+  - user_id: UUID (PK)
+  - username: String (unique)
+  - email: EmailField (unique)
+  - role: String (choices: admin, doctor, rib, lab, nurse, patient, external)
+  - full_name: String
+  - department: String
+  - license_number: String
+  - is_active: Boolean
+  - is_staff: Boolean
+  - is_superuser: Boolean
+  - created_at: DateTime
+  - last_login: DateTime
+
+JWT Token (djangorestframework-simplejwt)
+  - Access Token: 1시간 (설정 가능)
+  - Refresh Token: 7일 (설정 가능)
+  - Token Rotation: 활성화
+  - Blacklist: 활성화 (로그아웃 시)
 ```
-User (사용자)
-  - userId: UUID
-  - username: String
-  - passwordHash: String
-  - status: UserStatus (ACTIVE, LOCKED, DISABLED)
-  - failedLoginCount: int
-  - lockedUntil: DateTime
 
-Role (역할)
-  - roleKey: String
-  - name: String
-  - enabled: bool
-
-Permission (권한)
-  - permKey: String
-  - description: String
-
-UserRole (사용자-역할 매핑)
-  - userId: UUID (FK)
-  - roleKey: String (FK)
-
-RolePermission (역할-권한 매핑)
-  - roleKey: String (FK)
-  - permKey: String (FK)
-
-RefreshToken (리프레시 토큰)
-  - tokenId: UUID
-  - userId: UUID (FK)
-  - tokenHash: String
-  - status: RefreshTokenStatus (ACTIVE, REVOKED, EXPIRED)
-  - expiresAt: DateTime
-  - rotatedFrom: UUID (토큰 로테이션)
-```
+**UML 설계와의 차이점:**
+- ✅ User 모델은 Django AbstractBaseUser 기반으로 단순화
+- ✅ Role은 User 모델의 CharField로 구현 (별도 테이블 없음)
+- ⏳ Permission은 Django의 기본 Permission 시스템 활용 가능
+- ⏳ RefreshToken은 simplejwt의 token_blacklist 앱으로 관리
 
 #### 주요 흐름 (SD-ACCT-01: 로그인 성공)
 ```
@@ -201,16 +202,89 @@ AuthController → UI: 200 OK (tokens, profile)
 
 ---
 
-### 4.2 UC02 (EMR) - OpenEMR 프록시
+### 4.2 UC02 (EMR) - OpenEMR 프록시 ✅ 구현 완료
 
-#### 핵심 컴포넌트
+#### 핵심 컴포넌트 (실제 구현)
 ```
-PatientController
-  └─→ PatientProxyService
-        ├─→ OpenEMRClient (외부 API)
-        ├─→ PatientCacheRepository (캐싱)
-        └─→ EncounterCacheRepository
+EMRController (views.py) - OpenEMR 연동 API
+  └─→ EMRService (services.py)
+        └─→ OpenEMRClient (openemr_client.py) - 외부 API
+
+EMR CRUD ViewSets (viewsets.py) - 내부 CRUD API
+  ├─→ PatientCacheViewSet
+  │     └─→ PatientService (services.py)
+  │           └─→ PatientRepository (repositories.py)
+  ├─→ EncounterViewSet
+  │     └─→ EncounterService (services.py)
+  │           └─→ EncounterRepository (repositories.py)
+  └─→ OrderViewSet
+        └─→ OrderService (services.py)
+              └─→ OrderRepository (repositories.py)
+
+Models (models.py)
+  ├─→ PatientCache (환자 기본 정보 캐시)
+  │     - patient_id: P-YYYY-NNNNNN (PK, 자동 생성)
+  │     - family_name, given_name, birth_date, gender
+  │     - phone, email, address
+  │     - emergency_contact (JSON), allergies (JSON)
+  │     - openemr_patient_id (외부 동기화)
+  ├─→ Encounter (진료 기록)
+  │     - encounter_id: E-YYYY-NNNNNN (PK, 자동 생성)
+  │     - patient (FK), doctor_id
+  │     - encounter_type, department, chief_complaint
+  │     - diagnosis, status, encounter_date
+  ├─→ Order (처방 주문)
+  │     - order_id: O-YYYY-NNNNNN (PK, 자동 생성)
+  │     - patient (FK), encounter (FK, nullable)
+  │     - ordered_by, order_type, urgency, status
+  └─→ OrderItem (처방 항목)
+        - item_id: OI-ORDERID-NNN (PK, 자동 생성)
+        - drug_code, drug_name, dosage, frequency
+        - duration, route, instructions
 ```
+
+**구현 상태:**
+- ✅ Service/Repository 레이어 패턴 적용 (3-layer)
+- ✅ OpenEMRClient 외부 API 통합
+- ✅ MySQL 캐싱 구조
+- ✅ OCS (Order Communication System) 모델 포함
+- ✅ JSON 필드 활용 (allergies, emergency_contact)
+- ✅ DRF ViewSets를 통한 REST API CRUD 엔드포인트
+- ✅ 자동 ID 생성 정책 (Service 레이어에서 처리)
+- ✅ Transaction 보장 (Order + OrderItem 동시 생성)
+- ✅ 테스트 UI (emr_crud_test.html) - 예시입력 버튼 포함
+
+#### API 엔드포인트
+
+**OpenEMR 연동 API:**
+- GET /api/emr/health/ - OpenEMR 연결 상태 확인
+- POST /api/emr/auth/ - OpenEMR 인증
+- GET /api/emr/openemr/patients/ - OpenEMR 환자 목록
+- GET /api/emr/openemr/patients/search/ - OpenEMR 환자 검색
+- GET /api/emr/openemr/patients/{id}/ - OpenEMR 환자 상세
+
+**CRUD API (DRF Router):**
+- GET /api/emr/patients/ - 환자 목록
+- POST /api/emr/patients/ - 환자 생성 (ID 자동 생성)
+- GET /api/emr/patients/{id}/ - 환자 상세
+- PUT/PATCH /api/emr/patients/{id}/ - 환자 수정
+- DELETE /api/emr/patients/{id}/ - 환자 삭제
+- GET /api/emr/patients/search/?q={query} - 환자 검색
+
+- GET /api/emr/encounters/ - 진료 기록 목록
+- POST /api/emr/encounters/ - 진료 기록 생성 (ID 자동 생성)
+- GET /api/emr/encounters/{id}/ - 진료 기록 상세
+- PUT/PATCH /api/emr/encounters/{id}/ - 진료 기록 수정
+- DELETE /api/emr/encounters/{id}/ - 진료 기록 삭제
+- GET /api/emr/encounters/by_patient/?patient_id={id} - 환자별 진료 기록
+
+- GET /api/emr/orders/ - 처방 목록
+- POST /api/emr/orders/ - 처방 생성 (ID 자동 생성, 항목 포함)
+- GET /api/emr/orders/{id}/ - 처방 상세
+- PUT/PATCH /api/emr/orders/{id}/ - 처방 수정
+- DELETE /api/emr/orders/{id}/ - 처방 삭제
+- POST /api/emr/orders/{id}/execute/ - 처방 실행
+- GET /api/emr/orders/by_patient/?patient_id={id} - 환자별 처방 목록
 
 #### 설계 패턴
 - **Pull-Based**: Django가 OpenEMR에서 데이터를 가져옴 (Push 없음)
@@ -805,6 +879,8 @@ OpenEMR, Orthanc, HAPI FHIR는 외부 상용 서버를 사용합니다.
 |---|---|---|
 | 2025-12-16 | Claude (초기 인스턴스) | 문서 최초 작성 |
 | 2025-12-19 | Claude | 업무계획서 작성 및 CLAUDE_CONTEXT.md 업데이트<br>- 기술 스택별 업무 분류 추가<br>- 상용 서버 확인 사항 정리<br>- 팀 구성 및 개발 일정 추가 |
+| 2025-12-23 (오전) | Claude | 프로젝트 현황 반영 업데이트<br>- UC01 (ACCT) 구현 완료 반영<br>- UC02 (EMR) Service/Repository 레이어 구조 추가<br>- Custom User 모델 적용 상태 업데이트<br>- MySQL 데이터베이스 전환 완료 반영 |
+| 2025-12-23 (오후) | Claude | EMR CRUD 기능 완성 업데이트<br>- EMR CRUD ViewSets 전체 구현 완료<br>- Patient/Encounter/Order 자동 ID 생성 정책 추가<br>- DRF Router 기반 REST API 엔드포인트 전체 구성<br>- Service/Repository 3-layer 패턴 완성<br>- 테스트 UI (emr_crud_test.html) 구현<br>- 테스트 사용자 7개 역할 생성<br>- Transaction 보장 로직 추가 |
 
 ---
 

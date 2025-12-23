@@ -32,7 +32,17 @@
       "Bash(python manage.py startapp:*)",
       "Bash(venv/Scripts/python:*)",
       "Bash(venvScriptspip install django djangorestframework django-cors-headers requests python-dotenv)",
-      "Bash(start cmd /k \"cd /d d:\\\\1222\\\\NeuroNova_v1\\\\NeuroNova_02_back_end\\\\01_django_server && ./venv/Scripts/python manage.py runserver\")"
+      "Bash(start cmd /k \"cd /d d:\\\\1222\\\\NeuroNova_v1\\\\NeuroNova_02_back_end\\\\01_django_server && ./venv/Scripts/python manage.py runserver\")",
+      "Bash(dir:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(test:*)",
+      "Bash(start emr_crud_test.html)",
+      "Bash(taskkill:*)",
+      "Bash(venvScriptspython manage.py shell -c \"from django.db import connections; c = connections[''openemr''].cursor\\(\\); c.execute\\(''SELECT VERSION\\(\\)''\\); print\\(''OpenEMR DB Connected:'', c.fetchone\\(\\)[0]\\)\")",
+      "Bash(rm:*)"
     ]
   }
 }
