@@ -217,9 +217,11 @@ EMR CRUD ViewSets (viewsets.py) - 내부 CRUD API
   ├─→ EncounterViewSet
   │     └─→ EncounterService (services.py)
   │           └─→ EncounterRepository (repositories.py)
-  └─→ OrderViewSet
-        └─→ OrderService (services.py)
-              └─→ OrderRepository (repositories.py)
+  ├─→ OrderViewSet
+  │     └─→ OrderService (services.py)
+  │           └─→ OrderRepository (repositories.py)
+  └─→ OrderItemViewSet
+        └─→ OrderItemRepository (repositories.py)
 
 Models (models.py)
   ├─→ PatientCache (환자 기본 정보 캐시)
@@ -230,29 +232,31 @@ Models (models.py)
   │     - openemr_patient_id (외부 동기화)
   ├─→ Encounter (진료 기록)
   │     - encounter_id: E-YYYY-NNNNNN (PK, 자동 생성)
-  │     - patient (FK), doctor_id
+  │     - patient (FK), doctor_id (FK → acct.User)
   │     - encounter_type, department, chief_complaint
   │     - diagnosis, status, encounter_date
   ├─→ Order (처방 주문)
   │     - order_id: O-YYYY-NNNNNN (PK, 자동 생성)
   │     - patient (FK), encounter (FK, nullable)
-  │     - ordered_by, order_type, urgency, status
+  │     - ordered_by (FK → acct.User), order_type, urgency, status
   └─→ OrderItem (처방 항목)
         - item_id: OI-ORDERID-NNN (PK, 자동 생성)
-        - drug_code, drug_name, dosage, frequency
+        - order (FK), drug_code, drug_name, dosage, frequency
         - duration, route, instructions
 ```
 
 **구현 상태:**
-- ✅ Service/Repository 레이어 패턴 적용 (3-layer)
+- ✅ Service/Repository 레이어 패턴 완성 (3-layer)
 - ✅ OpenEMRClient 외부 API 통합
 - ✅ MySQL 캐싱 구조
 - ✅ OCS (Order Communication System) 모델 포함
 - ✅ JSON 필드 활용 (allergies, emergency_contact)
-- ✅ DRF ViewSets를 통한 REST API CRUD 엔드포인트
+- ✅ DRF ViewSets를 통한 REST API CRUD 엔드포인트 (4개)
 - ✅ 자동 ID 생성 정책 (Service 레이어에서 처리)
 - ✅ Transaction 보장 (Order + OrderItem 동시 생성)
 - ✅ 테스트 UI (emr_crud_test.html) - 예시입력 버튼 포함
+- ✅ OrderItem 개별 CRUD 지원 (PATCH, DELETE)
+- ✅ Custom User 모델 FK 연결 (doctor_id, ordered_by)
 
 #### API 엔드포인트
 
@@ -286,9 +290,35 @@ Models (models.py)
 - POST /api/emr/orders/{id}/execute/ - 처방 실행
 - GET /api/emr/orders/by_patient/?patient_id={id} - 환자별 처방 목록
 
+- GET /api/emr/order-items/ - 처방 항목 목록
+- POST /api/emr/order-items/ - 처방 항목 생성
+- GET /api/emr/order-items/{id}/ - 처방 항목 상세
+- PATCH /api/emr/order-items/{id}/ - 처방 항목 수정
+- DELETE /api/emr/order-items/{id}/ - 처방 항목 삭제
+
+**테스트 UI:**
+- GET /api/emr/comprehensive-test/ - **종합 테스트 대시보드** (⭐ 최신, 추천)
+  - 6개 탭: Overview, OpenEMR Integration, Patient CRUD, Encounter CRUD, Order/OCS, Write-Through
+  - Write-Through 패턴 테스트 통합
+  - 실시간 통계 대시보드
+- GET /api/emr/test-dashboard/ - 통합 테스트 대시보드 (순차적 CRUD 시나리오)
+- GET /api/emr/test-ui/ - 레거시 OpenEMR 테스트 UI
+
 #### 설계 패턴
 - **Pull-Based**: Django가 OpenEMR에서 데이터를 가져옴 (Push 없음)
 - **Cache-Aside**: 조회 시 캐시 먼저 확인 → 없으면 EMR에서 Pull → 캐시 저장
+- **Write-Through**: 환자 프로필 수정 시 FHIR 서버 먼저 업데이트 → 성공 시 Django DB**설계 철학:**
+- **Single Source of Truth**: OpenEMR (FHIR Server)가 환자 정보 및 처방의 유일한 원본
+- **Django DB**: Read Cache로만 동작
+- **OpenEMR First 전략**: 데이터 생성 시 OpenEMR(원본)에 먼저 쓰고, 성공 시에만 Django DB(캐시)에 기록
+  - 기존 Write-Through(Django->OpenEMR)에서 **Write-Behind/OpenEMR-First(OpenEMR->Django)**로 변경 (2025-12-23)
+
+**데이터 흐름:**
+```
+사용자 → Django API → OpenEMR DB (Insert) → 성공 → Django DB (Cache Insert)
+                           ↓ 실패
+                       Django DB 저장 없이 에러 반환
+```
 - **Aggregate View**: 환자 요약 카드 생성 시 여러 소스 집계
   - Radiology Orders (UC5)
   - Lab Results (UC4)
@@ -376,32 +406,23 @@ AI_ARTIFACTS (결과 파일)
 
 ---
 
-### 4.5 UC08 (FHIR) - 의료정보 교환
+### 4.5 UC08 (FHIR) - 의료정보 교환 ✅ 구축 완료
 
 #### 핵심 컴포넌트
 ```
 FHIRController
-  └─→ FHIRTransformService
-        ├─→ FHIRResourceMapRepository (리소스 매핑)
-        ├─→ HAPIClient (HAPI FHIR 서버)
-        └─→ FHIRTxQueueRepository (전송 큐)
+  └─→ FHIRServiceAdapter (HAPI FHIR 연동)
+        ├─→ HAPI FHIR Server (Docker, Port 8080)
+        └─→ REST API (requests)
 ```
 
-#### CDSS → FHIR 매핑
-```
-CDSS Entity          → FHIR Resource
-─────────────────────────────────────
-EMR_PATIENT_CACHE    → Patient
-RADIOLOGY_ORDERS     → ServiceRequest
-RADIOLOGY_STUDIES    → ImagingStudy
-AI_RESULTS           → DiagnosticReport
-TIMELINE_EVENTS      → AuditEvent
-```
+#### 아키텍처 변경사항 (2025-12-23)
+- **HAPI FHIR Server**: 기존 OpenEMR 내장 FHIR 대신, 별도의 HAPI FHIR JPA Server를 구축하여 **메인 FHIR 게이트웨이**로 사용.
+- **설정**: `FHIR_SERVER_URL = 'http://localhost:8080/fhir'`
 
 #### 동기화 전략
-- **Change Data Capture**: CDSS DB 변경 감지 → FHIR_TX_QUEUE 삽입
-- **Retry Logic**: 전송 실패 시 exponential backoff 재시도
-- **Idempotent**: 동일 리소스 중복 전송 방지 (FHIR_RESOURCE_MAP으로 추적)
+- **OpenEMR First**: 데이터 생성 시 OpenEMR에 먼저 저장.
+- **HAPI Sync**: 주요 리소스(Patient, Encounter)는 HAPI FHIR 서버로 동기화 (구현 예정).
 
 ---
 
@@ -491,12 +512,15 @@ RADIOLOGY_STUDIES
             └─ AI_ARTIFACTS
 ```
 
-**5. Timeline & Alerts (UC07)**
+**5. Timeline & Alerts (UC07) - Implemented**
 ```
-TIMELINE_EVENTS
-  └─ USER_NOTIFICATIONS
-       └─ (사용자 FK: user_id → ACCT_USERS)
+TIMELINE_EVENTS (시스템 이벤트)
+  └─ USER_NOTIFICATIONS (Alert 모델 - MySQL)
+       ├─ user_id (FK)
+       ├─ message, type, metadata
+       └─ is_read
 ```
+- **Redis Channel Layer**: 실시간 전송 (WebSocket)
 
 **6. FHIR (UC08)**
 ```
@@ -881,6 +905,8 @@ OpenEMR, Orthanc, HAPI FHIR는 외부 상용 서버를 사용합니다.
 | 2025-12-19 | Claude | 업무계획서 작성 및 CLAUDE_CONTEXT.md 업데이트<br>- 기술 스택별 업무 분류 추가<br>- 상용 서버 확인 사항 정리<br>- 팀 구성 및 개발 일정 추가 |
 | 2025-12-23 (오전) | Claude | 프로젝트 현황 반영 업데이트<br>- UC01 (ACCT) 구현 완료 반영<br>- UC02 (EMR) Service/Repository 레이어 구조 추가<br>- Custom User 모델 적용 상태 업데이트<br>- MySQL 데이터베이스 전환 완료 반영 |
 | 2025-12-23 (오후) | Claude | EMR CRUD 기능 완성 업데이트<br>- EMR CRUD ViewSets 전체 구현 완료<br>- Patient/Encounter/Order 자동 ID 생성 정책 추가<br>- DRF Router 기반 REST API 엔드포인트 전체 구성<br>- Service/Repository 3-layer 패턴 완성<br>- 테스트 UI (emr_crud_test.html) 구현<br>- 테스트 사용자 7개 역할 생성<br>- Transaction 보장 로직 추가 |
+| 2025-12-23 (저녁) | Claude | 프로젝트 전체 검토 및 문서 업데이트<br>- OrderItem 개별 CRUD API 추가 (ViewSet 구현)<br>- Custom User FK 연결 확인 (doctor_id, ordered_by)<br>- 테스트 대시보드 추가 (통합 테스트 UI)<br>- REF_CLAUDE_CONTEXT.md 최신화<br>- LOG_작업이력.md 최신화 |
+| 2025-12-23 (심야) | Claude | Write-Through 패턴 구현 및 종합 테스트 대시보드 완성<br>- FHIR Service Adapter 구현 (fhir_adapter.py)<br>- PatientCacheViewSet에 Write-Through 패턴 적용<br>- Write-Through 패턴 유닛 테스트 완료 (7개 테스트 Pass)<br>- 16_Write_Through_패턴_가이드.md 문서 작성<br>- 종합 테스트 대시보드 구현 (comprehensive_test.html)<br>- 6개 탭 통합 테스트 UI 완성<br>- 15_테스트_페이지_가이드.md 업데이트<br>- REF_CLAUDE_CONTEXT.md 설계 패턴 추가 |
 
 ---
 

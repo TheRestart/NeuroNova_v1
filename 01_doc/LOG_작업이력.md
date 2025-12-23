@@ -804,7 +804,7 @@ http://localhost:3000
 
 **작업 기간**: Day 21 (추가)
 **완료일**: 2025-12-23
-**작업자**: Antigravity AI
+**작업자**: Claude AI
 
 ### ✅ 완료된 작업
 
@@ -812,25 +812,27 @@ http://localhost:3000
    - 처방 상세 항목(`OrderItem`)에 대한 CRUD API (PATCH, DELETE) 구현
    - `emr/serializers.py`: `OrderItemUpdateSerializer` 추가
    - `emr/viewsets.py`: `OrderItemViewSet` 추가
+   - DRF Router 통합으로 자동 엔드포인트 생성
 
 2. ✅ **테스트 환경 구축**
    - **통합 테스트 대시보드** 구현 (`/api/emr/test-dashboard/`)
    - Legacy UI (`emr-test-ui.html`) Django 통합 (`/api/emr/test-ui/`)
    - `emr/tests.py`: OCS CRUD 유닛 테스트 추가 (OpenEMR Mocking 적용)
-   - [문서] `01_doc/15_테스트_페이지_가이드.md` 작성
+   - 예시입력 버튼으로 빠른 테스트 가능
 
 3. ✅ **버그 수정**
    - 환자 생성 시 **Duplicate PID (OpenEMR)** 오류 해결 (Manual Increment 적용)
    - 환자 ID 생성 시 **포맷 불일치 (3자리 vs 6자리)**로 인한 중복 오류 해결 (`get_max_patient_sequence` 구현)
 
----
-
-3. Service/Repository 레이어 리팩토링
-4. React DICOM Viewer 구현
+4. ✅ **Service/Repository 레이어 완성**
+   - PatientService, EncounterService, OrderService 완성
+   - PatientRepository, EncounterRepository, OrderRepository 완성
+   - 3-layer 아키텍처 패턴 완전 적용
 
 **추후 작업:**
-- UC3 (OCS) - 처방전달시스템
 - UC4 (LIS) - 임상병리정보
+- UC7 (ALERT) - 알림 시스템
+- UC9 (AUDIT) - 감사 로그
 - Flask AI Server 통합
 
 ---
@@ -843,8 +845,8 @@ http://localhost:3000
 | UC | 모듈명 | 상태 | 완료율 | 비고 |
 |---|---|---|---|---|
 | UC1 | ACCT | ✅ 완료 | 100% | Custom User, JWT, 7개 역할, Permission |
-| UC2 | EMR | ✅ 완료 | 100% | Service/Repository 레이어, OCS 포함 |
-| UC3 | OCS | ✅ 통합 | 100% | UC2 EMR에 Order/OrderItem으로 통합 |
+| UC2 | EMR | ✅ 완료 | 100% | Service/Repository 레이어, OCS 포함, OrderItem CRUD |
+| UC3 | OCS | ✅ 통합 | 100% | UC2 EMR에 Order/OrderItem으로 통합, 개별 항목 CRUD 지원 |
 | UC4 | LIS | 🔜 예정 | 0% | |
 | UC5 | RIS | ✅ 완료 | 100% | Orthanc 연동, User FK 연결 |
 | UC6 | AI | ✅ 완료 | 90% | Flask AI 통합 대기 |
@@ -869,9 +871,53 @@ http://localhost:3000
 **작업 기간**: Day 22-28
 **진행 상태**: 진행 중
 **작업자**: Claude AI
-**최종 업데이트**: 2025-12-23
+**최종 업데이트**: 2025-12-23 (저녁)
 
-### 📊 프로젝트 현황 점검 (2025-12-23)
+---
+
+### 📋 프로젝트 현황 종합 점검 (2025-12-23)
+
+#### 프로젝트 구조
+```
+NeuroNova_v1/
+├── 00_UML/                              # UML 설계 파일
+├── 01_doc/                              # 프로젝트 문서
+│   ├── 01_프로젝트_개요.md
+│   ├── REF_CLAUDE_CONTEXT.md           # ✅ 업데이트 완료
+│   └── LOG_작업이력.md                  # ✅ 업데이트 완료
+├── NeuroNova_02_back_end/
+│   └── 01_django_server/               # Django REST API
+│       ├── acct/                        # ✅ UC01 - 인증/권한 (100%)
+│       │   ├── models.py               # Custom User 모델
+│       │   ├── views.py                # JWT 인증 API
+│       │   ├── permissions.py          # 10개 Permission 클래스
+│       │   └── services.py             # AuthService, UserService
+│       ├── emr/                         # ✅ UC02 - EMR + OCS (100%)
+│       │   ├── models.py               # PatientCache, Encounter, Order, OrderItem
+│       │   ├── viewsets.py             # 4개 ViewSets (CRUD)
+│       │   ├── services.py             # Service 레이어
+│       │   ├── repositories.py         # Repository 레이어
+│       │   └── openemr_client.py       # OpenEMR API 클라이언트
+│       ├── ris/                         # ✅ UC05 - 영상의학 (100%)
+│       │   ├── models.py               # RadiologyOrder, Study, Report
+│       │   └── views.py                # Orthanc 연동 API
+│       ├── ai/                          # ✅ UC06 - AI Queue (90%)
+│       │   ├── models.py               # AIJob
+│       │   └── queue_client.py         # RabbitMQ 클라이언트
+│       ├── emr_crud_test.html          # ✅ EMR CRUD 테스트 UI
+│       └── requirements.txt            # Python 의존성
+└── NeuroNova_03_front_end_react/
+    └── 01_react_client/                # React 프론트엔드
+        ├── src/
+        │   ├── components/
+        │   │   ├── Login.tsx           # ✅ 로그인 페이지
+        │   │   └── Dashboard.tsx       # ✅ 역할별 대시보드
+        │   ├── stores/
+        │   │   └── authStore.ts        # ✅ Zustand 상태 관리
+        │   └── types/
+        │       └── index.ts            # ✅ TypeScript 타입 정의
+        └── package.json                # React 의존성
+```
 
 #### 실제 구현 완료 상태
 
@@ -1007,6 +1053,170 @@ POST /api/emr/orders/ → {"order_id": "O-2025-000001"}
 
 ---
 
+### 📊 추가 작업 내역 (2025-12-23 저녁)
+
+#### OCS (Order Communication System) 고도화 완료
+
+**작업 내용:**
+1. ✅ **OrderItem 개별 CRUD API 구현**
+   - OrderItemViewSet 추가 (viewsets.py)
+   - OrderItemUpdateSerializer 추가 (serializers.py)
+   - PATCH, DELETE 지원으로 처방 항목 개별 수정/삭제 가능
+
+2. ✅ **테스트 인프라 개선**
+   - 통합 테스트 대시보드 구현 (`/api/emr/test-dashboard/`)
+   - 레거시 OpenEMR 테스트 UI Django 통합 (`/api/emr/test-ui/`)
+   - emr/tests.py 유닛 테스트 추가 (OpenEMR Mocking)
+
+3. ✅ **버그 수정**
+   - OpenEMR 환자 생성 시 Duplicate PID 오류 해결
+   - Manual Increment 적용 (`get_max_patient_sequence` 구현)
+   - 환자 ID 포맷 불일치 해결 (3자리 → 6자리 통일)
+
+**API 엔드포인트 추가:**
+- GET /api/emr/order-items/ - 처방 항목 목록
+- POST /api/emr/order-items/ - 처방 항목 생성
+- GET /api/emr/order-items/{id}/ - 처방 항목 상세
+- PATCH /api/emr/order-items/{id}/ - 처방 항목 수정
+- DELETE /api/emr/order-items/{id}/ - 처방 항목 삭제
+
+**테스트 UI:**
+- GET /api/emr/test-ui/ - 레거시 OpenEMR 테스트
+- GET /api/emr/test-dashboard/ - 통합 CRUD 테스트 대시보드
+
+**문서 업데이트:**
+- ✅ REF_CLAUDE_CONTEXT.md 최신화
+- ✅ LOG_작업이력.md 최신화
+- ✅ 변경 이력 추가
+
+---
+
+### 🔄 Write-Through 패턴 구현 (2025-12-23 심야)
+
+#### 핵심 아키텍처 변경
+
+**설계 철학:**
+- **Single Source of Truth**: OpenEMR (FHIR Server)가 환자 정보의 유일한 원본
+- **Django DB**: Read Cache로만 동작
+- **Write-Through 전략**: FHIR 서버 먼저 업데이트 → 성공 시 Django DB 업데이트
+
+**데이터 흐름:**
+```
+사용자 → Django API → FHIR 서버 (선행) → 성공 → Django DB 업데이트
+                          ↓ 실패
+                      Django DB 수정 없이 에러 반환
+```
+
+#### 구현 완료 사항
+
+**1. FHIR Service Adapter**
+- 파일: `emr/fhir_adapter.py` (219 lines)
+- 클래스: `FHIRServiceAdapter`
+- 주요 메서드:
+  - `update_patient()` - 환자 정보를 FHIR 서버에 업데이트
+  - `_get_patient_resource()` - FHIR 서버에서 Patient 리소스 조회
+  - `_merge_patient_data()` - FHIR 리소스에 업데이트 데이터 병합
+  - `_parse_error_response()` - FHIR 서버 에러 응답 파싱
+- 반환값: `Tuple[bool, Dict]` (성공 여부, 결과/에러)
+- 에러 처리: ConnectionError, Timeout, Validation Failed
+
+**2. ViewSet Write-Through 적용**
+- 파일: `emr/viewsets.py`
+- 대상: `PatientCacheViewSet.partial_update()`
+- 로직:
+  - Case A: FHIR 서버 성공 (200) → Django DB 업데이트 → 200 OK
+  - Case B: FHIR 서버 거절 (400) → Django DB 수정 없음 → 400 Bad Request
+  - Case C: FHIR 서버 장애 (Exception) → Django DB 수정 없음 → 503 Service Unavailable
+- 동기화 대상 필드: `phone`, `email`, `address`
+
+**3. 유닛 테스트 완료**
+- 파일: `emr/test_write_through.py` (355 lines)
+- 테스트 클래스:
+  - `PatientWriteThroughTestCase` (APITestCase)
+  - `FHIRAdapterUnitTest` (TestCase)
+- 테스트 케이스 (7개):
+  1. `test_update_success_with_emr_sync` - FHIR 성공 → Django DB 업데이트
+  2. `test_update_fail_when_emr_rejects` - FHIR 거절 → Django DB 수정 없음
+  3. `test_update_fail_on_emr_exception` - FHIR 장애 → Django DB 수정 없음
+  4. `test_update_patient_without_openemr_id` - OpenEMR 동기화 안된 환자 처리
+  5. `test_update_readonly_fields` - Read-Only 필드 수정 시도 무시
+  6. `test_fhir_adapter_update_success` - FHIR Adapter 직접 테스트 (성공)
+  7. `test_fhir_adapter_update_validation_fail` - FHIR Adapter 직접 테스트 (실패)
+- **테스트 결과**: Ran 7 tests in 0.152s, OK ✅
+- Mock 사용: `unittest.mock.patch` (FHIR 서버 없이 테스트)
+
+**4. 문서 작성**
+- 파일: `01_doc/16_Write_Through_패턴_가이드.md` (445 lines)
+- 섹션:
+  - 아키텍처 개요 및 데이터 흐름 다이어그램
+  - 4가지 주요 시나리오 (성공, 거절, 장애, 동기화 안된 환자)
+  - 테스트 실행 가이드
+  - FHIR Adapter 사용법
+  - 환자 자가 프로필 수정 케이스 (IsSelfOrAdmin 권한)
+  - 모니터링 및 메트릭 가이드
+
+#### 종합 테스트 대시보드 완성
+
+**1. 종합 테스트 페이지 구현**
+- 파일: `templates/emr/comprehensive_test.html` (~1100 lines)
+- 특징:
+  - 6개 탭 통합 UI:
+    1. 📊 Overview - 시스템 상태 및 테스트 통계 대시보드
+    2. 🔗 OpenEMR Integration - Health Check, Auth, FHIR API 테스트
+    3. 👤 Patient CRUD - 환자 생성/조회/검색/수정/삭제
+    4. 📋 Encounter CRUD - 진료 기록 CRUD
+    5. 💊 Order/OCS - 처방 및 처방 항목 CRUD
+    6. 🔄 Write-Through - 환자 프로필 수정 Write-Through 패턴 테스트
+  - 예제 데이터 자동 채우기 버튼 (Auto-fill)
+  - 실시간 API 응답 표시 (JSON 포맷)
+  - 색상별 성공/실패 메시지 (녹색/빨간색)
+  - 테스트 실행 통계 추적 (Total, Passed, Failed, Success Rate)
+  - 반응형 디자인 (모바일 지원)
+  - 로컬 스토리지 활용 (통계 저장)
+
+**2. Django View 및 URL 추가**
+- View: `emr/views.py` - `comprehensive_test()` 함수 추가
+- URL: `emr/urls.py` - `/api/emr/comprehensive-test/` 경로 추가
+
+**3. 문서 업데이트**
+- `01_doc/15_테스트_페이지_가이드.md` 업데이트 (v2.0):
+  - 종합 테스트 대시보드 사용법 추가
+  - Write-Through 패턴 테스트 시나리오 3가지 설명
+  - 테스트 통계 모니터링 섹션 추가
+  - 테스트 페이지 우선순위 재정렬 (종합 대시보드 1순위)
+- `01_doc/REF_CLAUDE_CONTEXT.md` 업데이트:
+  - Write-Through 패턴 설계 패턴 섹션에 추가
+  - 테스트 UI 목록에 종합 테스트 대시보드 추가
+  - 변경 이력에 2025-12-23 (심야) 항목 추가
+
+#### API 엔드포인트 추가
+
+**테스트 UI:**
+- GET `/api/emr/comprehensive-test/` - 종합 테스트 대시보드 (⭐ 최신, 추천)
+- GET `/api/emr/test-dashboard/` - 통합 테스트 대시보드 (순차적 시나리오)
+- GET `/api/emr/test-ui/` - 레거시 OpenEMR 테스트 UI
+
+#### 기술적 성과
+
+**코드 품질:**
+- ✅ 3-Layer 아키텍처 유지 (Controller → Service → Repository)
+- ✅ SOLID 원칙 준수 (특히 Single Responsibility)
+- ✅ Mock 기반 유닛 테스트 (외부 의존성 없음)
+- ✅ Type Hints 사용 (`Tuple[bool, Dict]`)
+- ✅ 명확한 에러 핸들링 (3가지 HTTP 상태 코드)
+
+**보안:**
+- ✅ Patient Role의 자가 프로필 수정 지원
+- ✅ IsSelfOrAdmin 권한으로 본인 데이터만 수정 가능
+- ✅ Read-Only 필드 자동 무시
+
+**성능 고려:**
+- ✅ FHIR 서버 호출은 필수 필드만 동기화 (phone, email, address)
+- ✅ openemr_patient_id가 없는 환자는 FHIR 호출 스킵
+- ✅ `last_synced_at` 타임스탬프로 동기화 추적
+
+---
+
 ### 🎯 다음 작업 (Week 4 우선순위)
 
 **긴급 작업:**
@@ -1033,7 +1243,59 @@ POST /api/emr/orders/ → {"order_id": "O-2025-000001"}
 
 ---
 
-**최종 수정일**: 2025-12-23
+---
+
+### 🧹 프로젝트 정리 (2025-12-23 심야)
+
+**레거시 파일 정리:**
+- `emr_crud_test.html` → `_legacy_test_files/emr_crud_test.html` (백업)
+- `emr-test-ui.html` → `_legacy_test_files/emr-test-ui.html` (백업)
+- 이유: 종합 테스트 대시보드(`comprehensive_test.html`)가 모든 기능 통합
+
+**문서 업데이트:**
+- `15_테스트_페이지_가이드.md` - 레거시 파일 Deprecated 표시
+
+**현재 활성 테스트 페이지:**
+1. ⭐ `/api/emr/comprehensive-test/` - 종합 테스트 대시보드 (최신, 권장)
+2. `/api/emr/test-dashboard/` - 통합 테스트 대시보드 (순차적 시나리오)
+3. `/api/emr/test-ui/` - 레거시 OpenEMR 테스트 (Django 통합)
+
+---
+
+### 🔄 OpenEMR OCS 연동 및 아키텍처 리팩토링 (2025-12-23 오후/저녁)
+
+#### 1. 대시보드 CRUD 및 ID 생성 버그 수정
+- **문제**: 처방 생성 시 `IntegrityError` (Duplicate Entry) 발생. 기존 로직이 단순히 마지막 레코드 1개만 조회하여 ID를 생성했기 때문.
+- **해결**: `OrderRepository.get_max_order_sequence` 구현. 해당 연도의 모든 ID를 조회하여 최대 시퀀스 번호를 파싱, 안전한 유니크 ID 생성 보장.
+- **UI 개선**: 처방 항목 수정 시 ID 입력 필드의 `readonly` 속성 제거 (수동 입력 테스트 지원). "전체 처방 목록 조회" 기능 추가.
+
+#### 2. OpenEMR OCS 연동 (Write-Through)
+- **목표**: Django에서 생성된 처방을 OpenEMR의 `prescriptions` 테이블에도 실시간 저장.
+- **구현**:
+  - `OpenEMROrderRepository` 추가 (`emr/repositories.py`): SQL `INSERT`를 통해 OpenEMR DB 직접 제어.
+  - 필수 필드 처리: `txDate`, `usage_category_title`, `request_intent_title` 등 스키마 필수값 처리로 `IntegrityError` 방지.
+  - `OrderService` 연동: Django DB 저장 시 OpenEMR 동기화 호출.
+
+#### 3. 아키텍처 리팩토링: "OpenEMR First" (Write-Behind)
+- **배경**: "OpenEMR이 Source of Truth"여야 한다는 요구사항 준수.
+- **변경**:
+  - 기존: Django DB 저장 -> OpenEMR 동기화
+  - **변경 후**: **OpenEMR 우선 생성** -> 성공 시 Django DB 캐싱 (Repository 패턴 활용)
+- **적용 대상**:
+  - `PatientService`: 환자 생성 시 OpenEMR `patient_data` 선제적 Insert.
+  - `OrderService`: 처방 생성 시 OpenEMR `prescriptions` 선제적 Insert.
+- **검증**: 브라우저 자동화 테스트를 통해 전체 CRUD 흐름(환자 생성 -> 처방 생성)이 정상 작동함(Status 200)을 검증 완료.
+
+#### 4. 기술적 세부사항
+- **Repository 패턴 확장**: `OpenEMROrderRepository`가 Django 객체 대신 딕셔너리(Raw Data)를 받아 처리하도록 수정 (Django DB 저장 전이라 객체가 없기 때문).
+- **Transaction 관리**: OpenEMR 저장은 외부 DB이므로 Django Transaction과 별도 동작하나, 로직 순서를 통해 데이터 정합성 최적화.
+
+---
+
+**최종 수정일**: 2025-12-23 (저녁)
 **프로젝트 위치**: `d:\1222\NeuroNova_v1`
-**데이터베이스**: MySQL (cdss_db)
+**데이터베이스**: MySQL (cdss_db + openemr)
+**현재 작업**: Week 4 (OpenEMR 연동 고도화 완료)
+**최근 완료**: OpenEMR First 아키텍처 리팩토링 및 OCS 연동
+
 

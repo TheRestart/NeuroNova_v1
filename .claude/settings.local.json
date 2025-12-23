@@ -42,7 +42,11 @@
       "Bash(start emr_crud_test.html)",
       "Bash(taskkill:*)",
       "Bash(venvScriptspython manage.py shell -c \"from django.db import connections; c = connections[''openemr''].cursor\\(\\); c.execute\\(''SELECT VERSION\\(\\)''\\); print\\(''OpenEMR DB Connected:'', c.fetchone\\(\\)[0]\\)\")",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(venvScriptspython manage.py showmigrations)",
+      "Bash(venvScriptspython manage.py test emr.test_write_through -v 2)",
+      "Bash(./venv/Scripts/python.exe manage.py test:*)",
+      "Bash(start cmd:*)"
     ]
   }
 }
