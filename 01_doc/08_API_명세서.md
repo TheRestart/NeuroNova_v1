@@ -414,6 +414,15 @@ Authorization: Bearer <access_token>
 
 ---
 
+### 4.3 약물/진단 마스터 조회
+
+**GET** `/ocs/medications/`
+**GET** `/ocs/diagnoses/`
+
+**설명**: 표준 코드 정보 조회 및 검색
+
+---
+
 ## 5. UC4 - LIS (임상병리)
 
 ### 5.1 검사 오더 생성

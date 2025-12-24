@@ -3,8 +3,34 @@
 > **목적**: 이 문서는 Claude AI가 프로젝트를 빠르게 이해하고 작업을 이어서 수행할 수 있도록 작성되었습니다.
 
 **문서 작성일**: 2025-12-16
-**프로젝트 위치**: `c:\Users\302-28\Downloads\UML`
-**프로젝트 타입**: 임상 의사결정 지원 시스템(CDSS) UML 설계 문서
+**최종 업데이트**: 2025-12-24
+**프로젝트 위치**: `d:\1222\NeuroNova_v1`
+**프로젝트 타입**: 임상 의사결정 지원 시스템(CDSS) - Django 백엔드 구현 중심
+
+---
+
+## ⚡ 중요: 프로젝트 R&R (역할 분담)
+
+### 현재 담당자(나)의 역할: AI 코어 모델 개발
+
+**책임 범위:**
+- ✅ AI 모델 개발 (MRI 종양 분석, Omics 분석)
+- ✅ 데이터 전처리 파이프라인
+- ✅ 추론 로직 구현 (독립 Python 모듈)
+
+**제외 사항 (타 팀원 담당):**
+- ❌ Backend Serving (Flask API)
+- ❌ Web Frontend (React)
+- ❌ Mobile App (Flutter)
+
+**개발 전략:**
+- 독립 실행 가능한 Python 모듈 개발
+- Interface Specification 문서 작성 필수
+- 타 팀 코드 의존 금지
+
+**관련 문서:**
+- [17_프로젝트_RR_역할분담.md](17_프로젝트_RR_역할분담.md)
+- [18_AI_개발_가이드.md](18_AI_개발_가이드.md)
 
 ---
 
@@ -257,6 +283,11 @@ Models (models.py)
 - ✅ 테스트 UI (emr_crud_test.html) - 예시입력 버튼 포함
 - ✅ OrderItem 개별 CRUD 지원 (PATCH, DELETE)
 - ✅ Custom User 모델 FK 연결 (doctor_id, ordered_by)
+- ✅ **데이터 충돌 방지 전략** (2025-12-24)
+  - **낙관적 락**: `version` 필드 기반 동시성 제어 (PatientCache, Encounter, Order, OrderItem)
+  - **비관적 락**: `select_for_update()` 기반 로우 잠금 (서비스 레이어 적용)
+  - **멱등성 보장**: `IdempotencyMiddleware` (`X-Idempotency-Key` 헤더 기반 응답 캐싱)
+  - **DB 격리 수준**: MySQL `READ COMMITTED` 설정으로 성능/정합성 균형 최적화
 
 #### API 엔드포인트
 
@@ -312,6 +343,10 @@ Models (models.py)
 - **Django DB**: Read Cache로만 동작
 - **OpenEMR First 전략**: 데이터 생성 시 OpenEMR(원본)에 먼저 쓰고, 성공 시에만 Django DB(캐시)에 기록
   - 기존 Write-Through(Django->OpenEMR)에서 **Write-Behind/OpenEMR-First(OpenEMR->Django)**로 변경 (2025-12-23)
+- **Concurrency Control**: 
+  - **Optimistic Locking**: 업데이트 시 `version` 필드 증가 및 필터링
+  - **Pessimistic Locking**: `atomic` 트랜잭션 내 `select_for_update` 사용
+- **Idempotency**: `X-Idempotency-Key` 헤더 기반 응답 캐싱 및 중복 요청 차단
 
 **데이터 흐름:**
 ```
@@ -736,6 +771,11 @@ SECURITY_EVENTS
 - **Refresh Token**: 긴 만료 시간 (7일) + Rotation
 - **RBAC**: 최소 권한 원칙
 - **Login Defense**: 5회 실패 시 15분 잠금
+- **CRUD Reliability**:
+  - **Optimistic Locking**: `version` 필드 기반 충돌 감지 (PatientCache, Encounter, Order, OrderItem 적용)
+  - **Pessimistic Locking**: 수정 시 `select_for_update()`를 통한 강력한 정합성 보장
+  - **Idempotency**: `X-Idempotency-Key` 헤더 기반 중복 요청 방지 미들웨어
+  - **Atomicity**: 서비스 레이어 내 `transaction.atomic()`을 통한 원자성 보장
 
 ---
 
@@ -907,6 +947,8 @@ OpenEMR, Orthanc, HAPI FHIR는 외부 상용 서버를 사용합니다.
 | 2025-12-23 (오후) | Claude | EMR CRUD 기능 완성 업데이트<br>- EMR CRUD ViewSets 전체 구현 완료<br>- Patient/Encounter/Order 자동 ID 생성 정책 추가<br>- DRF Router 기반 REST API 엔드포인트 전체 구성<br>- Service/Repository 3-layer 패턴 완성<br>- 테스트 UI (emr_crud_test.html) 구현<br>- 테스트 사용자 7개 역할 생성<br>- Transaction 보장 로직 추가 |
 | 2025-12-23 (저녁) | Claude | 프로젝트 전체 검토 및 문서 업데이트<br>- OrderItem 개별 CRUD API 추가 (ViewSet 구현)<br>- Custom User FK 연결 확인 (doctor_id, ordered_by)<br>- 테스트 대시보드 추가 (통합 테스트 UI)<br>- REF_CLAUDE_CONTEXT.md 최신화<br>- LOG_작업이력.md 최신화 |
 | 2025-12-23 (심야) | Claude | Write-Through 패턴 구현 및 종합 테스트 대시보드 완성<br>- FHIR Service Adapter 구현 (fhir_adapter.py)<br>- PatientCacheViewSet에 Write-Through 패턴 적용<br>- Write-Through 패턴 유닛 테스트 완료 (7개 테스트 Pass)<br>- 16_Write_Through_패턴_가이드.md 문서 작성<br>- 종합 테스트 대시보드 구현 (comprehensive_test.html)<br>- 6개 탭 통합 테스트 UI 완성<br>- 15_테스트_페이지_가이드.md 업데이트<br>- REF_CLAUDE_CONTEXT.md 설계 패턴 추가 |
+| 2025-12-24 (오전) | Claude | 프로젝트 현황 재검토 및 문서 최신화<br>- 실제 프로젝트 위치 확인 (d:\1222\NeuroNova_v1)<br>- 현재 구현 상태 정확히 반영<br>- 테스트 파일 위치 업데이트 (templates/emr/comprehensive_test.html)<br>- FHIR Adapter 구현 상태 확인<br>- Write-Through 패턴 적용 확인 |
+| 2025-12-24 (오후) | Claude | AI 코어 개발 R&R 정의 및 문서 작성<br>- 17_프로젝트_RR_역할분담.md 생성<br>- 18_AI_개발_가이드.md 생성<br>- Interface Specification 템플릿 생성<br>- AI 개발자 역할 명확화 (Backend/Frontend 제외)<br>- 독립 모듈 개발 전략 수립 |
 
 ---
 

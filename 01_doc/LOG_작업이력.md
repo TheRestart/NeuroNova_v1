@@ -1,8 +1,9 @@
 # 작업 이력 (Work Log)
 
 **프로젝트**: CDSS (Clinical Decision Support System)
-**최종 수정일**: 2025-12-23
-**현재 상태**: Week 3 완료, 핵심 인프라 구축 완료
+**최종 수정일**: 2024-12-24
+**현재 상태**: Week 4 진행 중, CRUD 강화 및 데이터 정합성 인프라 구축 완료
+**프로젝트 위치**: d:\1222\NeuroNova_v1
 
 ---
 
@@ -1292,10 +1293,259 @@ POST /api/emr/orders/ → {"order_id": "O-2025-000001"}
 
 ---
 
-**최종 수정일**: 2025-12-23 (저녁)
+**최종 수정일**: 2025-12-24 (오후)
 **프로젝트 위치**: `d:\1222\NeuroNova_v1`
 **데이터베이스**: MySQL (cdss_db + openemr)
-**현재 작업**: Week 4 (OpenEMR 연동 고도화 완료)
-**최근 완료**: OpenEMR First 아키텍처 리팩토링 및 OCS 연동
+**현재 작업**: Week 4 진행 중, AI 코어 개발 준비
+**최근 완료**: AI R&R 정의, 개발 가이드 작성
+
+---
+
+## 📍 현재 프로젝트 상태 요약 (2025-12-24)
+
+### 구현 완료된 UC 모듈
+1. ✅ **UC01 (ACCT)** - 인증/권한 시스템 (100%)
+2. ✅ **UC02 (EMR)** - EMR 프록시 + CRUD + Write-Through (100%)
+3. ✅ **UC03 (OCS)** - 처방전달시스템 (UC02에 통합, 100%)
+4. ✅ **UC05 (RIS)** - 영상의학정보시스템 (100%)
+5. ✅ **UC06 (AI)** - AI Queue 인프라 (90%, Flask AI 통합 대기)
+
+### 미구현 UC 모듈
+- ⏳ **UC04 (LIS)** - 임상병리정보시스템 (0%)
+- ⏳ **UC07 (ALERT)** - 알림 시스템 (0%)
+- ⏳ **UC08 (FHIR)** - FHIR Gateway (FHIR Adapter 구현됨, 독립 UC는 미구현)
+- ⏳ **UC09 (AUDIT)** - 감사 로그 (0%)
+
+### 주요 기술 구현 현황
+- ✅ Django 4.2 LTS + DRF
+- ✅ MySQL 8.0 연동
+- ✅ Custom User 모델 (7개 역할)
+- ✅ JWT 인증 (djangorestframework-simplejwt)
+- ✅ Service/Repository 레이어 패턴
+- ✅ Write-Through 패턴 (FHIR Adapter)
+- ✅ OpenEMR First 아키텍처
+- ✅ 종합 테스트 대시보드 (6개 탭)
+- ✅ Orthanc PACS 연동 준비
+- ✅ RabbitMQ AI Queue 준비
+
+### 테스트 환경
+**위치**: `NeuroNova_02_back_end/01_django_server/templates/emr/`
+1. ✅ **comprehensive_test.html** - 종합 테스트 대시보드 (⭐ 최신, 권장)
+   - 6개 탭: Overview, OpenEMR Integration, Patient CRUD, Encounter CRUD, Order/OCS, Write-Through
+   - URL: `/api/emr/comprehensive-test/`
+2. ✅ **test_dashboard.html** - 통합 테스트 대시보드
+   - URL: `/api/emr/test-dashboard/`
+3. ✅ **emr_test_ui.html** - 레거시 OpenEMR 테스트
+   - URL: `/api/emr/test-ui/`
+
+### 주요 파일 구조
+```
+NeuroNova_v1/
+├── 01_doc/
+│   ├── 01_프로젝트_개요.md               ✅
+│   ├── REF_CLAUDE_CONTEXT.md             ✅ (2025-12-24 업데이트)
+│   ├── LOG_작업이력.md                   ✅ (2025-12-24 업데이트)
+│   ├── 16_Write_Through_패턴_가이드.md   ✅
+│   └── 15_테스트_페이지_가이드.md        ✅
+├── NeuroNova_02_back_end/
+│   └── 01_django_server/
+│       ├── acct/                         ✅ UC01 (100%)
+│       │   ├── models.py                 (Custom User, 7개 역할)
+│       │   ├── views.py                  (JWT 인증 API)
+│       │   ├── permissions.py            (10개 Permission 클래스)
+│       │   └── services.py               (AuthService, UserService)
+│       ├── emr/                          ✅ UC02 (100%)
+│       │   ├── models.py                 (PatientCache, Encounter, Order, OrderItem)
+│       │   ├── viewsets.py               (4개 ViewSets CRUD)
+│       │   ├── services.py               (Service 레이어)
+│       │   ├── repositories.py           (Repository 레이어)
+│       │   ├── openemr_client.py         (OpenEMR API 클라이언트)
+│       │   ├── fhir_adapter.py           ✅ (Write-Through 패턴)
+│       │   ├── test_write_through.py     ✅ (유닛 테스트 7개, 통과)
+│       │   └── templates/emr/
+│       │       └── comprehensive_test.html  ✅
+│       ├── ris/                          ✅ UC05 (100%)
+│       ├── ai/                           ✅ UC06 (90%)
+│       └── templates/emr/
+│           └── comprehensive_test.html   ✅ (종합 테스트 대시보드)
+├── 05_ai_core/                         🔥 (신규 생성, AI 코어 개발 영역)
+│   ├── interface_spec_template.md      ✅ (Interface Specification 템플릿)
+│   └── README.md                       (작성 예정)
+└── NeuroNova_03_front_end_react/
+    └── 01_react_client/                  ✅ (로그인, 대시보드 완료)
+```
+
+---
+
+## 🔥 Week 4 (2025-12-24 오후) - AI 코어 개발 R&R 정의
+
+### ✅ 완료된 작업
+
+#### 1. 프로젝트 R&R (역할 분담) 정의
+- **문서**: [17_프로젝트_RR_역할분담.md](17_프로젝트_RR_역할분담.md)
+- **내용**:
+  - AI 코어 개발자 역할 명확화
+  - Backend Serving (Flask), Frontend (React/Flutter) 제외
+  - 단계적 개발 전략 (독립 개발 → Interface Spec 작성 → 통합)
+  - AI 개발 디렉토리 구조 정의
+
+#### 2. AI 개발 가이드 작성
+- **문서**: [18_AI_개발_가이드.md](18_AI_개발_가이드.md)
+- **내용**:
+  - Python 환경 설정 (requirements.txt)
+  - 프로젝트 구조 (05_ai_core/)
+  - DICOM 파싱 및 MRI 전처리 파이프라인
+  - 모델 개발 (PyTorch 기반 3D CNN)
+  - 추론 엔진 구현
+  - 단위 테스트 (pytest)
+  - Docker 배포 준비
+
+#### 3. Interface Specification 템플릿 생성
+- **파일**: `05_ai_core/interface_spec_template.md`
+- **내용**:
+  - Input Data Specification (NumPy Array, Shape, dtype)
+  - Output Data Specification (JSON 구조)
+  - Function Signature (predict 함수)
+  - Dependency List (requirements.txt)
+  - Error Handling (Exception 종류)
+  - Performance Metrics (추론 속도, 정확도)
+  - Usage Examples (Python 코드)
+
+#### 4. 문서 업데이트
+- ✅ REF_CLAUDE_CONTEXT.md: AI R&R 섹션 추가
+- ✅ LOG_작업이력.md: Week 4 AI 개발 작업 기록
+
+---
+
+### 📋 AI 코어 개발 범위
+
+**담당:**
+- ✅ AI 모델 개발 (MRI 종양 분석, Omics 분석)
+- ✅ 데이터 전처리 파이프라인 (DICOM 파싱, 정규화, Augmentation)
+- ✅ 추론 로직 구현 (독립 Python 모듈)
+- ✅ Interface Specification 문서 작성
+
+**제외 (타 팀원 담당):**
+- ❌ Backend Serving (Flask API)
+- ❌ Web Frontend (React)
+- ❌ Mobile App (Flutter)
+
+**개발 원칙:**
+1. **독립 실행 가능 (Self-Contained)**: Flask/React 없이 Python 모듈만으로 완결
+2. **입/출력 명확화 (Clear I/O)**: NumPy Array → JSON Dictionary
+3. **엄격한 스키마 정의 (Strict Schema)**: Pydantic, dataclass 사용
+4. **단위 테스트 (Unit Testing)**: pytest로 모든 함수 테스트
+
+---
+
+### 🎯 다음 단계 (Week 5~)
+
+#### Phase 1: AI 코어 독립 개발
+1. **환경 설정**
+   - Python 3.10+ 가상환경 구축
+   - requirements.txt 의존성 설치
+   - GPU 환경 확인 (CUDA 11.8+)
+
+2. **데이터 전처리 파이프라인**
+   - DICOM 파서 구현
+   - MRI 전처리 (Resampling, Normalization, Augmentation)
+   - Mock 데이터 생성 (테스트용)
+
+3. **모델 개발**
+   - 3D CNN 종양 분류 모델 (PyTorch)
+   - 학습 루프 구현
+   - 평가 지표 (Accuracy, F1, AUC)
+
+4. **추론 엔진**
+   - InferenceEngine 클래스 구현
+   - 입/출력 스키마 검증
+   - 성능 최적화 (GPU 추론)
+
+5. **테스트**
+   - 단위 테스트 (pytest)
+   - Mock 데이터 추론 테스트
+   - 성능 벤치마크
+
+6. **문서화**
+   - Interface Specification 작성
+   - README.md (사용법)
+   - Dockerfile
+
+#### Phase 2: Interface Specification 작성 (Week 13)
+- Backend Serving 팀에게 전달할 연동 명세서 작성
+
+#### Phase 3: 통합 (Week 14~15)
+- Flask API와 통합 (Backend 팀 담당)
+- Django RabbitMQ Queue 연동 확인
+
+---
+
+### 📌 중요 변경사항
+
+**프로젝트 구조 변경:**
+```
+NeuroNova_v1/
+├── 01_doc/                             (기존)
+│   ├── 17_프로젝트_RR_역할분담.md      🔥 신규
+│   └── 18_AI_개발_가이드.md            🔥 신규
+├── 05_ai_core/                         🔥 신규 (AI 코어 영역)
+│   ├── models/                         (MRI 분류, 세그멘테이션)
+│   ├── preprocessing/                  (DICOM 파싱, 전처리)
+│   ├── inference/                      (추론 엔진)
+│   ├── tests/                          (pytest)
+│   ├── interface_spec_template.md      ✅
+│   └── requirements.txt                (예정)
+└── NeuroNova_02_back_end/              (기존, Django)
+```
+
+**개발 전략 변경:**
+- **기존**: Django → Flask → AI 순차 개발
+- **변경**: AI 코어 독립 개발 → Interface Spec 작성 → 통합
+
+---
+
+---
+
+## Week 4 (계속)
+
+**작업 기간**: Day 24
+**완료일**: 2024-12-24
+**작업자**: Claude AI
+
+### ✅ 완료된 작업: CRUD 강화 및 데이터 정합성 보장 (UC02, UC03)
+
+1. **데이터베이스 락킹 전략 구현**
+   - **낙관적 락 (Optimistic Locking)**: `PatientCache`, `Encounter`, `Order`, `OrderItem` 모델에 `version` 필드 추가 및 서비스 레이어 검증 로직 구현.
+   - **비관적 락 (Pessimistic Locking)**: `select_for_update()`를 통한 데이터 수정 시 로우 잠금 적용.
+   - **트랜잭션 격리 수준**: MySQL `READ COMMITTED` 설정으로 성능 및 정합성 최적화.
+
+2. **멱등성(Idempotency) 보장**
+   - **IdempotencyMiddleware** 구현: `X-Idempotency-Key` 헤더를 기반으로 중복 요청 방지 및 응답 캐싱.
+   - 캐시(Django Cache)를 활용한 결과 재사용 및 동시 처리 충돌 방지.
+
+3. **동시성 테스트 검증**
+   - `test_concurrency_crud.py`: 낙관적 락 동시성 충돌 테스트 통과.
+   - `test_idempotency_unit.py`: 멱등성 보장 및 중복 요청 방지 유닛 테스트 통과.
+
+### 📁 생성/수정된 파일
+- `emr/models.py`, `emr/repositories.py`, `emr/services.py`: 락킹 로직 반영
+- `cdss_backend/middleware.py`: `IdempotencyMiddleware` 추가
+- `cdss_backend/settings.py`: 미들웨어 및 DB 격리 수준 설정
+- `test_concurrency_crud.py`, `test_idempotency_unit.py`: 검증 스크립트
+
+---
+
+### 🎯 다음 단계
+
+1. **데이터 사전 업로드 및 연동 (UC04/OCS 관련) [진행 중]**
+   - 진단(ICD-10), 약물(Drug), 검사(Lab) 마스터 데이터 모델 정의
+   - CSV/Excel 기반 데이터 벌크 업로드 도구 구현
+   - OCS/LIS 모듈 초기화 및 연동
+2. **UC07 (ALERT) 및 UC09 (AUDIT) 기반 시스템 구현**
+
+**최종 수정일**: 2025-12-24
+**작업자**: Claude AI
+**현재 단계**: Week 4 - 데이터 사전 업로드 준비 중
+```
 
 

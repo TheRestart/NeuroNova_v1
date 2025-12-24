@@ -1,11 +1,41 @@
-# CDSS (Clinical Decision Support System) 프로젝트
+# NeuroNova CDSS - 뇌종양 임상 의사결정 지원 시스템
 
 ## 프로젝트 개요
 
-**프로젝트명**: CDSS - Clinical Decision Support System (임상 의사결정 지원 시스템)
+**프로젝트명**: NeuroNova CDSS - Clinical Decision Support System (뇌종양 임상 의사결정 지원 시스템)
 **개발 기간**: 16주 (4개월)
+**현재 상태**: Week 4 완료 - AI 코어 개발 준비 단계
 **개발 방식**: AI 협업 개발 (Claude AI + 사용자)
-**아키텍처**: Django Backend + React/Flutter Frontend + 외부 시스템 통합
+**아키텍처**: Django Backend + AI Core (PyTorch) + React/Flutter Frontend + 외부 시스템 통합
+
+---
+
+## ⚡ 중요: 프로젝트 R&R (역할 분담)
+
+### 현재 담당 역할: Django Backend 개발
+
+**책임 범위:**
+- ✅ Django REST API 개발 (UC01~UC09)
+- ✅ 데이터 충돌 없는 CRUD 구현 (Optimistic/Pessimistic Locking)
+- ✅ Write-Through 패턴 (OpenEMR, FHIR 동기화)
+- ✅ 7-Layer Architecture 구현
+- ✅ Transaction 관리 및 동시성 제어
+- ✅ MySQL 데이터베이스 설계 및 마이그레이션
+
+**제외 사항 (타 팀원 담당):**
+- ❌ AI 모델 개발 (PyTorch, MONAI)
+- ❌ DICOM 전처리 파이프라인
+- ❌ Flask AI Serving
+- ❌ Web Frontend (React)
+- ❌ Mobile App (Flutter)
+
+**개발 전략:**
+- **안전한 CRUD**: Optimistic Locking (version 필드), Pessimistic Locking (select_for_update)
+- **데이터 정합성**: Transaction Isolation Level 관리
+- **동시성 테스트**: Race Condition 시나리오 테스트
+- **Idempotency**: 멱등성 보장
+
+📖 자세한 내용: [17_프로젝트_RR_역할분담.md](01_doc/17_프로젝트_RR_역할분담.md)
 
 ---
 
@@ -54,8 +84,11 @@
 - **MinIO**: S3 호환 객체 스토리지 (AI Artifacts)
 
 ### AI & ML
-- **Flask + GPU**: AI 추론 서버 (MRI 종양 분석, Omics 분석)
-- **RabbitMQ**: AI Job Queue
+- **PyTorch 2.0+**: 딥러닝 프레임워크 (3D CNN, Vision Transformer)
+- **Medical Imaging**: pydicom, SimpleITK, nibabel (DICOM 전처리)
+- **AI Core**: 독립 Python 모듈 (Flask/React 의존성 없음)
+- **Flask + GPU** (통합 예정): AI 추론 서버
+- **RabbitMQ** (통합 예정): AI Job Queue
 
 ### Infrastructure
 - **Docker + Docker Compose**: 컨테이너화
@@ -75,19 +108,30 @@
 
 ### 📁 프로젝트 문서
 ```
-00_UML/                        # UML 설계 파일
+00_UML/                          # UML 설계 파일
 01_doc/                          # 프로젝트 문서 및 스크립트
-├── 01_권한7.txt                 # ...
-├── ... (기타 문서)
-├── GIT_SETUP_GUIDE.md           # Git 설정 가이드
-└── ...
-02_back_end/                     # 백엔드 서버 (Django + OpenEMR)
-├── 01_django_server/            # Django 메인 서버
+├── 01_프로젝트_개요.md           # 프로젝트 전체 개요
+├── 17_프로젝트_RR_역할분담.md    # 🔥 [NEW] R&R 정의 및 개발 전략
+├── 18_AI_개발_가이드.md          # 🔥 [NEW] AI 코어 개발 가이드
+├── REF_CLAUDE_CONTEXT.md        # Claude AI 온보딩 문서
+├── LOG_작업이력.md               # 작업 이력 및 현황
+└── ... (기타 문서)
+NeuroNova_02_back_end/           # 백엔드 서버 (Django + OpenEMR)
+├── 01_django_server/            # Django REST API (UC01~UC06 완성)
 └── 02_openemr_server/           # OpenEMR Docker 구성
-03_front_end_react/              # React 클라이언트 저장소
+NeuroNova_03_front_end_react/    # React 클라이언트 저장소
 └── 01_react_client/             # React 웹 애플리케이션
-04_front_end_flutter/            # Flutter 클라이언트 저장소
+NeuroNova_04_front_end_flutter/  # Flutter 클라이언트 저장소
 └── (Flutter App)                # Flutter 모바일 애플리케이션
+05_ai_core/                      # 🔥 [NEW] AI 코어 모듈 (독립)
+├── models/                      # AI 모델 정의 (TumorClassifier, Segmentation)
+├── preprocessing/               # DICOM 전처리 파이프라인
+├── inference/                   # 추론 엔진
+├── tests/                       # 단위 테스트 (pytest)
+├── interface_spec_template.md   # Interface Specification 템플릿
+├── requirements.txt             # AI 전용 의존성
+└── README.md                    # AI 코어 사용 가이드
+06_trained_models/               # 학습된 모델 파일 (.pth, .h5)
 README.md                        # [이 파일] 프로젝트 개요
 ```
 
@@ -96,14 +140,11 @@ README.md                        # [이 파일] 프로젝트 개요
 | 문서 | 목적 | 대상 |
 |---|---|---|
 | **README.md** | 프로젝트 전체 개요 | 모든 사용자 |
-| **CLAUDE_CONTEXT.md** | Claude AI 빠른 온보딩 | Claude AI |
-| **업무계획서.md** | 기술 스택별 업무 분류 | 개발팀 |
-| **02_세부 계획서.md** | 인프라 구성 상세 | DevOps 팀 |
-| **03_개발_작업_순서.md** | Claude 1달 작업 계획 | Claude AI + 사용자 |
-| **04_수정_지침서.md** | 수정 요청 템플릿 | 사용자 |
-| **05_기술스택_상세.md** | 기술 스택 상세 설명 | 개발팀 |
-| **06_환경설정_가이드.md** | 가상환경 및 의존성 관리 | 개발팀 (필수) |
-| **07_일일_체크리스트.md** | 일일 개발 체크리스트 | 개발팀 |
+| **01_프로젝트_개요.md** | 프로젝트 상세 개요 | 개발팀 |
+| **17_프로젝트_RR_역할분담.md** | 🔥 [NEW] R&R 정의 및 개발 전략 | 전체 팀 (필수) |
+| **18_AI_개발_가이드.md** | 🔥 [NEW] AI 코어 개발 완전 가이드 | AI 개발자 |
+| **REF_CLAUDE_CONTEXT.md** | Claude AI 빠른 온보딩 | Claude AI |
+| **LOG_작업이력.md** | 작업 이력 및 현황 | 전체 팀 |
 | **08_API_명세서.md** | REST API 명세서 | 개발팀, QA |
 | **09_데이터베이스_스키마.md** | DB 스키마 및 ERD | Database 팀 |
 | **10_테스트_시나리오.md** | 테스트 시나리오 | QA/Test 팀 |
@@ -113,83 +154,77 @@ README.md                        # [이 파일] 프로젝트 개요
 
 ## 개발 일정 (16주)
 
-### Phase 1: 기반 구축 (Week 1-4)
-- Django 프로젝트 초기 설정
-- UC1 (인증/권한) 7개 역할 구현
-- UC2 (EMR Proxy), UC9 (Audit), UC7 (Alert) 기본 구현
-- React 프로젝트 초기 설정, 로그인 화면
-- MySQL 스키마 구축
+### Phase 1: 기반 구축 (Week 1-4) ✅ **완료**
+- ✅ Django 프로젝트 초기 설정
+- ✅ UC01 (ACCT): 인증/권한 7개 역할 구현
+- ✅ UC02 (EMR): OpenEMR 프록시, Write-Through 패턴
+- ✅ UC05 (RIS): Orthanc PACS 연동
+- ✅ UC06 (AI): RabbitMQ 큐 기본 구현
+- ✅ MySQL 스키마 구축 (7-Layer Architecture)
+- ✅ R&R 정의 및 AI 개발 환경 준비
 
-**마일스톤**: 기본 인증 + 환자 조회 기능 완성
+**마일스톤**: 기본 인증 + EMR/PACS 통합 완성 ✅
 
-### Phase 2: 핵심 기능 개발 (Week 5-10)
-- UC5 (RIS) - Orthanc 연동, DICOM Viewer
-- UC6 (AI) - RabbitMQ 큐, Flask AI 서버
-- UC3 (OCS), UC4 (LIS), UC8 (FHIR) 기본 구현
-- React 역할별 화면 구현
+### Phase 2: Backend CRUD 고도화 (Week 5-12) 🔄 **진행 중**
+- 🔄 데이터 충돌 방지 패턴 구현 (Optimistic/Pessimistic Locking)
+- 🔄 Transaction Isolation Level 설정 및 테스트
+- 🔄 동시성 제어 (Race Condition 시나리오)
+- 🔄 Idempotency 보장 (멱등성 패턴)
+- 🔄 Django select_for_update() 활용
+- ⏸️ UC03 (OCS), UC04 (LIS), UC08 (FHIR) - 타 팀원 담당
+- ⏸️ React 역할별 화면 구현 - 타 팀원 담당
+- ⏸️ AI 모델 개발 (PyTorch, MONAI) - 타 팀원 담당
 
-**마일스톤**: 영상 조회 + AI 분석 + 처방 입력 완성
+**마일스톤**: 안전한 CRUD 구현 완료 + 동시성 테스트 통과
 
-### Phase 3: 고급 기능 및 통합 (Week 11-14)
-- UC5 판독문 서명, UC6 AI 비동기 폴링
-- UC8 FHIR 리소스 변환 완성
-- Flutter 모바일 앱 개발 (Patient 전용)
-- 전체 통합 테스트
+### Phase 3: Interface Specification 작성 및 통합 준비 (Week 13)
+- Interface Specification 문서 작성 (AI → Backend)
+- requirements.txt, Dockerfile 준비
+- AI 모듈 전달 패키지 준비
+- ⏸️ UC03/UC04/UC08 FHIR 리소스 변환 완성 - 타 팀원 담당
+- ⏸️ Flutter 모바일 앱 개발 (Patient 전용) - 타 팀원 담당
 
-**마일스톤**: 전체 UC 기능 완성
+**마일스톤**: AI 코어 모듈 완성 + 통합 준비 완료
 
-### Phase 4: 최적화 및 배포 (Week 15-16)
-- 성능 테스트 및 최적화
-- 보안 감사
-- Docker 배포, Prometheus 모니터링 구축
-- Flutter App Store/Google Play 배포
+### Phase 4: 통합 테스트 및 배포 (Week 14-16)
+- AI 모듈 통합 (Django → RabbitMQ → Flask → AI Core)
+- 전체 시스템 통합 테스트
+- 성능 테스트 및 최적화 (AI 추론 속도)
+- ⏸️ Docker 배포, Prometheus 모니터링 구축 - DevOps 담당
+- ⏸️ Flutter App Store/Google Play 배포 - 타 팀원 담당
 
-**마일스톤**: 프로덕션 배포
+**마일스톤**: 전체 시스템 통합 완료 및 배포
 
 ---
 
 ## 빠른 시작 (Quick Start)
 
-### 1. 프로젝트 클론 및 환경 설정 (개발자)
+### 1. Django Backend 환경 설정 (현재 담당자)
 
 ```bash
-# 프로젝트 클론
-git clone <repository-url>
-cd UML
-
 # Backend 환경 설정
-cd 02_back_end/01_django_server
+cd NeuroNova_02_back_end/01_django_server
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+venv\Scripts\activate  # Windows
 pip install -r requirements.txt
-cp .env.example .env  # .env 파일 수정 필요
 
-# Frontend 환경 설정
-cd ../../03_front_end_react/01_react_client
-npm install
-cp .env.example .env  # .env 파일 수정 필요
+# Django 서버 실행
+python manage.py runserver 0.0.0.0:8000
 ```
-
-**중요**: [06_환경설정_가이드.md](06_환경설정_가이드.md) 참조
 
 ### 2. Claude AI에게 작업 요청 시
 
 ```
-[03_개발_작업_순서.md]를 읽고 Week X의 작업을 시작해줘.
+[REF_CLAUDE_CONTEXT.md]를 먼저 읽고,
+Django Backend에서 데이터 충돌 없는 CRUD를 구현해줘.
+Optimistic Locking과 Pessimistic Locking 패턴을 적용해줘.
 ```
 
-### 3. 수정 요청 시
+### 3. 새로운 Claude 인스턴스 시작 시
 
 ```
-[04_수정_지침서.md]의 [수정 템플릿]을 참고해서
-UC1의 JWT 토큰 만료 시간을 30분으로 변경해줘.
-```
-
-### 4. 새로운 Claude 인스턴스 시작 시
-
-```
-[CLAUDE_CONTEXT.md]를 먼저 읽고 프로젝트를 이해한 후,
-[03_개발_작업_순서.md]에서 현재 진행 상황을 확인해줘.
+[REF_CLAUDE_CONTEXT.md]를 먼저 읽고 프로젝트를 이해한 후,
+[LOG_작업이력.md]에서 현재 진행 상황을 확인해줘.
 ```
 
 ---
@@ -216,19 +251,24 @@ UC1의 JWT 토큰 만료 시간을 30분으로 변경해줘.
 
 ---
 
-## 팀 구성
+## 팀 구성 및 역할 분담
 
-| 팀 | 인원 | 주요 역할 |
-|---|---|---|
-| Frontend | 3-4명 | React (2명), Flutter (1명), UI/UX (1명) |
-| Backend | 4-5명 | Django (3명), DevOps (1명), 시니어 (1명) |
-| Database | 1-2명 | DBA (1명), 데이터 엔지니어 (1명) |
-| AI | 2명 | AI 엔지니어 (1명), MLOps (1명) |
-| Integration | 2명 | 외부 시스템 연동 전문가 |
-| DevOps | 1-2명 | Docker, CI/CD, 모니터링 |
-| QA/Test | 2명 | 기능 테스트, E2E 자동화 |
+### 현재 개발 단계: Phase 2 (AI 코어 개발)
 
-**총 인원**: 14-18명
+| 팀 | 담당 | 현재 작업 | 상태 |
+|---|---|---|---|
+| **Django Backend** | **현재 담당자** | 데이터 충돌 없는 CRUD 구현 | 🔄 진행 중 |
+| AI 코어 | 타 팀원 | PyTorch 모델 개발 | ⏸️ 대기 (타 팀원) |
+| Backend Serving | 타 팀원 | Flask AI API 서버 | ⏸️ 대기 (Week 13 통합) |
+| Frontend (React) | 타 팀원 | React Web UI | ⏸️ 대기 |
+| Frontend (Flutter) | 타 팀원 | Flutter Mobile App | ⏸️ 대기 |
+| Backend Infrastructure | **완료** | Django REST API | ✅ Week 4 완료 |
+
+### Django Backend 팀 책임 범위
+- **개발**: Django REST API, CRUD 로직, 동시성 제어
+- **테스트**: Concurrency 테스트, Transaction 테스트
+- **문서화**: API 명세서, DB 스키마
+- **제외**: AI 모델, DICOM 전처리, Flask API, React UI, Flutter App (타 팀원 담당)
 
 ---
 
@@ -292,21 +332,24 @@ UC1의 JWT 토큰 만료 시간을 30분으로 변경해줘.
 - [Mermaid ERD 문법](https://mermaid.js.org/syntax/entityRelationshipDiagram.html)
 
 ### 내부 문서
-- [CLAUDE_CONTEXT.md](01_doc/CLAUDE_CONTEXT.md): Claude AI 온보딩
-- [업무계획서.md](01_doc/업무계획서.md): 전체 업무 계획
-- [02_세부 계획서.md](01_doc/02_세부 계획서.md): 인프라 상세
-- [03_개발_작업_순서.md](01_doc/03_개발_작업_순서.md): 1달 작업 계획
-- [04_수정_지침서.md](01_doc/04_수정_지침서.md): 수정 요청 가이드
-- [05_기술스택_상세.md](01_doc/05_기술스택_상세.md): 기술 스택 상세
-- [06_환경설정_가이드.md](01_doc/06_환경설정_가이드.md): 환경 설정
-- [07_일일_체크리스트.md](01_doc/07_일일_체크리스트.md): 일일 체크리스트
-- [08_API_명세서.md](01_doc/08_API_명세서.md): API 명세서
-- [09_데이터베이스_스키마.md](01_doc/09_데이터베이스_스키마.md): DB 스키마
+
+#### 🔥 필수 문서 (Django Backend 개발)
+- [17_프로젝트_RR_역할분담.md](01_doc/17_프로젝트_RR_역할분담.md): R&R 정의 및 개발 전략
+- [16_Write_Through_패턴_가이드.md](01_doc/16_Write_Through_패턴_가이드.md): Write-Through 패턴 가이드
+- [15_테스트_페이지_가이드.md](01_doc/15_테스트_페이지_가이드.md): 테스트 페이지 사용법
+
+#### 📚 프로젝트 전체 문서
+- [REF_CLAUDE_CONTEXT.md](01_doc/REF_CLAUDE_CONTEXT.md): Claude AI 온보딩
+- [LOG_작업이력.md](01_doc/LOG_작업이력.md): 작업 이력 및 현황
+- [01_프로젝트_개요.md](01_doc/01_프로젝트_개요.md): 프로젝트 전체 개요
+- [08_API_명세서.md](01_doc/08_API_명세서.md): Django REST API 명세서
+- [09_데이터베이스_스키마.md](01_doc/09_데이터베이스_스키마.md): DB 스키마 및 ERD
 - [10_테스트_시나리오.md](01_doc/10_테스트_시나리오.md): 테스트 시나리오
-- [11_배포_가이드.md](01_doc/11_배포_가이드.md): 배포 가이드
+- [11_배포_가이드.md](01_doc/11_배포_가이드.md): Docker 배포 가이드
 
 ---
 
-**Last Updated**: 2025-12-19
-**Version**: 1.0
+**Last Updated**: 2025-12-24
+**Version**: 2.0 (AI R&R Update)
 **Author**: Claude AI + Project Team
+**Current Status**: Week 4 Complete - AI Core Development Phase Started

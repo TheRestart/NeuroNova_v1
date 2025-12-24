@@ -46,7 +46,8 @@
       "Bash(venvScriptspython manage.py showmigrations)",
       "Bash(venvScriptspython manage.py test emr.test_write_through -v 2)",
       "Bash(./venv/Scripts/python.exe manage.py test:*)",
-      "Bash(start cmd:*)"
+      "Bash(start cmd:*)",
+      "Bash(venvScriptspython manage.py check)"
     ]
   }
 }
