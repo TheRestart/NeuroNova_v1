@@ -53,12 +53,12 @@
 | UC1 | ACCT | Accounts/Auth | JWT 인증, RBAC 권한, MFA |
 | UC2 | EMR | EMR Proxy | OpenEMR 데이터 Pull, 캐싱 |
 | UC3 | OCS | Order Communication System | 처방 전달 |
-| UC4 | LIS | Lab Information System | 임상병리 검사 |
-| UC5 | RIS | Radiology Information System | 영상 검사 오더, DICOM 연동 |
-| UC6 | AI | AI Orchestration | AI 모델 호출, 결과 관리 |
-| UC7 | ALERT | Timeline/Alert Core | 이벤트 타임라인, 알림 |
-| UC8 | FHIR | FHIR Gateway | FHIR 리소스 변환, 동기화 |
-| UC9 | AUDIT | Audit/Admin | 감사 로그, 보안 이벤트 |
+| UC04 | LIS | Lab Information System | 임상병리 검사 결과 및 이상치 알림 | ✅ 완료 |
+| UC05 | RIS | Radiology Information System | 영상 검사 오더, DICOM 연동 | ✅ 완료 |
+| UC06 | AI | AI Orchestration | AI 모델 호출, 결과 관리, 검토 프로세스 | ✅ 완료 |
+| UC07 | ALERT | Timeline/Alert Core | 이벤트 타임라인, 실시간 알림 | ✅ 완료 |
+| UC08 | FHIR | FHIR Gateway | FHIR 리소스 변환, 동기화 | 🔄 진행 중 |
+| UC09 | AUDIT | Audit/Admin | 전수 감사 로그, 보안 모니터링 뷰식 | ✅ 완료 |
 
 ---
 
@@ -415,22 +415,25 @@ AIJobController
         └─→ AIPollingService (비동기 폴링)
 ```
 
-#### 비동기 처리 패턴
-```
-1. AI Job 제출 → 즉시 job_id 반환
-2. Background Worker가 주기적으로 AI 서버 폴링
-3. 결과 준비되면 DB에 저장 + Timeline 이벤트 발행
-4. UI는 WebSocket으로 실시간 알림 수신
-```
+#### 비동기 처리 및 검토 패턴 ✅ 구현 완료
+1. **AI Job 제출**: `AIJobService.submit_ai_job` 호출 → RabbitMQ 큐 등록 → `job_id` 반환
+2. **AI 서버 처리**: Flask Worker가 큐에서 타스크를 가져와 분석 수행
+3. **분석 결과 콜백**: AI 서버가 `POST /api/ai/callback/` 호출 → Django에서 상태를 `COMPLETED`로 업데이트
+4. **의료진 알림**: 결과 수신 즉시 `AlertService`가 'doctor' 역할군에게 WebSocket 실시간 알림 발송
+5. **의료진 검토**: 의사가 `review()` API를 통해 수동 승인(`APPROVED`) 또는 반려(`REJECTED`) 처리
+6. **감사 추적**: 제출, 수신, 검토의 전 과정이 `AuditService`에 의해 기록됨
 
-#### AI 결과 구조
+#### 도메인 모델 (ai/models.py)
+```python
+AIJob
+  - job_id: UUID (PK)
+  - study_id: UUID (RIS 연동)
+  - status: PENDING, QUEUED, PROCESSING, COMPLETED, FAILED
+  - result_data: JSON (AI 분석 원본 결과)
+  - review_status: PENDING, APPROVED, REJECTED
+  - reviewed_by: FK (acct.User)
+  - review_comment: Text (의료진 소견)
 ```
-AI_RESULTS
-  - result_id
-  - ai_job_id (FK)
-  - tumor_class (분류 결과)
-  - metrics_json (정확도, 신뢰도 등)
-
 AI_ARTIFACTS (결과 파일)
   - artifact_id
   - result_id (FK)
@@ -461,30 +464,17 @@ FHIRController
 
 ---
 
-### 4.6 UC09 (AUDIT) - 감사/보안
+### 4.6 UC09 (AUDIT) - 감사/보안 ✅ 구현 완료
 
 #### 핵심 컴포넌트
-```
-AuditController
-  └─→ AuditService
-        ├─→ AuditLogRepository (모든 액션 기록)
-        └─→ SecurityEventRepository (보안 이벤트)
-```
+- **AuditService (`audit/services.py`)**: 비즈니스 액션 기록을 위한 싱글톤 성격의 서비스.
+- **AuditMiddleware (`audit/middleware.py`)**: HTTP 요청/응답 레벨에서의 자동 감사 로깅.
+- **AuditLogViewer (UI)**: `/api/audit/viewer/` 환경에서 필터링 기능을 갖춘 관리자 전용 뷰어.
 
-#### 로깅 대상
-```
-AUDIT_LOGS (일반 감사)
-  - LOGIN, LOGOUT
-  - PATIENT_VIEW, PATIENT_EDIT
-  - ORDER_CREATE, REPORT_SIGN
-  - ROLE_ASSIGN
-
-SECURITY_EVENTS (보안)
-  - LOGIN_FAILED (5회 이상)
-  - UNAUTHORIZED_ACCESS
-  - PERMISSION_DENIED
-  - TOKEN_REVOKED
-```
+#### 로깅 및 모니터링 대상
+- **일반 감사**: LOGIN, LOGOUT, PATIENT_VIEW/EDIT, ORDER_CREATE, REPORT_SIGN
+- **AI/PACS**: AI_REQUEST, AI_CALLBACK, AI_REVIEW
+- **보안 이벤트**: LOGIN_FAILED, UNAUTHORIZED_ACCESS
 
 #### 모든 UC에서 AuditClient 호출
 ```python
