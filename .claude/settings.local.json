@@ -47,7 +47,12 @@
       "Bash(venvScriptspython manage.py test emr.test_write_through -v 2)",
       "Bash(./venv/Scripts/python.exe manage.py test:*)",
       "Bash(start cmd:*)",
-      "Bash(venvScriptspython manage.py check)"
+      "Bash(venvScriptspython manage.py check)",
+      "Bash(venvScriptspython manage.py shell)",
+      "Bash(venvScriptspython add_diagnosis_data.py)",
+      "Bash(d:\\\\1222\\\\NeuroNova_v1\\\\NeuroNova_02_back_end\\\\01_django_server\\\\venv\\\\Scripts\\\\python.exe:*)",
+      "Bash(venvScriptspython manage.py add_diagnosis_data)",
+      "Bash(./venv/Scripts/python.exe:*)"
     ]
   }
 }
