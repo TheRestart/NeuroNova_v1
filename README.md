@@ -17,7 +17,7 @@
 **책임 범위:**
 - ✅ Django REST API 개발 (UC01~UC09)
 - ✅ 데이터 충돌 없는 CRUD 구현 (Optimistic/Pessimistic Locking)
-- ✅ Write-Through 패턴 (OpenEMR, FHIR 동기화)
+- ✅ Parallel Dual-Write (OpenEMR, Django DB 독립 병렬 전송)
 - ✅ 7-Layer Architecture 구현
 - ✅ Transaction 관리 및 동시성 제어
 - ✅ MySQL 데이터베이스 설계 및 마이그레이션

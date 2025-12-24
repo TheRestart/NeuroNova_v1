@@ -338,11 +338,11 @@ Models (models.py)
 #### 설계 패턴
 - **Pull-Based**: Django가 OpenEMR에서 데이터를 가져옴 (Push 없음)
 - **Cache-Aside**: 조회 시 캐시 먼저 확인 → 없으면 EMR에서 Pull → 캐시 저장
-- **Write-Through**: 환자 프로필 수정 시 FHIR 서버 먼저 업데이트 → 성공 시 Django DB**설계 철학:**
-- **Single Source of Truth**: OpenEMR (FHIR Server)가 환자 정보 및 처방의 유일한 원본
-- **Django DB**: Read Cache로만 동작
-- **OpenEMR First 전략**: 데이터 생성 시 OpenEMR(원본)에 먼저 쓰고, 성공 시에만 Django DB(캐시)에 기록
-  - 기존 Write-Through(Django->OpenEMR)에서 **Write-Behind/OpenEMR-First(OpenEMR->Django)**로 변경 (2025-12-23)
+- **Parallel Dual-Write**: 데이터 생성/수정 시 OpenEMR DB와 Django DB에 독립적으로 병렬 전달 (2025-12-24 변경)
+**설계 철학:**
+- **Distributed Persistence**: OpenEMR(원본)과 Django DB(캐시/비즈니스)를 독립적인 저장 시스템으로 취급
+- **Parallel Delivery**: 요청이 들어오면 두 시스템에 병렬적으로(Concurrency) 데이터를 전달하여 최신성 동기화
+- **High Visibility**: API 응답 시 각 DB(테이블별) 저장 성공 여부를 독립적으로 반환하여 투명성 확보
 - **Concurrency Control**: 
   - **Optimistic Locking**: 업데이트 시 `version` 필드 증가 및 필터링
   - **Pessimistic Locking**: `atomic` 트랜잭션 내 `select_for_update` 사용
@@ -350,9 +350,9 @@ Models (models.py)
 
 **데이터 흐름:**
 ```
-사용자 → Django API → OpenEMR DB (Insert) → 성공 → Django DB (Cache Insert)
-                           ↓ 실패
-                       Django DB 저장 없이 에러 반환
+사용자 → Django API → [1] OpenEMR DB (Insert) & [2] Django DB (Insert) -- 병렬/독립 전달
+                           ↓ 각 DB별 결과 취합 (persistence_status)
+                       성공/실패 상태를 포함한 구조화된 응답 반환
 ```
 - **Aggregate View**: 환자 요약 카드 생성 시 여러 소스 집계
   - Radiology Orders (UC5)
