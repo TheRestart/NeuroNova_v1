@@ -3,9 +3,10 @@
 > **목적**: 이 문서는 Claude AI가 프로젝트를 빠르게 이해하고 작업을 이어서 수행할 수 있도록 작성되었습니다.
 
 **문서 작성일**: 2025-12-16
-**최종 업데이트**: 2025-12-24
+**최종 업데이트**: 2025-12-28 (API 품질 관리 정책 추가)
 **프로젝트 위치**: `d:\1222\NeuroNova_v1`
 **프로젝트 타입**: 임상 의사결정 지원 시스템(CDSS) - Django 백엔드 구현 중심
+**최신 변경**: Phase 1 문서 완성 (에러 핸들링, API 자동문서화, 데이터 검증 정책)
 
 ---
 
@@ -107,9 +108,104 @@ c:\Users\302-28\Downloads\UML\
 
 ---
 
-## 3. 아키텍처 패턴 이해
+## 3. 개발 품질 관리 정책 (2025-12-28 추가)
 
-### 3.1 레이어 아키텍처 (공통)
+### 3.1 에러 핸들링 전략
+
+**표준 에러 응답 형식** ([25_에러_핸들링_가이드.md](25_에러_핸들링_가이드.md) 참조):
+```json
+{
+  "error": {
+    "code": "ERR_XXX",
+    "message": "사용자 친화적 에러 메시지",
+    "detail": "개발자용 상세 정보 (선택)",
+    "field": "field_name (유효성 검증 실패 시)",
+    "timestamp": "2025-12-28T10:30:00Z"
+  }
+}
+```
+
+**에러 코드 체계**:
+- `ERR_001~099`: 인증/권한
+- `ERR_101~199`: 유효성 검증
+- `ERR_201~299`: 리소스 없음
+- `ERR_301~399`: 충돌/락킹
+- `ERR_401~499`: 비즈니스 로직
+- `ERR_501~599`: 외부 시스템
+- `ERR_500`: 서버 내부 오류
+
+**구현 방법**:
+- 커스텀 Exception 클래스 (`utils/exceptions.py`)
+- 커스텀 Exception Handler (`utils/exception_handlers.py`)
+- DRF 설정: `EXCEPTION_HANDLER = 'utils.exception_handlers.custom_exception_handler'`
+
+### 3.2 API 자동문서화
+
+**도구**: drf-spectacular (OpenAPI 3.0)
+
+**접속 URL**:
+- Swagger UI: `http://localhost:8000/api/docs/`
+- ReDoc: `http://localhost:8000/api/redoc/`
+- OpenAPI Schema: `http://localhost:8000/api/schema/`
+
+**문서화 방법** ([26_API_자동문서화_가이드.md](26_API_자동문서화_가이드.md) 참조):
+```python
+from drf_spectacular.utils import extend_schema, extend_schema_view
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="환자 목록 조회",
+        description="등록된 모든 환자의 목록을 조회합니다.",
+        tags=['emr'],
+        responses={200: PatientSerializer(many=True)}
+    )
+)
+class PatientViewSet(viewsets.ModelViewSet):
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer
+```
+
+**프론트엔드 협업**:
+- OpenAPI Schema Export: `python manage.py spectacular --file schema.json`
+- TypeScript 타입 자동 생성: `npx openapi-typescript schema.json --output api.d.ts`
+- Postman Collection Export 지원
+
+### 3.3 데이터 검증 정책
+
+**검증 계층** ([27_데이터_검증_정책.md](27_데이터_검증_정책.md) 참조):
+
+```
+1. Serializer 검증 (형식, 타입, 필수값)
+   ↓
+2. 커스텀 필드 검증 (validate_<field_name>)
+   ↓
+3. 객체 수준 검증 (validate() - 다중 필드 관계)
+   ↓
+4. 비즈니스 로직 검증 (Service Layer)
+```
+
+**주요 원칙**:
+- **Defensive Programming**: "절대 사용자 입력을 신뢰하지 마라"
+- **Fail Fast**: 잘못된 데이터는 가능한 빨리 거부
+- **검증 vs 변환**: 변환은 최소화하고, 검증을 우선시
+
+**데이터 무결성 보장**:
+- DB Constraints (UNIQUE, CHECK, FK)
+- Transaction 관리 (`@transaction.atomic`)
+- 낙관적/비관적 락킹 (동시성 제어)
+- 병렬 데이터 전달 무결성 (Parallel Dual-Write)
+
+**외부 시스템 연동 검증**:
+- HTTP 상태 코드 검증
+- 응답 데이터 형식 검증 (JSON 파싱)
+- 필수 필드 존재 여부 확인
+- 타임아웃 설정 (OpenEMR: 10초, Orthanc: 60초)
+
+---
+
+## 4. 아키텍처 패턴 이해
+
+### 4.1 레이어 아키텍처 (공통)
 
 모든 UC는 동일한 7-Layer 구조를 따릅니다:
 
@@ -134,7 +230,7 @@ c:\Users\302-28\Downloads\UML\
 **의존성 흐름**: Controller → Service → Repository/Client
 **도메인 모델**: 모든 레이어에서 참조 가능
 
-### 3.2 파일 읽기 순서 (UC 분석 시)
+### 4.2 파일 읽기 순서 (UC 분석 시)
 
 1. **`uc0X_01_class_main.puml`** ← 먼저 읽기 (전체 구조 파악)
 2. `uc0X_02_domain.puml` (데이터 모델)
@@ -144,9 +240,9 @@ c:\Users\302-28\Downloads\UML\
 
 ---
 
-## 4. UC별 상세 분석
+## 5. UC별 상세 분석
 
-### 4.1 UC01 (ACCT) - 인증/권한 시스템 ✅ 구현 완료
+### 5.1 UC01 (ACCT) - 인증/권한 시스템 ✅ 구현 완료
 
 #### 핵심 컴포넌트
 ```
@@ -176,6 +272,13 @@ Permission Classes (permissions.py)
 - ✅ 7개 역할 시스템 (admin, doctor, rib, lab, nurse, patient, external)
 - ✅ Service 레이어 패턴
 - ✅ 10개 Permission 클래스
+
+**회원가입 정책 (2025-12-28 업데이트):**
+- **Patient**: 자가 회원가입 가능 (`POST /acct/register/` - AllowAny)
+- **의료진** (Doctor, RIB, Lab, Nurse, External): Admin이 계정 생성 후 ID/PW 공지
+  - 보안 강화 및 내부 인력 관리 목적
+  - Admin 전용 계정 생성 API 사용 (IsAdmin 권한 필요)
+- **API**: 모든 역할의 회원가입 API 구현되어 있음 (정책 변경 대비)
 
 #### 도메인 모델 (실제 구현: acct/models.py)
 ```python
@@ -228,7 +331,7 @@ AuthController → UI: 200 OK (tokens, profile)
 
 ---
 
-### 4.2 UC02 (EMR) - OpenEMR 프록시 ✅ 구현 완료
+### 5.2 UC02 (EMR) - OpenEMR 프록시 ✅ 구현 완료
 
 #### 핵심 컴포넌트 (실제 구현)
 ```
@@ -372,7 +475,7 @@ EMRController → UI: patient list DTO
 
 ---
 
-### 4.3 UC05 (RIS) - 영상의학 (가장 복잡)
+### 5.3 UC05 (RIS) - 영상의학 (가장 복잡)
 
 #### 핵심 컴포넌트
 ```
@@ -403,7 +506,7 @@ RadiologyController
 
 ---
 
-### 4.4 UC06 (AI) - AI 오케스트레이션
+### 5.4 UC06 (AI) - AI 오케스트레이션
 
 #### 핵심 컴포넌트
 ```
@@ -444,7 +547,7 @@ AI_ARTIFACTS (결과 파일)
 
 ---
 
-### 4.5 UC08 (FHIR) - 의료정보 교환 ✅ 구축 완료
+### 5.5 UC08 (FHIR) - 의료정보 교환 ✅ 구축 완료
 
 #### 핵심 컴포넌트
 ```
@@ -464,7 +567,7 @@ FHIRController
 
 ---
 
-### 4.6 UC09 (AUDIT) - 감사/보안 ✅ 구현 완료
+### 5.6 UC09 (AUDIT) - 감사/보안 ✅ 구현 완료
 
 #### 핵심 컴포넌트
 - **AuditService (`audit/services.py`)**: 비즈니스 액션 기록을 위한 싱글톤 성격의 서비스.
@@ -490,9 +593,9 @@ audit_client.log_event(
 
 ---
 
-## 5. 데이터베이스 스키마 (ERD)
+## 6. 데이터베이스 스키마 (ERD)
 
-### 5.1 CDSS_DB.mmd (메인 DB)
+### 6.1 CDSS_DB.mmd (메인 DB)
 
 #### 주요 테이블 그룹
 
@@ -568,7 +671,7 @@ SECURITY_EVENTS
   └─ actor_user_id (FK: ACCT_USERS)
 ```
 
-### 5.2 외부 시스템 DB
+### 6.2 외부 시스템 DB
 
 **OpenEMR_DB.mmd**
 - 읽기 전용 (Django는 조회만)
@@ -584,9 +687,9 @@ SECURITY_EVENTS
 
 ---
 
-## 6. 파일 형식 및 도구
+## 7. 파일 형식 및 도구
 
-### 6.1 PlantUML (.puml)
+### 7.1 PlantUML (.puml)
 - **사용처**: Usecase, Sequence, Class Diagram
 - **미리보기**: VSCode에서 `Alt+D`
 - **문법 예시**:
@@ -600,7 +703,7 @@ SECURITY_EVENTS
   @enduml
   ```
 
-### 6.2 Mermaid (.mmd)
+### 7.2 Mermaid (.mmd)
 - **사용처**: ERD
 - **미리보기**: VSCode `Ctrl+Shift+V` 또는 mermaid.live
 - **문법 예시**:
@@ -613,15 +716,15 @@ SECURITY_EVENTS
     }
   ```
 
-### 6.3 StarUML (.mdj)
+### 7.3 StarUML (.mdj)
 - **사용처**: 전체 시스템 아키텍처
 - **도구**: StarUML 7.0 (독립 실행형 GUI)
 
 ---
 
-## 7. 작업 시나리오별 가이드
+## 8. 작업 시나리오별 가이드
 
-### 7.1 새로운 UC 추가 시
+### 8.1 새로운 UC 추가 시
 
 1. **폴더 생성**:
    ```
@@ -643,7 +746,7 @@ SECURITY_EVENTS
    - `db/CDSS_DB.mmd`에 새 테이블 추가
    - `db/IntegrationERD.mmd`에 관계 추가
 
-### 7.2 기존 UC 수정 시
+### 8.2 기존 UC 수정 시
 
 **예시: UC01에 MFA 기능 추가**
 
@@ -669,7 +772,7 @@ SECURITY_EVENTS
 6. **ERD 수정**:
    - `db/CDSS_DB.mmd`에 `ACCT_MFA_SECRETS` 테이블 확인/수정
 
-### 7.3 API 엔드포인트 추가 시
+### 8.3 API 엔드포인트 추가 시
 
 **예시: 환자 알레르기 조회 API 추가 (UC02)**
 
@@ -709,7 +812,7 @@ SECURITY_EVENTS
 5. **Sequence 추가**:
    - `SD-EMR-06.puml` 생성 (알레르기 조회 흐름)
 
-### 7.4 외부 시스템 통합 시
+### 8.4 외부 시스템 통합 시
 
 **예시: 새로운 AI 모델 서버 추가**
 
@@ -733,30 +836,30 @@ SECURITY_EVENTS
 
 ---
 
-## 8. 중요한 설계 원칙
+## 9. 중요한 설계 원칙
 
-### 8.1 일관성 유지
+### 9.1 일관성 유지
 - 모든 UC는 **동일한 7-Layer 구조** 사용
 - 파일 명명 규칙 엄격히 준수:
   - `uc[번호]_[레이어]_*.puml`
   - `SD-[모듈명]-[번호].puml`
 
-### 8.2 관심사 분리
+### 9.2 관심사 분리
 - **Domain**: 비즈니스 로직 없음 (순수 데이터 구조)
 - **Service**: 비즈니스 로직만 (HTTP/DB 직접 접근 금지)
 - **Controller**: 요청 파싱 + 응답 직렬화만
 - **Repository**: SQL/ORM만 (비즈니스 로직 금지)
 
-### 8.3 외부 시스템 추상화
+### 9.3 외부 시스템 추상화
 - 모든 외부 API는 **Client 인터페이스**로 추상화
 - 테스트 시 Mock 객체로 교체 가능
 - 예: `OpenEMRClient`, `OrthancClient`, `AIClient`
 
-### 8.4 감사 추적
+### 9.4 감사 추적
 - **모든 중요한 액션**은 `AuditClient.log_event()` 호출
 - 개인정보 조회/수정은 필수 로깅
 
-### 8.5 보안
+### 9.5 보안
 - **JWT**: 짧은 만료 시간 (15분)
 - **Refresh Token**: 긴 만료 시간 (7일) + Rotation
 - **RBAC**: 최소 권한 원칙
@@ -769,9 +872,9 @@ SECURITY_EVENTS
 
 ---
 
-## 9. 자주 사용하는 UML 패턴
+## 10. 자주 사용하는 UML 패턴
 
-### 9.1 PlantUML 관계 표기법
+### 10.1 PlantUML 관계 표기법
 ```plantuml
 ' 연관 (Association)
 ClassA --> ClassB
@@ -795,7 +898,7 @@ ClassA ..|> InterfaceB
 ClassA "1" --> "0..*" ClassB
 ```
 
-### 9.2 Sequence Diagram 패턴
+### 10.2 Sequence Diagram 패턴
 ```plantuml
 ' 그룹
 group 로그인 인증
@@ -939,6 +1042,7 @@ OpenEMR, Orthanc, HAPI FHIR는 외부 상용 서버를 사용합니다.
 | 2025-12-23 (심야) | Claude | Write-Through 패턴 구현 및 종합 테스트 대시보드 완성<br>- FHIR Service Adapter 구현 (fhir_adapter.py)<br>- PatientCacheViewSet에 Write-Through 패턴 적용<br>- Write-Through 패턴 유닛 테스트 완료 (7개 테스트 Pass)<br>- 16_Write_Through_패턴_가이드.md 문서 작성<br>- 종합 테스트 대시보드 구현 (comprehensive_test.html)<br>- 6개 탭 통합 테스트 UI 완성<br>- 15_테스트_페이지_가이드.md 업데이트<br>- REF_CLAUDE_CONTEXT.md 설계 패턴 추가 |
 | 2025-12-24 (오전) | Claude | 프로젝트 현황 재검토 및 문서 최신화<br>- 실제 프로젝트 위치 확인 (d:\1222\NeuroNova_v1)<br>- 현재 구현 상태 정확히 반영<br>- 테스트 파일 위치 업데이트 (templates/emr/comprehensive_test.html)<br>- FHIR Adapter 구현 상태 확인<br>- Write-Through 패턴 적용 확인 |
 | 2025-12-24 (오후) | Claude | AI 코어 개발 R&R 정의 및 문서 작성<br>- 17_프로젝트_RR_역할분담.md 생성<br>- 18_AI_개발_가이드.md 생성<br>- Interface Specification 템플릿 생성<br>- AI 개발자 역할 명확화 (Backend/Frontend 제외)<br>- 독립 모듈 개발 전략 수립 |
+| 2025-12-28 | Claude | API 품질 관리 문서 추가 및 REF_CLAUDE_CONTEXT.md 업데이트<br>- **섹션 3 추가**: 개발 품질 관리 정책 (에러 핸들링, API 자동문서화, 데이터 검증)<br>- 25_에러_핸들링_가이드.md 생성 (표준 에러 응답 형식, 에러 코드 체계)<br>- 26_API_자동문서화_가이드.md 생성 (drf-spectacular, Swagger UI, TypeScript 타입 생성)<br>- 27_데이터_검증_정책.md 생성 (4단계 검증 계층, 데이터 무결성 보장)<br>- 섹션 번호 재조정 (기존 3~9 → 4~10)<br>- README.md 업데이트 (API 품질 관리 문서 추가) |
 
 ---
 

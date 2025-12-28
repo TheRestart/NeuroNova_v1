@@ -52,7 +52,10 @@
       "Bash(venvScriptspython add_diagnosis_data.py)",
       "Bash(d:\\\\1222\\\\NeuroNova_v1\\\\NeuroNova_02_back_end\\\\01_django_server\\\\venv\\\\Scripts\\\\python.exe:*)",
       "Bash(venvScriptspython manage.py add_diagnosis_data)",
-      "Bash(./venv/Scripts/python.exe:*)"
+      "Bash(./venv/Scripts/python.exe:*)",
+      "Bash(du:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)"
     ]
   }
 }
