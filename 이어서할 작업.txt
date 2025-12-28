@@ -2,16 +2,30 @@
 ==
 데이터 사전 업로드 
 
-=== 프롬이어서 진행 
-Claude에게 작업 시작 요청 시:
+=== Claude AI 온보딩 방법 (2025-12-28 업데이트)
 
+🎯 **빠른 온보딩** (권장 - 토큰 80% 절약):
+1. **REF_CLAUDE_ONBOARDING_QUICK.md** 읽기 (5분) ← 핵심만 요약
+2. **LOG_작업이력.md** 읽기 (현재 진행 상황)
+3. 필요 시 개별 문서 참조
 
-**01_프로젝트_개요.md**에서 프로젝트 전체 구조 파악
-**REF_CLAUDE_CONTEXT.md**로 Claude AI 온보딩
-**LOG_작업이력.md**에서 현재 진행 상황 확인
+📚 **상세 온보딩** (필요 시):
+1. **REF_CLAUDE_CONTEXT.md** 전체 읽기 (1000줄+) ← 모든 상세 내용
+2. **LOG_작업이력.md** 읽기
+3. 개별 UC 분석 (필요 시)
 
-현 프로젝트를 확인하고 'REF_CLAUDE_CONTEXT.md, LOG_작업이력.md'를 업데이트 하라
-현 프로젝트를 확인하고 'REF_CLAUDE_CONTEXT.md, LOG_작업이력.md'를 포함해 업데이트가 필요한 문서를 업데이트 하라
+---
+
+=== Claude에게 작업 시작 요청 시 프롬프트 예시:
+
+**빠른 온보딩**:
+"01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악해줘"
+
+**상세 온보딩**:
+"01_doc/REF_CLAUDE_CONTEXT.md와 LOG_작업이력.md를 읽고 전체 시스템을 이해해줘"
+
+**문서 업데이트 요청**:
+"현 프로젝트를 확인하고 'REF_CLAUDE_CONTEXT.md, LOG_작업이력.md'를 업데이트 하라"
 
 
 

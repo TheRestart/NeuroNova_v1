@@ -1,7 +1,8 @@
 # 01_doc - 프로젝트 문서 디렉토리
 
-**최종 수정일**: 2025-12-28 (문서 넘버링 완료)
+**최종 수정일**: 2025-12-28 (API 품질 관리 문서 추가)
 **현재 상태**: Week 6 완료 - AI 모듈 통합 및 진단 데이터 확충 완료
+**최신 업데이트**: Phase 1 문서 작성 완료 (25~27번 문서 추가)
 
 ---
 
@@ -103,11 +104,19 @@
 | 23 | [1224_상황공유.md](23_1224_상황공유.md) | 12/24 현황 공유 | - |
 | 24 | [레이어_아키텍처_가이드.md](24_레이어_아키텍처_가이드.md) | 7-Layer 아키텍처 객체 생성 법칙 | 🔥 필수 |
 
+#### API 품질 관리 (25~27) - 🆕 2025-12-28 추가
+| 번호 | 문서명 | 설명 | 중요도 |
+|---|---|---|---|
+| 25 | [에러_핸들링_가이드.md](25_에러_핸들링_가이드.md) | 표준 에러 응답 형식 및 예외 처리 전략 | 🔥 필수 |
+| 26 | [API_자동문서화_가이드.md](26_API_자동문서화_가이드.md) | Swagger/OpenAPI 자동 문서화 설정 | 🔥 필수 |
+| 27 | [데이터_검증_정책.md](27_데이터_검증_정책.md) | 데이터 검증 규칙 및 무결성 보장 정책 | 🔥 필수 |
+
 ### 참고 문서 (REF_ 접두사)
 
 | 문서명 | 설명 |
 |---|---|
-| [REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md) | Claude AI 온보딩 가이드 |
+| [REF_CLAUDE_ONBOARDING_QUICK.md](REF_CLAUDE_ONBOARDING_QUICK.md) | 🔥 **Claude AI 빠른 온보딩** (토큰 80% 절약, 5분) |
+| [REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md) | Claude AI 온보딩 가이드 (상세 - 1000줄+) |
 | [REF_PROJECT_STRUCTURE.md](REF_PROJECT_STRUCTURE.md) | 디렉토리 구조 설명 |
 | [REF_GIT_SETUP_GUIDE.md](REF_GIT_SETUP_GUIDE.md) | Git 설정 가이드 |
 | [REF_UML_사용법.md](REF_UML_사용법.md) | UML 다이어그램 사용법 |
@@ -140,17 +149,27 @@
 ### API 명세가 필요하면
 → **[08_API_명세서.md](08_API_명세서.md)** (통합 시 참조)
 
+### 🆕 API 품질 관리가 필요하면
+→ **[25_에러_핸들링_가이드.md](25_에러_핸들링_가이드.md)** (에러 응답 표준 형식)
+→ **[26_API_자동문서화_가이드.md](26_API_자동문서화_가이드.md)** (Swagger/OpenAPI 설정)
+→ **[27_데이터_검증_정책.md](27_데이터_검증_정책.md)** (데이터 검증 규칙)
+
 ### 작업 진행 상황을 확인하려면
 → **[LOG_작업이력.md](LOG_작업이력.md)**
 
-### Claude AI가 프로젝트를 이해하려면
-→ **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**
+### 🆕 Claude AI 빠른 온보딩 (권장)
+→ **[REF_CLAUDE_ONBOARDING_QUICK.md](REF_CLAUDE_ONBOARDING_QUICK.md)** (5분, 토큰 80% 절약)
+
+### Claude AI가 프로젝트를 상세히 이해하려면
+→ **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)** (1000줄 상세 참조)
 
 ### Interface Specification 작성이 필요하면
 → **[../05_ai_core/interface_spec_template.md](../05_ai_core/interface_spec_template.md)**
 
 ---
 
-**문서 버전**: 4.0 (넘버링 완료)
+**문서 버전**: 5.1 (빠른 온보딩 문서 추가)
 **정리 완료일**: 2025-12-28
 **현재 단계**: Week 6 완료 - AI 모듈 통합 단계
+**총 문서 수**: 31개 (00~27번 + REF 7개 + LOG 1개)
+**최신 추가**: REF_CLAUDE_ONBOARDING_QUICK.md (토큰 절약형 온보딩)
