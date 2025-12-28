@@ -40,7 +40,14 @@ python manage.py runserver 0.0.0.0:8000
 - `ENABLE_SECURITY = False` (기본값): 인증 없이 모든 API 접근 가능 (개발/테스트 용)
 - `ENABLE_SECURITY = True`: JWT 인증 및 역할별 Permission(10개 클래스) 엄격히 적용
 
-### 2.2 중앙 인증 정책
+### 2.2 회원가입 정책 (2025-12-28 업데이트)
+- **Patient (환자)**: 자가 회원가입 가능 (`POST /api/acct/register/` - AllowAny)
+- **의료진** (Doctor, RIB, Lab, Nurse, External): Admin이 계정 생성 후 ID/PW 공지
+  - Admin 전용 계정 생성 API 사용 (IsAdmin 권한 필요)
+  - 보안 강화 및 내부 인력 관리 목적
+- **API**: 모든 역할의 회원가입 API는 구현되어 있음 (정책 변경 대비)
+
+### 2.3 중앙 인증 정책
 - 모든 외부 시스템(OpenEMR, Orthanc) 접근은 반드시 Django API를 경유해야 합니다.
 - **클라이언트 직접 호출 엄금**.
 

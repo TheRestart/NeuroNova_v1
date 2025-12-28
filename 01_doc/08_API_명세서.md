@@ -48,7 +48,90 @@ Authorization: Bearer <access_token>
 
 ## 2. UC1 - ACCT (인증/권한)
 
-### 2.1 로그인
+### 회원가입 정책
+
+**기본 정책** (현재 운영 방침):
+- **환자(Patient)**: 자가 회원가입 가능
+- **의료진 및 관리자**: Admin이 계정 생성 후 ID/PW 공지
+  - Doctor, RIB, Lab, Nurse, External 역할은 Admin만 생성 가능
+  - 보안 강화 및 내부 인력 관리 목적
+
+**API 구현 상태**:
+- 모든 역할의 회원가입 API는 구현되어 있음 (정책 변경 대비)
+- 프론트엔드에서 Patient만 회원가입 UI 노출
+- Admin은 전용 계정 생성 UI 사용
+
+---
+
+### 2.1 회원가입 (Patient 자가 가입 / Admin 계정 생성)
+
+**POST** `/acct/register/`
+
+**설명**:
+- **Patient**: 자가 회원가입 (일반 사용자용)
+- **의료진**: Admin이 계정 생성 (내부 관리용)
+
+**요청 Body**
+```json
+{
+  "username": "patient001",
+  "password": "SecureP@ss123",
+  "email": "patient@example.com",
+  "role": "patient",
+  "firstName": "홍",
+  "lastName": "길동",
+  "phone": "010-1234-5678"
+}
+```
+
+**의료진 계정 생성 (Admin만 가능)**
+```json
+{
+  "username": "dr.kim",
+  "password": "TempP@ss123",
+  "email": "dr.kim@hospital.com",
+  "role": "doctor",
+  "employeeId": "D-2024-001",
+  "department": "신경외과",
+  "firstName": "김",
+  "lastName": "의사",
+  "phone": "010-9999-0000"
+}
+```
+
+**응답 (201 Created)**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "username": "patient001",
+  "email": "patient@example.com",
+  "role": "patient",
+  "message": "회원가입이 완료되었습니다."
+}
+```
+
+**에러 응답**
+```json
+// 403 Forbidden (의료진 계정 생성 시도)
+{
+  "error": "permission_denied",
+  "message": "의료진 계정은 관리자만 생성할 수 있습니다."
+}
+
+// 400 Bad Request
+{
+  "error": "validation_error",
+  "message": "이미 존재하는 사용자명입니다."
+}
+```
+
+**권한**:
+- Patient 가입: 인증 불필요 (AllowAny)
+- 의료진 계정 생성: Admin 권한 필요 (IsAdmin)
+
+---
+
+### 2.2 로그인
 
 **POST** `/acct/login/`
 
@@ -103,7 +186,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 2.2 토큰 갱신
+### 2.3 토큰 갱신
 
 **POST** `/acct/token/refresh/`
 
@@ -125,7 +208,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 2.3 로그아웃
+### 2.4 로그아웃
 
 **POST** `/acct/logout/`
 
@@ -147,7 +230,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 2.4 현재 사용자 정보 조회
+### 2.5 현재 사용자 정보 조회
 
 **GET** `/acct/me/`
 
@@ -177,7 +260,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 2.5 사용자 목록 조회
+### 2.6 사용자 목록 조회
 
 **GET** `/acct/users/`
 

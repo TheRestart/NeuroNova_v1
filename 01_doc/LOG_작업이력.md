@@ -50,11 +50,46 @@
 - [x] RabbitMQ (UC6) AI Queue 인프라 구축
 - [x] React 역할별 대시보드 및 JWT 인증 연동 완성
 
-### Week 2
-- [x] OpenEMR (UC2) REST API 연동 및 Patient/Encounter 모델 구현
-- [x] EMR 테스트 UI 및 유닛 테스트 환경 구축
+### Week 2 (2025-12-22)
+**UC02 (EMR) - OpenEMR 연동 및 유닛테스트 완료**
+- **OpenEMR Docker 환경**:
+  - [x] OpenEMR 7.0.3 Docker 컨테이너 구동 (포트 80, 443)
+  - [x] MariaDB 11.8 연동
+- **Django EMR 앱 구현**:
+  - [x] OpenEMRClient 구현 (인증, 환자 조회, 검색, 진료 기록, 바이탈 조회)
+  - [x] Patient, Encounter 모델 설계 및 캐싱 로직
+  - [x] 8개 API 엔드포인트 구현 (`/api/emr/`)
+  - [x] 감사 로그 통합 (프로덕션 모드)
+- **테스트**:
+  - [x] HTML 테스트 UI 구현 (emr-test-ui.html)
+  - [x] 유닛테스트 16개 작성 (81% 통과율)
+- **UC07 (ALERT) - 알림 시스템 레이아웃**:
+  - [x] Alert 모델 정의 (4단계 심각도: INFO, WARNING, CRITICAL, CODE_BLUE)
+  - [x] 알림 목록 조회 API 구현
+  - [x] 읽음 처리 API 구현
+- **React 프론트엔드 초기화**:
+  - [x] React + TypeScript + Tailwind CSS 환경 구축
+  - [x] 역할별 테마 색상 정의
+  - [x] axios, react-router-dom, zustand 설치
 
-### Week 1
-- [x] Django 프로젝트 및 MySQL 초기 환경 설정
-- [x] 7개 사용자 역할(RBAC) 커스텀 User 모델 구현
-- [x] JWT 기반 인증 시스템 구축
+### Week 1 (2025-12-22)
+**프로젝트 초기 설정 및 UC01, UC09 완료**
+- **프로젝트 구조**:
+  - [x] Django 4.2 프로젝트 생성 (cdss_backend)
+  - [x] MySQL 8.0+ 연동 설정
+  - [x] acct, audit, emr, alert 앱 생성
+- **UC01 (ACCT) - 인증/권한 시스템**:
+  - [x] 7개 역할 정의 (Admin, Doctor, RIB, Lab, Nurse, Patient, External)
+  - [x] 커스텀 User 모델 구현
+  - [x] 10개 권한 클래스 구현 (IsAdmin, IsDoctor, IsDoctorOrRIB, IsSelfOrAdmin 등)
+  - [x] JWT/Token 기반 인증 시스템 구축
+  - [x] 4개 API 엔드포인트 (login, register, logout, me)
+- **UC09 (AUDIT) - 감사 로그 시스템**:
+  - [x] AuditLog 모델 설계
+  - [x] AuditClient 유틸리티 구현 (IP, User-Agent 자동 기록)
+  - [x] 로그인/로그아웃/권한 거부 자동 로깅
+  - [x] Django Admin 통합 (읽기 전용)
+- **보안 아키텍처**:
+  - [x] Django 중앙 인증 정책 수립
+  - [x] 개발 모드 토글 기능 구현 (ENABLE_SECURITY)
+  - [x] 7개 역할별 테스트 사용자 생성 스크립트

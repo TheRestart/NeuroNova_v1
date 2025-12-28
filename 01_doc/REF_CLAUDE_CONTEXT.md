@@ -177,6 +177,13 @@ Permission Classes (permissions.py)
 - ✅ Service 레이어 패턴
 - ✅ 10개 Permission 클래스
 
+**회원가입 정책 (2025-12-28 업데이트):**
+- **Patient**: 자가 회원가입 가능 (`POST /acct/register/` - AllowAny)
+- **의료진** (Doctor, RIB, Lab, Nurse, External): Admin이 계정 생성 후 ID/PW 공지
+  - 보안 강화 및 내부 인력 관리 목적
+  - Admin 전용 계정 생성 API 사용 (IsAdmin 권한 필요)
+- **API**: 모든 역할의 회원가입 API 구현되어 있음 (정책 변경 대비)
+
 #### 도메인 모델 (실제 구현: acct/models.py)
 ```python
 User (AbstractBaseUser, PermissionsMixin)
