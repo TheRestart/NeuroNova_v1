@@ -614,10 +614,8 @@ Django API Server (포트 8000)
 
 #### 알려진 문제 및 해결 필요사항
 1. **OHIF Viewer API 호출 부재**:
-   - 증상: "No matching results" 표시, DICOM-Web API 요청 없음
-   - 원인 추정: 브라우저 캐시, OHIF 설정 인식 실패, JavaScript 초기화 오류
-   - 해결 진행 중: 브라우저 캐시 삭제, 설정 검증, Nginx 설정 최적화 완료
-   - 상세: `프로젝트_구성_및_문제_보고서.md` 참조
+   - 원인: `.env` 설정(`ORTHANC_API_URL`)이 Docker 내부 주소(`orthanc:8042`)로 설정되어 Host Django에서 접근 불가
+   - 해결: `ORTHANC_API_URL` 및 `FHIR_SERVER_URL`을 `localhost`로 변경하여 Host-Docker 통신 복구 완료 (2025-12-29)
 
 ---
 
@@ -678,7 +676,7 @@ FHIRController
 
 #### 동기화 전략
 - **OpenEMR First**: 데이터 생성 시 OpenEMR에 먼저 저장.
-- **HAPI Sync**: 주요 리소스(Patient, Encounter)는 HAPI FHIR 서버로 동기화 (구현 예정).
+- **HAPI Sync**: 9개 리소스(Patient, Encounter, Observation, DiagnosticReport 등) 동기화 및 Celery 기반 재시도 로직 구현 완료.
 
 ---
 

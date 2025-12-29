@@ -20,5 +20,12 @@ def upload_dicoms(root_dir):
     
     print(f"Total upload complete: {count} instances.")
 
+import argparse
+
 if __name__ == "__main__":
-    upload_dicoms(r"d:\1222\NeuroNova_v1\sample_dicoms")
+    parser = argparse.ArgumentParser(description="Upload DICOM files to Orthanc.")
+    parser.add_argument("--dir", required=True, help="Root directory containing DICOM files to upload")
+    parser.add_argument("--url", default="http://localhost:8042/instances", help="Orthanc instances URL")
+    args = parser.parse_args()
+
+    upload_dicoms(args.dir)

@@ -23,6 +23,23 @@
 ## 📅 상세 작업 로그
 
 ### Week 7 (2025-12-29)
+- **2025-12-29 Day 5**:
+  - [x] **Orthanc JWT URL 관리 기능 구현 (보안 강화)**:
+    - [x] **JWT URL 생명주기 설정**: 1시간 생명주기 (24시간 → 1시간으로 변경, 보안 강화)
+    - [x] **OrthancClient JWT URL 메서드**: `get_study_url_with_jwt()` 구현
+    - [x] **Redis 캐시 전략**: 50분 TTL (10분 안전 마진)
+    - [x] **RadiologyStudy 모델 프로퍼티 추가**: `dicom_web_url`, `jwt_token_expires_at`
+    - [x] **API Serializer 업데이트**: JWT URL 필드 노출 (RadiologyStudySerializer)
+    - [x] **설정 파일 업데이트**: `ORTHANC_JWT_LIFETIME_HOURS` 환경변수 추가
+    - [x] **.env.example 업데이트**: JWT 생명주기 설정 가이드 추가
+    - [x] **문서 업데이트**: [15_Orthanc_JWT_URL_관리.md](15_Orthanc_JWT_URL_관리.md) 1시간 생명주기로 전면 수정
+    - [x] **보안 고려사항**:
+      - URL 유출 시 피해 최소화 (1시간 이내 만료)
+      - 진료/판독에 충분한 시간 제공
+      - HIPAA 및 개인정보보호법 규정 준수
+    - [x] **Django check 통과**: 설정 및 코드 오류 없음 확인
+  - [x] **문서 정리**: RabbitMQ → Redis 마이그레이션 문서 FastAPI 반영
+
 - **2025-12-29 Day 4**:
   - [x] **UC08 (FHIR) 의료정보 교환 표준 구현 완료**:
     - [x] **FHIR 데이터 모델 구현**: `FHIRResourceMap`, `FHIRSyncQueue` 모델 생성 및 마이그레이션
@@ -90,6 +107,21 @@
     - [x] **Celery Beat 스케줄 확장**: AI Job 처리 스케줄 추가 (3분 주기, 새벽 3시 정리)
     - [x] **인프라 효과**: 메모리 120MB (60%) 절감, 관리 복잡도 감소, 모니터링 통합 (Flower)
     - [x] **마이그레이션 가이드 작성** (`14_RabbitMQ_to_Redis_Migration.md`): 배경, 아키텍처 변경, 코드 변경, 배포 절차, 트러블슈팅
+  - [x] **Orthanc JWT URL 관리 문서화**:
+    - [x] **JWT 암호화 URL**: Django 요청 → Orthanc에서 JWT로 암호화된 DICOM 이미지 URL 생성
+    - [x] **24시간 생명주기**: JWT 토큰은 발급 후 24시간 자동 만료
+    - [x] **23시간 Redis 캐싱**: 1시간 안전 마진을 두고 Redis에 캐싱하여 Orthanc API 호출 최소화
+    - [x] **자동 갱신 전략**: 만료 1시간 전 proactive refresh, 에러 시 reactive refresh
+    - [x] **OHIF Viewer 통합**: JWT URL을 통한 보안 강화 DICOM 이미지 로딩
+    - [x] **문서 작성** (`15_Orthanc_JWT_URL_관리.md`): JWT 구조, 생명주기 관리, Django 구현, 보안 고려사항, 트러블슈팅
+  - [x] **레거시 정리 및 Frontend RIS 연동**:
+    - [x] **Legacy Code Cleanup**: `queue_client.py` 삭제, RabbitMQ 문서/디렉토리 제거, Redis/Celery로 완전 대체.
+    - [x] **환경 설정 미스매치 해결**: `.env`의 `ORTHANC_API_URL`을 Docker 내부용에서 Host용(`localhost`)으로 수정하여 OHIF/FHIR 접속 불량 해결.
+    - [x] **Frontend RIS 모듈 구현**:
+      - `ris` 페이지 및 컴포넌트 생성: `RISDashboard.tsx`, `StudyList.tsx`
+      - 서비스 계층 구현: `apiClient.ts` (JWT Interceptor), `risService.ts` (Proxy 호출)
+      - 라우팅 및 메뉴: `App.tsx` 라우트 등록, `Dashboard.tsx` 메뉴 경로 수정 (`/ris`)
+    - [x] **WSL 환경 전환**: Windows `npm` 호환성 문제로 WSL Ubuntu 환경에서 의존성 설치 진행.
 
 - **2025-12-29 Day 2**:
   - [x] **아키텍처 정렬 (Gateway-Controller 전환)**:

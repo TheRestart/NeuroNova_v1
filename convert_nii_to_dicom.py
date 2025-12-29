@@ -78,26 +78,44 @@ def convert_nii_to_dicom(nii_path, output_dir, patient_name, study_description, 
     
     print(f"Converted {nii_path} to {num_slices} DICOM slices in {series_dir}")
 
-# Define the source and destination
-source_base = r"C:\Users\302-28\Downloads\sub"
-output_base = r"d:\1222\NeuroNova_v1\sample_dicoms"
+import argparse
 
-# Subjects and their files
-subjects = ["sub-0004", "sub-0005"]
+def main():
+    parser = argparse.ArgumentParser(description="Convert NIfTI files to DICOM series.")
+    parser.add_argument("--source", required=True, help="Root directory containing subject folders (e.g., /path/to/sub)")
+    parser.add_argument("--output", required=True, help="Output directory for DICOM files")
+    args = parser.parse_args()
 
-for sub in subjects:
-    sub_path = os.path.join(source_base, sub)
-    if not os.path.exists(sub_path):
-        continue
+    source_base = args.source
+    output_base = args.output
+
+    if not os.path.exists(source_base):
+        print(f"Error: Source directory '{source_base}' does not exist.")
+        return
+
+    # Automatically find all sub-* directories
+    subjects = [d for d in os.listdir(source_base) if os.path.isdir(os.path.join(source_base, d)) and d.startswith("sub-")]
+
+    if not subjects:
+        print(f"No subject directories (starting with 'sub-') found in {source_base}")
+        return
+
+    for sub in subjects:
+        sub_path = os.path.join(source_base, sub)
         
-    for file in os.listdir(sub_path):
-        if file.endswith(".nii.gz"):
-            nii_path = os.path.join(sub_path, file)
-            series_desc = file.replace(f"{sub}_", "").replace(".nii.gz", "")
-            convert_nii_to_dicom(
-                nii_path=nii_path,
-                output_dir=output_base,
-                patient_name=sub,
-                study_description="Brain MRI Restoration",
-                series_description=series_desc
-            )
+        for file in os.listdir(sub_path):
+            if file.endswith(".nii.gz"):
+                nii_path = os.path.join(sub_path, file)
+                # cleanup filename to be used as series description
+                series_desc = file.replace(f"{sub}_", "").replace(".nii.gz", "")
+                
+                convert_nii_to_dicom(
+                    nii_path=nii_path,
+                    output_dir=output_base,
+                    patient_name=sub,
+                    study_description="Brain MRI Restoration",
+                    series_description=series_desc
+                )
+
+if __name__ == "__main__":
+    main()

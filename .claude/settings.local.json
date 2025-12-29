@@ -63,7 +63,9 @@
       "Bash(python:*)",
       "Bash(start:*)",
       "Bash(docker-compose restart:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(d:\\\\\\\\1222\\\\\\\\NeuroNova_v1\\\\\\\\NeuroNova_02_back_end\\\\\\\\01_django_server\\\\\\\\venv\\\\\\\\Scripts\\\\\\\\python.exe:*)",
+      "Bash(docker-compose build:*)"
     ]
   }
 }
