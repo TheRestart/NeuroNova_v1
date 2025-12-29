@@ -55,7 +55,13 @@
       "Bash(./venv/Scripts/python.exe:*)",
       "Bash(du:*)",
       "Bash(cp:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(if [ -d \"C:\\\\Users\\\\302-28\\\\Downloads\\\\sub\\\\sub-0004\" ])",
+      "Bash(then ls -la \"C:\\\\Users\\\\302-28\\\\Downloads\\\\sub\\\\sub-0004\")",
+      "Bash(else echo \"Directory not found\")",
+      "Bash(fi)",
+      "Bash(python:*)",
+      "Bash(start:*)"
     ]
   }
 }
