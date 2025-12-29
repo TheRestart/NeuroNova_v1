@@ -1,7 +1,7 @@
 # 작업 이력 (Work Log)
 
-**최종 수정일**: 2025-12-24
-**현재 상태**: Week 6 완료 - AI 모듈 통합(UC06) 및 진단 마스터 데이터(100종) 확충 완료
+**최종 수정일**: 2025-12-29
+**현재 상태**: Week 7 Day 1 완료 - 에러 핸들링, Swagger 문서화, 데이터 검증 강화 완료 (Phase 1 구현)
 
 > [!NOTE]
 > 시스템 아키텍처, 사용자 역할(RBAC), 상세 모듈 설계 등 기술 참조 정보는 **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**를 참조하십시오. 이 문서는 일자별 작업 진행 상황과 변경 이력만을 기록합니다.
@@ -16,10 +16,37 @@
 - **Week 4**: 데이터 정합성(Locking), 멱등성(Idempotency), AI R&R 정의, OCS 고도화 완료
 - **Week 5**: OCS/LIS 워크플로우 심화, 실시간 알림 강화(UC07), 감사 로그 뷰어(UC09) 완료
 - **Week 6**: AI 모듈 통합(UC06) 비동기 워크플로우 및 진단 마스터 데이터 확장 완료
+- **Week 7**: Phase 1 문서(25~27번) 실제 코드 구현 - 에러 핸들링, Swagger 문서화, 데이터 검증 완료
 
 ---
 
 ## 📅 상세 작업 로그
+
+### Week 7 (2025-12-29)
+- **2025-12-29**:
+  - [x] **에러 핸들링 구현 (Phase 1)**:
+    - `utils/exceptions.py` 생성: 7개 커스텀 Exception 클래스 구현 (CDSSException 기본 + 6개 특화)
+    - `utils/exception_handlers.py` 생성: DRF 전역 예외 처리 핸들러 구현
+    - `settings.py`에 커스텀 Exception Handler 등록
+    - `acct/services.py` AuthService.login()에 AuthenticationFailedException 적용 (샘플)
+    - 표준 에러 응답 형식 (`error.code`, `error.message`, `error.timestamp`) 적용
+  - [x] **Swagger 자동문서화 구현 (Phase 1)**:
+    - `drf-spectacular` 패키지 설치 (v0.29.0)
+    - `settings.py`에 SPECTACULAR_SETTINGS 추가 (제목, 설명, 태그, 인증 스키마)
+    - `urls.py`에 Swagger UI, ReDoc, Schema 엔드포인트 추가
+    - `acct/views.py` 주요 API 3개에 `@extend_schema` 적용 (login, logout, me)
+    - Swagger 접속 URL: `http://localhost:8000/api/docs/`
+  - [x] **데이터 검증 강화 (Phase 1)**:
+    - `emr/serializers.py` PatientCreateSerializer에 5개 필드 검증 메서드 추가
+    - `validate_phone()`: 한국 전화번호 형식 검증
+    - `validate_email()`: 이메일 형식 검증
+    - `validate_gender()`: 성별 허용 값 검증 (M, F, O)
+    - `validate_blood_type()`: 혈액형 허용 값 검증 (A+, A-, B+, B-, AB+, AB-, O+, O-)
+    - `validate()`: 객체 수준 검증 (필수 필드, 생년월일 미래 날짜 체크)
+  - [x] **통합 테스트**:
+    - `python manage.py check` 통과 (0 issues)
+    - 서버 정상 실행 확인
+    - `requirements.txt` 업데이트 (drf-spectacular 포함)
 
 ### Week 6 (2025-12-24)
 - **2025-12-24**:
