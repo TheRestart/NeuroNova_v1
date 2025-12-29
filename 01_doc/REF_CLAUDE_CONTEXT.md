@@ -3,10 +3,10 @@
 > **목적**: 이 문서는 Claude AI가 프로젝트를 빠르게 이해하고 작업을 이어서 수행할 수 있도록 작성되었습니다.
 
 **문서 작성일**: 2025-12-16
-**최종 업데이트**: 2025-12-28 (API 품질 관리 정책 추가)
+**최종 업데이트**: 2025-12-29 (PACS 시스템 및 OHIF Viewer 구축 완료)
 **프로젝트 위치**: `d:\1222\NeuroNova_v1`
 **프로젝트 타입**: 임상 의사결정 지원 시스템(CDSS) - Django 백엔드 구현 중심
-**최신 변경**: Phase 1 문서 완성 (에러 핸들링, API 자동문서화, 데이터 검증 정책)
+**최신 변경**: PACS 인프라 구축 및 DICOM 시각화 시스템 완성 (Orthanc + OHIF Viewer + Nginx)
 
 ---
 
@@ -475,34 +475,114 @@ EMRController → UI: patient list DTO
 
 ---
 
-### 5.3 UC05 (RIS) - 영상의학 (가장 복잡)
+### 5.3 UC05 (RIS) - 영상의학 ✅ PACS 인프라 구축 완료 (2025-12-29)
 
 #### 핵심 컴포넌트
 ```
-RadiologyController
-  └─→ RadiologyService
+RadiologyController (ris/views.py)
+  └─→ RadiologyService (ris/services.py)
         ├─→ RadiologyOrderRepository (오더 관리)
         ├─→ RadiologyStudyRepository (검사 관리)
-        ├─→ OrthancClient (DICOM 서버)
+        ├─→ OrthancClient (ris/clients/orthanc_client.py) ✅ 구현 완료
         ├─→ AIClient (AI 모델 호출)
         └─→ TimelineClient (이벤트 발행)
 ```
 
+#### 구현 상태
+
+**PACS 인프라 (2025-12-29 완성)**:
+- ✅ **Orthanc PACS 서버**: Docker 기반 구축 (포트 8042, DICOM 포트 4242)
+  - DICOM-Web API 활성화 (QIDO-RS, WADO-RS, STOW-RS)
+  - 12개 Study, 약 1,860개 DICOM 인스턴스 저장 (Brain MRI)
+  - 2명의 환자 데이터 (sub-0004, sub-0005)
+- ✅ **OHIF Viewer**: 웹 기반 DICOM 뷰어 (포트 3000)
+  - Nginx 리버스 프록시 통한 접근
+  - CORS 처리 완료
+  - JavaScript 모듈(.mjs) MIME 타입 수정 완료
+- ✅ **Nginx 프록시**: CORS, MIME 타입, 라우팅 처리
+  - `/pacs/dicom-web/*` → Orthanc PACS 프록시
+  - polyfill.io 보안 차단 처리
+- ✅ **NIfTI → DICOM 변환**: Python 스크립트 구현
+  - `scripts/convert_nifti_to_dicom.py`
+  - 3D MRI 볼륨 → 2D 슬라이스 자동 변환
+  - 155 슬라이스/Study, 100% 변환 성공률
+
+**Django API (RIS 모듈)**:
+- ✅ OrthancClient 구현 (`ris/clients/orthanc_client.py`)
+  - `health_check()`: Orthanc 연결 상태 확인
+  - `get_studies()`: Study 목록 조회 (페이지네이션)
+  - `get_study()`: Study 상세 정보
+  - `search_studies()`: DICOM Query/Retrieve
+  - `download_dicom_instance()`: DICOM 파일 다운로드
+- ✅ RIS ViewSets 구현 (`ris/views.py`)
+  - `RadiologyOrderViewSet`: 영상 검사 오더 CRUD
+  - `RadiologyStudyViewSet`: DICOM Study 관리
+  - `RadiologyReportViewSet`: 판독문 작성 및 서명
+- ✅ 테스트 API 엔드포인트
+  - `GET /api/ris/test/patients/`: Orthanc 환자 목록 (페이지네이션)
+  - `GET /api/ris/test/studies/`: Orthanc Study 목록 (페이지네이션)
+
+**DICOM 데이터 현황**:
+```
+환자 ID: sub-0004, sub-0005
+Study 개수: 각 6개 (총 12개)
+Modality: MR (Magnetic Resonance)
+시퀀스: T1w, T2w, FLAIR, SWI, ce-T1w 등
+슬라이스: 155개/Study
+Instance 총계: 약 1,860개
+```
+
+**아키텍처**:
+```
+사용자 브라우저
+  ↓ http://localhost:8000
+Nginx 리버스 프록시 (포트 8000)
+  ↓
+Django API Server (포트 8000)
+  ├─→ OHIF Viewer (Proxy)
+  └─→ Orthanc PACS (REST API)
+        ↑ (Flask-Orthanc 연결)
+  [Flask AI Server] (서버간 유일한 별도 연결)
+```
+
+**문서**:
+- ✅ `프로젝트_구성_및_문제_보고서.md`: 시스템 아키텍처 및 문제 해결 가이드
+- ✅ `OHIF_문제분석_보고서.md`: OHIF Viewer 문제 분석 및 해결 방안
+- ✅ `scripts/README_DICOM_UPLOAD.md`: DICOM 업로드 가이드
+
+**접속 정보**:
+- Orthanc Web UI: `http://localhost:8042/app/explorer.html`
+- OHIF Viewer: `http://localhost:3000` (Nginx 프록시)
+- Django RIS API: `http://localhost:8000/api/ris/`
+
 #### 워크플로우 (14개 Sequence Diagram)
 1. **오더 생성** (SD-RIS-01)
-2. **DICOM 업로드** (SD-RIS-02) - Orthanc로 전송
-3. **Study 생성** (SD-RIS-03) - DICOM 메타데이터 파싱
+2. **DICOM 업로드** (SD-RIS-02) - ✅ Orthanc로 전송 구현
+3. **Study 생성** (SD-RIS-03) - ✅ DICOM 메타데이터 파싱 구현
 4. **AI 자동 트리거** (SD-RIS-04) - 특정 Modality 시 AI 호출
 5. **AI 결과 수신** (SD-RIS-05)
-6. **판독문 작성** (SD-RIS-06~08)
-7. **판독문 서명** (SD-RIS-09)
-8. **DICOM Viewer** (SD-RIS-10~11) - Orthanc API 프록시
+6. **판독문 작성** (SD-RIS-06~08) - ✅ RadiologyReportViewSet 구현
+7. **판독문 서명** (SD-RIS-09) - ✅ sign() API 구현
+8. **DICOM Viewer** (SD-RIS-10~11) - ✅ OHIF Viewer 구축 (문제 해결 중)
 9. **Study 상태 관리** (SD-RIS-12~14)
 
 #### 외부 시스템 통합
-- **Orthanc**: DICOM 저장소 (C-STORE, WADO-RS)
-- **AI Server**: REST API로 모델 호출
-- **FHIR**: ImagingStudy 리소스로 변환
+- **Orthanc PACS** (v1.12.10): ✅ 구축 완료
+  - DICOM-Web 프로토콜 (QIDO-RS, WADO-RS, STOW-RS)
+  - REST API (`http://localhost:8042`)
+  - Docker Volume 영구 저장
+- **OHIF Viewer** (최신): ✅ 구축 완료 (일부 디버깅 필요)
+  - Web-based DICOM 뷰어
+  - DICOMweb 표준 준수
+- **AI Server**: REST API로 모델 호출 (구현 예정)
+- **FHIR**: ImagingStudy 리소스로 변환 (구현 예정)
+
+#### 알려진 문제 및 해결 필요사항
+1. **OHIF Viewer API 호출 부재**:
+   - 증상: "No matching results" 표시, DICOM-Web API 요청 없음
+   - 원인 추정: 브라우저 캐시, OHIF 설정 인식 실패, JavaScript 초기화 오류
+   - 해결 진행 중: 브라우저 캐시 삭제, 설정 검증, Nginx 설정 최적화 완료
+   - 상세: `프로젝트_구성_및_문제_보고서.md` 참조
 
 ---
 
@@ -1043,6 +1123,7 @@ OpenEMR, Orthanc, HAPI FHIR는 외부 상용 서버를 사용합니다.
 | 2025-12-24 (오전) | Claude | 프로젝트 현황 재검토 및 문서 최신화<br>- 실제 프로젝트 위치 확인 (d:\1222\NeuroNova_v1)<br>- 현재 구현 상태 정확히 반영<br>- 테스트 파일 위치 업데이트 (templates/emr/comprehensive_test.html)<br>- FHIR Adapter 구현 상태 확인<br>- Write-Through 패턴 적용 확인 |
 | 2025-12-24 (오후) | Claude | AI 코어 개발 R&R 정의 및 문서 작성<br>- 17_프로젝트_RR_역할분담.md 생성<br>- 18_AI_개발_가이드.md 생성<br>- Interface Specification 템플릿 생성<br>- AI 개발자 역할 명확화 (Backend/Frontend 제외)<br>- 독립 모듈 개발 전략 수립 |
 | 2025-12-28 | Claude | API 품질 관리 문서 추가 및 REF_CLAUDE_CONTEXT.md 업데이트<br>- **섹션 3 추가**: 개발 품질 관리 정책 (에러 핸들링, API 자동문서화, 데이터 검증)<br>- 25_에러_핸들링_가이드.md 생성 (표준 에러 응답 형식, 에러 코드 체계)<br>- 26_API_자동문서화_가이드.md 생성 (drf-spectacular, Swagger UI, TypeScript 타입 생성)<br>- 27_데이터_검증_정책.md 생성 (4단계 검증 계층, 데이터 무결성 보장)<br>- 섹션 번호 재조정 (기존 3~9 → 4~10)<br>- README.md 업데이트 (API 품질 관리 문서 추가) |
+| 2025-12-29 | Claude | **아키텍처 오해 수정**: Nginx → Django 단일 연결 및 Django 허브 구조 반영<br>- Orthanc/OHIF 직접 연결 가이드 삭제<br>- Flask AI-Orthanc 유일한 서버간 연결 명시 |
 
 ---
 

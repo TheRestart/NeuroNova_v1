@@ -77,10 +77,21 @@ NeuroNova_v1/
 
 ---
 
-## 🏗️ 4. 핵심 아키텍처 (7-Layer Pattern)
+## 🏗️ 4. 핵심 아키텍처 (Centralized Hub Pattern)
 
-**모든 앱(UC)은 동일한 구조**:
+**Nginx는 Django 서버와만 연결되며, Django가 모든 외부 시스템의 허브 역할을 수행합니다.**
 
+```
+[Nginx] → [Django REST Framework]
+               ↓
+    ┌──────────┼──────────┐
+    ↓          ↓          ↓
+[OpenEMR]  [Orthanc]  [RabbitMQ]
+               ↑
+        [Flask AI Server] (유일한 서버간 직접 연결)
+```
+
+**모든 앱(UC)은 동일한 레이어 구조**:
 ```
 Controller (views.py)     ← REST API 엔드포인트
     ↓
@@ -89,12 +100,6 @@ Service (services.py)     ← 비즈니스 로직
 Repository (repositories.py) ← DB 접근 (Django ORM)
 Client (clients/)         ← 외부 시스템 (OpenEMR, Orthanc)
 ```
-
-**개발 시 규칙**:
-- Controller: 요청 파싱 + 응답 직렬화만
-- Service: 비즈니스 로직 (HTTP/DB 직접 접근 금지)
-- Repository: ORM 쿼리만
-- Client: 외부 API 호출만
 
 > 상세: [24_레이어_아키텍처_가이드.md](24_레이어_아키텍처_가이드.md)
 

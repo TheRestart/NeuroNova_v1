@@ -30,17 +30,16 @@
 
 1229 월 학원에서 명령 : 
 "01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악해줘"
-업무지시서_1229.md**를 보고 일을 시작해 
 
 
 
 
 
 ===
-REF_CLAUDE_CONTEXT.md, LOG_작업이력.md, 업무계획서, CDSS 프로젝트 인수인계 문서.md
+REF_CLAUDE_CONTEXT.md, LOG_작업이력.md, CDSS 프로젝트 인수인계 문서.md
 
-핵심 4개 문서 
-REF_CLAUDE_CONTEXT.md, LOG_작업이력.md, 업무계획서, CDSS 프로젝트 인수인계 문서.md
+핵심 3개 문서를 업데이트 하시오 
+REF_CLAUDE_CONTEXT.md, LOG_작업이력.md, CDSS 프로젝트 인수인계 문서.md
 
 
 
