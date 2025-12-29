@@ -1,16 +1,9 @@
-AI 에이전트가 `NeuroNova` 프로젝트의 전체 아키텍처, 네트워크 흐름, 데이터 전략, 배포 구성을 명확히 이해할 수 있도록 정리한 기술 문서(`MD`)입니다.
-
-이 내용을 프로젝트 루트 디렉토리에 **`SYSTEM_ARCHITECTURE.md`** 라는 이름으로 저장해두면, 향후 AI에게 코딩을 맡길 때 **"SYSTEM_ARCHITECTURE.md를 참고해"**라고만 해도 문맥을 완벽히 파악할 수 있습니다.
-
----
-
 ```markdown
 # NeuroNova System Architecture Documentation
 
 ## 1. Project Overview
-**Project Name:** NeuroNova (Brain Tumor CDSS)
-**Description:** A multi-modal AI Clinical Decision Support System for brain tumor segmentation and metastasis prediction.
 **Core Stack:** Django (Backend), React/OHIF (Frontend), Orthanc (PACS), RabbitMQ/Celery (Async Tasks), Docker (Deployment).
+**Standard Image Format:** HTJ2K (High Throughput JPEG 2000) Lossless Compression.
 
 ---
 
@@ -21,67 +14,63 @@ The system follows a standard PACS/Web architecture where Nginx acts as the unif
 ### 2.1 Component Roles
 | Component | Type | Role & Responsibility |
 |:---:|:---:|:---|
-| **Nginx** | Web Server | **Entry Point.** Reverse proxy, SSL termination, static file serving, and request routing based on URL paths. |
-| **Django** | Backend | **Controller.** User authentication (JWT), business logic, patient data management, and AI inference triggering. |
-| **OHIF** | Frontend | **Viewer.** React-based DICOM viewer running in the client browser. Fetches images directly from Orthanc via Nginx proxy. |
-| **Orthanc** | PACS Server | **Storage.** Stores DICOM files. Provides DICOMWeb API for the OHIF viewer. **Must be protected.** |
-| **Celery** | Async Worker | **Worker.** Handles heavy background tasks (AI inference, external API sync). Uses the same codebase as Django. |
-| **Redis/RabbitMQ** | Broker | **Message Queue.** Mediates tasks between Django and Celery. |
+| **Nginx** | Web Server | **Gateway.** Unified Entry Point. Performs reverse proxy, SSL termination, and **X-Accel-Redirect** for secure image serving. |
+| **Django** | Backend | **Controller.** Handles JWT Auth, Business Logic, and **Signed URL generation** for PACS security. |
+| **OHIF** | Frontend | **Viewer.** HTJ2K compatible DICOM viewer. Decodes images via WASM-based multi-threading. |
+| **Orthanc** | PACS Server | **Storage.** Stores DICOM in **HTJ2K** format. Isolated from external networks. Served via Django/Nginx proxy. |
+| **Celery** | Async Worker | **Worker.** AI inference (decoding HTJ2K to Numpy) and external API sync. |
+| **Redis/RabbitMQ** | Broker | **Message Queue.** Task mediation and Channel Layer for real-time alerts. |
 
 ### 2.2 Traffic Flow Diagram
 ```mermaid
 graph TD
     User((User/Browser))
     
-    subgraph "Docker Network"
-        Nginx[Nginx (Gateway)]
-        Django[Django API Server]
-        Orthanc[Orthanc PACS]
+    subgraph "Public Zone"
+        Nginx[Nginx Unified Gateway]
+    end
+
+    subgraph "Secure Zone"
+        Django[Django Controller]
+        Orthanc[Orthanc PACS (Isolated)]
         Celery[Celery Worker]
         Broker[RabbitMQ/Redis]
     end
 
-    User -- "1. Load Viewer (Static)" --> Nginx
-    User -- "2. API / Login (REST)" --> Nginx
-    User -- "3. Image Req (DICOMWeb)" --> Nginx
-
-    Nginx -- "/ (Static)" --> OHIF_Files[OHIF Build Files]
-    Nginx -- "/api/" --> Django
-    Nginx -- "/orthanc/" --> Orthanc
-
-    %% Security Flow
-    Nginx -.->|Auth Check (Internal)| Django
+    User -- "1. Load Viewer & API" --> Nginx
+    Nginx -- "/api/auth/" --> Django
+    
+    %% Secure Image Flow
+    User -- "2. Req Image w/ Signed URL" --> Nginx
+    Nginx -- "3. Verify Signature" --> Django
+    Django -- "4. X-Accel-Redirect (Internal)" --> Nginx
+    Nginx -- "5. Serve Image (HTJ2K)" --> Orthanc
+    Orthanc -- "DICOM Stream" --> Nginx
+    Nginx -- "Protected Traffic" --> User
 
     %% Async Flow
     Django -- "Task" --> Broker
     Broker -- "Task" --> Celery
-    Celery -.->|DB Access| Django
-
+    Celery -- "HTJ2K to Numpy" --> AI_Model[AI Inference]
 ```
 
 ---
 
-## 3. Network & Security Strategy (Nginx)
+## 3. Network & Security Strategy (Nginx-Django-Orthanc Proxy)
 
-To prevent CORS errors and secure the Orthanc server, **Nginx** manages all traffic.
+Orthanc is completely isolated. All image requests must be validated by Django.
 
-### 3.1 Routing Rules
+### 3.1 Secure Image Serving Flow
+1. **Request:** OHIF requests an image using a **Signed URL** (containing JWT/Signature).
+2. **Gateway:** Nginx receives the request and forwards it to Django for signature/permission validation.
+3. **Controller:** Django verifies the signature. If valid, it returns a response with the `X-Accel-Redirect` header pointing to an internal Nginx location.
+4. **Final Proxy:** Nginx intercepts the `X-Accel-Redirect` and proxies the request to the isolated **Orthanc** server.
+5. **Streaming:** The DICOM file (HTJ2K) is streamed to the user via Nginx.
 
-1. **`/` (Root):** Serves OHIF Viewer static files (React build).
-2. **`/api/`:** Proxies to **Django (Port 8000)**.
-3. **`/orthanc/`:** Proxies to **Orthanc (Port 8042)** via DICOMWeb protocol.
-
-### 3.2 Security Implementation (`auth_request`)
-
-Orthanc must not be publicly accessible. Nginx delegates authentication to Django for every image request.
-
-* **Logic:**
-1. Client requests `/orthanc/...` with `Authorization: Bearer <token>`.
-2. Nginx pauses and calls internal endpoint `/auth_check`.
-3. Nginx passes the `Authorization` header to Django.
-4. Django verifies the JWT.
-* **Valid:** Returns `200 OK` → Nginx proxies request to Orthanc.
-* **Invalid:** Returns `401 Unauthorized` → Nginx blocks request.
+### 3.2 Security Headers (COOP/COEP)
+To enable high-performance HTJ2K decoding (via `SharedArrayBuffer`), Nginx enforces the following headers:
+* `Cross-Origin-Opener-Policy: same-origin`
+* `Cross-Origin-Embedder-Policy: require-corp`
 
 
 
@@ -174,15 +163,38 @@ sequenceDiagram
 
 ## 6. Docker Compose Service Structure
 
-Summary of the `docker-compose.yml` services.
+Summary of the `docker-compose.yml` services integrated into the unified network.
 
-* `nginx`: Gateway, Static file serving.
-* `backend`: Django application (API).
-* `celery_worker`: Background task worker (Copies `backend` image).
-* `orthanc`: DICOM server (with DICOMWeb plugin enabled).
-* `fhir_server`: HAPI FHIR or equivalent.
-* `db`: MySQL/MariaDB (Shared by Django and OpenEMR if needed, or separate instances).
-* `redis`: Message Broker for Celery.
+| Service | Container Name | Image/Build | Port Mapping | Key Dependencies |
+|:---|:---|:---|:---|:---|
+| **nginx** | `cdss-nginx` | custom | 80:80, 443:443 | `backend`, `ohif`, `orthanc` |
+| **backend** | `cdss-django-backend` | `./NeuroNova_02_back_end/01_django_server` | 8000:8000 | `db`, `redis`, `rabbitmq` |
+| **ohif** | `cdss-ohif-viewer` | `./NeuroNova_03_front_end_react` | 3000:3000 | N/A (Static) |
+| **orthanc** | `cdss-orthanc` | `jodogne/orthanc-plugins` | 8042:8042, 4242:4242 | `db` |
+| **celery_worker** | `cdss-celery` | (same as backend) | N/A | `backend`, `redis` |
+| **db** | `cdss-mysql` | `mysql:8.0` | 3306:3306 | N/A |
+| **redis** | `cdss-redis` | `redis:7.0-alpine` | 6379:6379 | N/A |
+| **rabbitmq** | `cdss-rabbitmq` | `rabbitmq:3-management` | 5672, 15672 | N/A |
+| **hapi_fhir** | `cdss-hapi-fhir` | `hapiproject/hapi-fhir-jpaserver` | 8080:8080 | `db` |
+| **ai_server** | `cdss-ai-server` | `./00_ai_core` | 5000:5000 | GPU |
+
+---
+
+## 7. HTJ2K Optimization Strategy
+
+To maximize performance, the system standardizes on HTJ2K (High Throughput JPEG 2000).
+
+### 7.1 Orthanc Configuration
+* **Ingest Transcoding:** Orthanc is configured to automatically transcode incoming DICOMs to HTJ2K Lossless format (`1.2.840.10008.1.2.4.201`).
+* **Storage Efficiency:** Reduces storage footprint while maintaining zero information loss.
+
+### 7.2 OHIF Decoding
+* **WASM Decoder:** OHIF utilizes a WebAssembly (WASM) based HTJ2K decoder.
+* **Multi-threading:** Enabled via `SharedArrayBuffer`, allowing the browser to utilize multiple CPU cores for real-time decoding and 3D rendering.
+
+### 7.3 AI Pipeline Integration
+* **HTJ2K to Numpy:** The AI inference pipeline includes a dedicated pre-processing step to decode HTJ2K DICOM streams directly into Numpy arrays for model input.
+
 
 ```
 

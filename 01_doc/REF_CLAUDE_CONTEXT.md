@@ -3,10 +3,10 @@
 > **목적**: 이 문서는 Claude AI가 프로젝트를 빠르게 이해하고 작업을 이어서 수행할 수 있도록 작성되었습니다.
 
 **문서 작성일**: 2025-12-16
-**최종 업데이트**: 2025-12-29 (Nginx Gateway 아키텍처 정렬 및 Phase 1, 2 완료)
+**최종 업데이트**: 2025-12-29 (HTJ2K 비손실 압축 표준화 및 보안 프록시 아키텍처 구축 완료)
 **프로젝트 위치**: `d:\1222\NeuroNova_v1`
-**프로젝트 타입**: 임상 의사결정 지원 시스템(CDSS) - Django 백엔드 구현 및 시스템 통합
-**최신 변경**: Nginx 중점의 Gateway-Controller 아키텍처 수립 및 `/auth-check` 설계 완료
+**프로젝트 타입**: 임상 의사결정 지원 시스템(CDSS) - HTJ2K 기반 고성능 의료 영상 아키텍처
+**최신 변경**: Nginx-Django-Orthanc 보안 프록시(Signed URL & X-Accel-Redirect) 및 HTJ2K 자동 변환 설정 완료
 
 ---
 
@@ -214,19 +214,22 @@ class PatientViewSet(viewsets.ModelViewSet):
 
 ---
 
-## 4. 아키텍처 패턴 이행 (Gateway-Controller)
+## 4. 아키텍처 패턴 이행 (Gateway-Controller & Secure Proxy)
 
-시스템은 Nginx를 단일 진입점(Unified Entry Point)으로 하는 Gateway-Controller 구조를 따릅니다. 상세 내용은 **[31_SYSTEM_ARCHITECTURE.md](31_SYSTEM_ARCHITECTURE.md)**를 참조하십시오.
+시스템은 Nginx를 단일 진입점(Unified Entry Point)으로 하며, 고도로 보안된 **Nginx-Django-Orthanc 보안 프록시** 구조를 따릅니다. 상세 내용은 **[31_SYSTEM_ARCHITECTURE.md](31_SYSTEM_ARCHITECTURE.md)**를 참조하십시오.
 
-### 4.1 트래픽 흐름 (Traffic Flow)
-1. **정적 파일 (`/`)**: Nginx가 OHIF Viewer 빌드 파일을 직접 서비스.
-2. **API 요청 (`/api/`)**: Django 백엔드 서버(Port 8000)로 프록시.
-3. **이미지 요청 (`/orthanc/`)**: Orthanc PACS 서버(Port 8042)로 프록시.
+### 4.1 트래픽 흐름 및 이미지 서빙 (Secure Flow)
+1. **정적 파일/API**: Nginx가 OHIF 및 Django API로 라우팅.
+2. **이미지 보안 요청**: OHIF가 Django로부터 발급받은 **Signed URL**로 데이터 요청.
+3. **인증 검증**: Nginx가 Django의 `/api/ris/auth-check/`를 호출하여 서명 및 권한 확인.
+4. **내부 리다이렉트**: 인증 성공 시 Django는 `X-Accel-Redirect` 헤더를 반환하여 Nginx가 내부적으로 Orthanc에서 데이터를 가져오도록 지시.
+5. **스트리밍**: Nginx가 격리된 Orthanc로부터 **HTJ2K** 데이터를 받아 사용자에게 스트리밍.
 
-### 4.2 보안 및 인증 전략 (`auth_request`)
-Orthanc 서버에 대한 직접 접근을 차단하기 위해 Nginx의 `auth_request` 모듈을 사용합니다.
-- **동작**: Nginx가 `/orthanc/` 요청을 받으면 내부적으로 Django의 `/api/ris/auth-check/`를 호출하여 JWT 유효성을 검증합니다.
-- **결과**: Django가 200 OK를 반환하면 이미지를 전송하고, 401/403을 반환하면 접근을 차단합니다.
+### 4.2 이미징 및 성능 표준 (HTJ2K)
+보안과 성능을 위해 시스템은 다음 표준을 강제합니다:
+- **포맷**: 모든 DICOM은 **HTJ2K 비손실 압축(`1.2.840.10008.1.2.4.201`)**으로 자동 변환 저장.
+- **가속**: 브라우저 멀티스레드 디코딩을 위해 Nginx에서 **COOP/COEP** 보안 헤더 필수 적용.
+- **파이프라인**: AI 추론 서버는 전처리 단계에서 HTJ2K 스트림을 직접 Numpy로 디코딩하여 처리.
 
 ### 4.3 데이터 조회 및 캐싱 전략 (Fallback)
 1. **MySQL (Cache Layer)**: 로컬 DB 우선 조회.

@@ -61,7 +61,9 @@
       "Bash(else echo \"Directory not found\")",
       "Bash(fi)",
       "Bash(python:*)",
-      "Bash(start:*)"
+      "Bash(start:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(echo:*)"
     ]
   }
 }

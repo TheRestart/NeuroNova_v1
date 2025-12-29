@@ -77,7 +77,7 @@ NeuroNova_v1/
 
 ---
 
-## 🏗️ 4. 핵심 아키텍처 (Centralized Hub Pattern)
+## 🏗️ 4. 핵심 아키텍처 (Gateway-Controller Pattern)
 
 **Nginx는 Django 서버와만 연결되며, Django가 모든 외부 시스템의 허브 역할을 수행합니다.**
 
