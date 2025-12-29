@@ -1,7 +1,8 @@
 # Claude AI 빠른 온보딩 가이드 (Quick Onboarding)
 
-**최종 수정일**: 2025-12-28
+**최종 수정일**: 2025-12-29
 **목적**: 최소 토큰으로 프로젝트 핵심만 빠르게 파악
+**최신 변경**: Redis/Celery 아키텍처 개선 (Docker → 로컬 venv)
 
 > **원칙**: 이 문서만 읽으면 즉시 작업 가능. 상세 내용은 필요 시 참조 문서 확인.
 
@@ -10,10 +11,10 @@
 ## 🎯 1. 프로젝트 정체성 (30초 요약)
 
 - **프로젝트명**: NeuroNova CDSS (Clinical Decision Support System)
-- **현재 위치**: `c:\Users\gksqu\Downloads\git_hub\NeuroNova_v1`
+- **현재 위치**: `d:\1222\NeuroNova_v1`
 - **프로젝트 성격**: **연습, 시연, 취업준비용** (포트폴리오 프로젝트)
 - **현재 단계**: Week 6 완료 - AI 모듈 통합 완료
-- **주요 기술**: Django REST Framework + OpenEMR + Orthanc + RabbitMQ
+- **주요 기술**: Django REST Framework + OpenEMR + Orthanc + Redis/Celery
 
 ---
 
@@ -71,8 +72,14 @@ NeuroNova_v1/
 
 **주요 Docker 컨테이너** (별도 실행):
 - Orthanc PACS (DICOM 서버)
-- RabbitMQ (AI Queue)
+- Redis (캐시 + Celery 브로커)
 - OpenEMR (외부 EMR 시스템)
+
+**로컬 가상환경** (venv - Django와 동일 환경):
+- Django Server
+- Celery Worker (비동기 작업 처리)
+- Celery Beat (주기적 작업 스케줄러)
+- Flower (Celery 모니터링 - 선택)
 ```
 
 ---
@@ -82,14 +89,19 @@ NeuroNova_v1/
 **Nginx는 Django 서버와만 연결되며, Django가 모든 외부 시스템의 허브 역할을 수행합니다.**
 
 ```
-[Nginx] → [Django REST Framework]
-               ↓
-    ┌──────────┼──────────┐
-    ↓          ↓          ↓
-[OpenEMR]  [Orthanc]  [RabbitMQ]
-               ↑
-        [Flask AI Server] (유일한 서버간 직접 연결)
+[Nginx] → [Django REST Framework] ← [Celery Workers (로컬 venv)]
+               ↓                          ↑
+    ┌──────────┼──────────┐               │
+    ↓          ↓          ↓               ↓
+[OpenEMR]  [Orthanc]  [Redis (Docker)]  [AI Core]
+                                          ↓
+                                    [AI Inference]
 ```
+
+**비동기 작업 흐름** (Celery):
+- **AI 분석 요청**: Django → Redis Queue → Celery Worker → AI Core
+- **FHIR 동기화**: Celery Beat (주기 실행) → HAPI FHIR Server
+- **데이터 정리**: Celery Beat → 오래된 캐시/로그 삭제
 
 **모든 앱(UC)은 동일한 레이어 구조**:
 ```
@@ -192,31 +204,50 @@ Client (clients/)         ← 외부 시스템 (OpenEMR, Orthanc)
 
 ## 🚀 8. 빠른 시작 (서버 실행)
 
-### 8.1 Backend (Django) - PowerShell
+### 8.1 Infrastructure (Docker) - PowerShell
 
+```powershell
+# Redis (캐시 + Celery 브로커)
+cd NeuroNova_02_back_end/07_redis
+docker-compose up -d
+
+# Orthanc PACS
+cd ../02_orthanc_pacs
+docker-compose up -d
+```
+
+### 8.2 Backend (Django + Celery) - 로컬 venv
+
+**Terminal 1 - Django Server:**
 ```powershell
 cd NeuroNova_02_back_end/01_django_server
-./venv/Scripts/activate
-python manage.py runserver 0.0.0.0:8000
+venv\Scripts\python manage.py runserver
 ```
 
-### 8.2 Infrastructure (Docker) - PowerShell
-
+**Terminal 2 - Celery Worker (비동기 작업 처리):**
 ```powershell
-# Orthanc PACS
-cd 03_orthanc_pacs
-docker-compose up -d
-
-# RabbitMQ
-cd ../04_rabbitmq_queue
-docker-compose up -d
+cd NeuroNova_02_back_end/01_django_server
+venv\Scripts\celery -A cdss_backend worker -l info --concurrency=4
 ```
 
-### 8.3 API 문서 접속
+**Terminal 3 - Celery Beat (주기 작업 스케줄러):**
+```powershell
+cd NeuroNova_02_back_end/01_django_server
+venv\Scripts\celery -A cdss_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+```
+
+**Terminal 4 - Flower (선택사항, Celery 모니터링):**
+```powershell
+cd NeuroNova_02_back_end/01_django_server
+venv\Scripts\celery -A cdss_backend flower --port=5555
+```
+
+### 8.3 API 및 모니터링 접속
 
 - **Swagger UI**: http://localhost:8000/api/docs/
 - **ReDoc**: http://localhost:8000/api/redoc/
 - **Django Admin**: http://localhost:8000/admin/
+- **Flower (Celery)**: http://localhost:5555 (선택사항)
 
 ---
 

@@ -40,6 +40,46 @@
     - [x] **Django check 통과**: 설정 및 코드 오류 없음 확인
   - [x] **문서 정리**: RabbitMQ → Redis 마이그레이션 문서 FastAPI 반영
 
+- **2025-12-29 Day 6**:
+  - [x] **Redis/Celery 아키텍처 개선 (환경 일관성 확보)**:
+    - [x] **문제 인식**: Docker Celery 컨테이너와 로컬 Django venv 환경 불일치 문제 식별
+      - Docker Celery는 독립적인 Python 환경 사용
+      - Django는 로컬 가상환경(venv)에서 실행
+      - 코드는 볼륨 마운트로 공유되지만 Python 패키지 환경 미공유
+      - MySQL 연결 시 socket vs TCP 연결 문제 발생 (`OperationalError: 2002`)
+    - [x] **아키텍처 결정**: Django와 Celery를 동일한 로컬 venv에서 실행하도록 변경
+      - Redis만 Docker 컨테이너로 유지 (브로커 역할)
+      - Django, Celery Worker, Celery Beat, Flower 모두 로컬 venv에서 실행
+    - [x] **Docker 정리**:
+      - celery_worker, celery_beat, flower 컨테이너 중지 및 제거
+      - `07_redis_celery` → `07_redis`로 폴더명 변경 (Celery 제거)
+      - `docker-compose.yml` 업데이트: Redis 서비스만 유지
+    - [x] **로컬 venv 설정**:
+      - venv에 Celery 패키지 설치: celery[redis], django-celery-beat, django-redis, flower
+      - Django 5.1.6 다운그레이드 (django-celery-beat 호환성)
+      - redis 4.6.0 다운그레이드 (celery[redis] 호환성)
+    - [x] **서비스 실행 검증**:
+      - Celery Worker 로컬 실행 성공 (백그라운드 터미널)
+      - Celery Beat 로컬 실행 성공 (백그라운드 터미널)
+      - Flower 로컬 실행 성공 (백그라운드 터미널)
+      - Redis 연결 테스트 성공
+    - [x] **문서 업데이트**:
+      - `07_redis/README.md`: 새 아키텍처 반영 (Docker: Redis만, 로컬 venv: Django + Celery)
+      - `07_redis/docker-compose.yml`: Celery 서비스 제거
+      - `REF_CLAUDE_CONTEXT.md`: Section 4.5 "Redis/Celery 아키텍처" 추가 (배경, 현재 구성, 실행 방법, 패키지 버전, 변경 이력)
+      - `REF_CLAUDE_ONBOARDING_QUICK.md`: 빠른 시작 가이드 업데이트 (4개 터미널 실행 방법)
+      - `LOG_작업이력.md`: 이 항목 추가
+    - [x] **폴더 구조 변경**:
+      - `NeuroNova_02_back_end/04_rabbitmq_queue` 삭제 (RabbitMQ 완전 제거)
+      - `NeuroNova_02_back_end/00_ai_core` → `01_ai_core`로 리넘버링
+      - `NeuroNova_02_back_end/07_redis_celery` → `07_redis`로 변경
+      - 참고: `01_django_server`는 실행 중이라 리넘버링 보류
+    - [x] **효과**:
+      - 환경 일관성 확보: Django와 Celery가 동일한 Python 환경 공유
+      - MySQL 연결 문제 해결: socket/TCP 문제 원천 차단
+      - 종속성 버전 충돌 방지: 단일 requirements.txt 관리
+      - 개발 환경 단순화: Docker는 Redis만 관리
+
 - **2025-12-29 Day 4**:
   - [x] **UC08 (FHIR) 의료정보 교환 표준 구현 완료**:
     - [x] **FHIR 데이터 모델 구현**: `FHIRResourceMap`, `FHIRSyncQueue` 모델 생성 및 마이그레이션

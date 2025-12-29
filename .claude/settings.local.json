@@ -65,7 +65,9 @@
       "Bash(docker-compose restart:*)",
       "Bash(echo:*)",
       "Bash(d:\\\\\\\\1222\\\\\\\\NeuroNova_v1\\\\\\\\NeuroNova_02_back_end\\\\\\\\01_django_server\\\\\\\\venv\\\\\\\\Scripts\\\\\\\\python.exe:*)",
-      "Bash(docker-compose build:*)"
+      "Bash(docker-compose build:*)",
+      "Bash(venvScriptspython -c \"import redis; r = redis.Redis\\(host=''localhost'', port=6379\\); print\\(''Redis 연결 성공:'', r.ping\\(\\)\\)\")",
+      "Bash(\"/d/1222/NeuroNova_v1/NeuroNova_02_back_end/01_django_server/venv/Scripts/python.exe\" -c \"import redis; r = redis.Redis\\(host=''localhost'', port=6379\\); print\\(''Redis 연결 성공:'', r.ping\\(\\)\\)\")"
     ]
   }
 }

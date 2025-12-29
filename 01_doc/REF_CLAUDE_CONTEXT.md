@@ -3,10 +3,10 @@
 > **목적**: 이 문서는 Claude AI가 프로젝트를 빠르게 이해하고 작업을 이어서 수행할 수 있도록 작성되었습니다.
 
 **문서 작성일**: 2025-12-16
-**최종 업데이트**: 2025-12-29 (HTJ2K 비손실 압축 표준화 및 보안 프록시 아키텍처 구축 완료)
+**최종 업데이트**: 2025-12-29 (Redis/Celery 로컬 venv 전환 완료)
 **프로젝트 위치**: `d:\1222\NeuroNova_v1`
 **프로젝트 타입**: 임상 의사결정 지원 시스템(CDSS) - HTJ2K 기반 고성능 의료 영상 아키텍처
-**최신 변경**: Nginx-Django-Orthanc 보안 프록시(Signed URL & X-Accel-Redirect) 및 HTJ2K 자동 변환 설정 완료
+**최신 변경**: Redis/Celery 아키텍처 개선 - Docker에서 로컬 가상환경으로 전환하여 Django와 동일 Python 환경 공유
 
 ---
 
@@ -235,6 +235,141 @@ class PatientViewSet(viewsets.ModelViewSet):
 1. **MySQL (Cache Layer)**: 로컬 DB 우선 조회.
 2. **FHIR Server (Standard Layer)**: 상호운용성 서버 조회 및 Write-Back 캐싱.
 3. **OpenEMR (Source of Truth)**: 원천 시스템 조회, FHIR 변환 및 동기화.
+
+---
+
+## 4.5 Redis/Celery 아키텍처 (2025-12-29 업데이트)
+
+### 배경 및 의사결정
+
+**문제**: 초기 아키텍처에서는 Django와 Celery를 별도의 Docker 컨테이너로 분리하여 실행했습니다. 이 구조는 다음과 같은 환경 불일치 문제를 발생시켰습니다:
+
+- Docker Celery 컨테이너는 독립적인 Python 환경을 가짐
+- Django는 로컬 가상환경(venv)에서 실행
+- 코드는 볼륨 마운트로 공유되지만, Python 패키지 환경은 공유되지 않음
+- MySQL 연결 시 socket vs TCP 연결 문제 발생
+- 종속성 버전 불일치 가능성
+
+**해결 방안**: Django와 Celery를 **동일한 로컬 가상환경(venv)**에서 실행하도록 아키텍처를 변경했습니다. Redis만 Docker 컨테이너로 유지합니다.
+
+### 현재 구성 (개발 환경)
+
+**Docker:**
+- **Redis**: Django 캐시 및 Celery 브로커 (포트 6379)
+  - 이미지: `redis:7-alpine`
+  - 명령어: `redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru`
+  - 네트워크: `neuronova_network`
+
+**로컬 가상환경 (d:\1222\NeuroNova_v1\NeuroNova_02_back_end\01_django_server\venv):**
+- **Django Server**: `venv\Scripts\python manage.py runserver`
+- **Celery Worker**: `venv\Scripts\celery -A cdss_backend worker -l info --concurrency=4`
+- **Celery Beat**: `venv\Scripts\celery -A cdss_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler`
+- **Flower**: `venv\Scripts\celery -A cdss_backend flower --port=5555` (선택사항)
+
+### 폴더 구조
+
+```
+NeuroNova_02_back_end/
+├── 01_django_server/           # Django + Celery (로컬 venv)
+│   ├── venv/                   # 공유 Python 가상환경
+│   ├── manage.py
+│   ├── cdss_backend/           # Django 프로젝트 설정
+│   │   ├── celery.py           # Celery 설정
+│   │   └── settings.py
+│   ├── acct/, emr/, lis/, ris/, ai/, alert/, fhir/, audit/  # Django 앱
+│   └── requirements.txt
+│
+├── 07_redis/                   # Redis (Docker)
+│   ├── docker-compose.yml
+│   └── README.md
+│
+└── ... (기타 백엔드 서비스)
+```
+
+**참고**: `07_redis/` 폴더는 이전에 `07_redis_celery/`였으나, Celery가 로컬 venv로 이동하면서 폴더명을 변경했습니다.
+
+### 실행 방법
+
+#### 1. Redis 시작 (Docker)
+
+```bash
+cd d:\1222\NeuroNova_v1\NeuroNova_02_back_end\07_redis
+docker-compose up -d
+```
+
+#### 2. Django 및 Celery 시작 (로컬 venv)
+
+```bash
+cd d:\1222\NeuroNova_v1\NeuroNova_02_back_end\01_django_server
+
+# Django 서버 (메인 터미널)
+venv\Scripts\python manage.py runserver
+
+# Celery Worker (새 터미널)
+venv\Scripts\celery -A cdss_backend worker -l info --concurrency=4
+
+# Celery Beat (새 터미널)
+venv\Scripts\celery -A cdss_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+# Flower - 선택사항 (새 터미널)
+venv\Scripts\celery -A cdss_backend flower --port=5555
+```
+
+### Celery 태스크 기능
+
+1. **AI Job Processing**: AI 분석 요청 큐잉 및 처리
+2. **FHIR Sync**: 의료 데이터 표준 변환 및 HAPI FHIR 서버 동기화
+3. **Periodic Tasks**: 오래된 데이터 정리, 재시도 로직 실행
+
+### 모니터링
+
+**Celery Flower**를 통해 작업 상태를 모니터링할 수 있습니다:
+- URL: http://localhost:5555
+- 기능: 태스크 성공/실패 확인, 워커 상태 모니터링, 재시도 관리
+
+### 패키지 버전
+
+```python
+# requirements.txt
+Django==5.1.6                    # django-celery-beat 호환성 (5.1.x 요구)
+redis==4.6.0                     # celery[redis] 호환성 (<5.0.0 요구)
+celery[redis]==5.3.4
+django-celery-beat==2.7.0        # 동적 스케줄 관리
+django-redis==5.4.0              # Django 캐시 백엔드
+flower==2.0.1                    # Celery 모니터링
+```
+
+**버전 제약 사항**:
+- `django-celery-beat 2.7.0`은 Django 5.2 미만 요구 → Django 5.1.6 사용
+- `celery[redis] 5.3.4`는 redis<5.0.0 요구 → redis 4.6.0 사용
+
+### 아키텍처 변경 이력
+
+**변경 전 (2025-12-28 이전):**
+```
+Docker:
+- Redis (브로커)
+- Celery Worker
+- Celery Beat
+- Flower
+
+로컬:
+- Django Server (venv)
+```
+
+**변경 후 (2025-12-29):**
+```
+Docker:
+- Redis (브로커)
+
+로컬 venv:
+- Django Server
+- Celery Worker
+- Celery Beat
+- Flower
+```
+
+**변경 사유**: Django와 Celery가 동일한 Python 환경을 공유하여 환경 일관성 확보, MySQL 연결 문제 해결, 종속성 버전 충돌 방지.
 
 ---
 
