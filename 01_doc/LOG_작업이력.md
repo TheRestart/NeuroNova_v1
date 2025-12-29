@@ -54,6 +54,42 @@
     - [x] **5개 추가 API 엔드포인트**: GET /api/fhir/{ResourceType}/{id}
     - [x] **동기화 작업 확장**: 모든 9개 리소스 타입 지원
     - [x] **검증 완료**: Django check 통과, Swagger 문서 자동 생성
+  - [x] **인프라 고도화 (Celery + Redis)**:
+    - [x] **Celery Worker 구현**: FHIR 동기화 큐 비동기 처리 (`fhir/tasks.py`)
+      - `sync_fhir_resource`: 개별 리소스 동기화 (재시도 최대 3회, 60초 간격)
+      - `process_fhir_sync_queue`: 5분마다 pending/failed 큐 일괄 처리 (Celery Beat)
+      - `cleanup_old_sync_queue`: 매일 새벽 2시 오래된 큐 정리 (완료 30일, 실패 90일)
+    - [x] **Redis 캐싱 적용**: OAuth 2.0 토큰, FHIR 리소스 맵 캐싱 (만료 시간 90%)
+    - [x] **Celery 설정**: `cdss_backend/celery.py`, `cdss_backend/__init__.py` 초기화
+    - [x] **Docker Compose 구성**: `07_redis_celery/docker-compose.yml` (Redis, Worker, Beat, Flower)
+    - [x] **Dockerfile**: `Dockerfile.celery` (Celery 전용 이미지)
+    - [x] **환경 변수**: `.env.example`에 Redis, FHIR OAuth 설정 추가
+    - [x] **의존성 추가**: `requirements.txt`에 celery[redis], django-celery-beat, django-redis, flower 추가
+    - [x] **성능 최적화**: Redis 메모리 정책(allkeys-lru), Worker concurrency(4), Beat 스케줄 설정
+  - [x] **테스트 코드 작성**:
+    - [x] **FHIR Converters 테스트**: PatientConverter, MedicationRequestConverter, ConditionConverter, ImagingStudyConverter (4개 클래스)
+    - [x] **모델 테스트**: FHIRResourceMap, FHIRSyncQueue (unique constraint, ordering)
+    - [x] **Celery Tasks 테스트**: OAuth 토큰 캐싱/발급, FHIR 리소스 전송, 동기화 태스크 (3개 테스트)
+    - [x] **API 테스트**: Patient FHIR 조회, 동기화 작업 생성 (2개 테스트)
+    - [x] **총 11개 테스트 클래스**: 단위 테스트 및 통합 테스트 포함
+  - [x] **문서화 완료**:
+    - [x] **배포 가이드 업데이트** (`11_배포_가이드.md`): FHIR v1.1 업데이트, 마이그레이션 가이드, 성능 최적화 내역
+    - [x] **API 사용 가이드 생성** (`12_API_사용_가이드.md`): 전체 UC01-UC09 API 문서, FHIR 9개 리소스 예제
+    - [x] **FHIR 통합 가이드 생성** (`13_FHIR_통합_가이드.md`): FHIR 아키텍처, 리소스 매핑, 동기화 워크플로우, OAuth 2.0, 실전 시나리오
+    - [x] **Redis/Celery 배포 가이드** (`07_redis_celery/README.md`): 서비스 구성, 배포 방법, 모니터링, 트러블슈팅
+  - [x] **RabbitMQ 제거 및 Redis 통합 (메시지 브로커 단순화)**:
+    - [x] **AI Job Queue Celery 마이그레이션**: RabbitMQ ai_jobs 큐 → Celery 태스크 (`ai/tasks.py`)
+      - `process_ai_job`: AI 작업 처리 (재시도 최대 3회, 5분 간격)
+      - `process_pending_ai_jobs`: 3분마다 pending/failed AI Job 일괄 처리 (Celery Beat)
+      - `cleanup_old_ai_jobs`: 매일 새벽 3시 오래된 AI Job 정리 (완료 90일, 실패 180일)
+    - [x] **AI 서비스 레이어 업데이트**: `ai/services.py` - Celery 태스크 디스패치로 변경
+    - [x] **API 문서 업데이트**: `ai/views.py` - Swagger 주석 변경 (RabbitMQ → Celery)
+    - [x] **RabbitMQ 의존성 제거**: `requirements.txt`에서 pika 패키지 제거
+    - [x] **RabbitMQ 설정 제거**: `settings.py`, `.env.example`에서 RabbitMQ 설정 제거
+    - [x] **queue_client.py deprecated 처리**: AIQueueClient 클래스 deprecated 경고 및 마이그레이션 가이드 추가
+    - [x] **Celery Beat 스케줄 확장**: AI Job 처리 스케줄 추가 (3분 주기, 새벽 3시 정리)
+    - [x] **인프라 효과**: 메모리 120MB (60%) 절감, 관리 복잡도 감소, 모니터링 통합 (Flower)
+    - [x] **마이그레이션 가이드 작성** (`14_RabbitMQ_to_Redis_Migration.md`): 배경, 아키텍처 변경, 코드 변경, 배포 절차, 트러블슈팅
 
 - **2025-12-29 Day 2**:
   - [x] **아키텍처 정렬 (Gateway-Controller 전환)**:
