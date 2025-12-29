@@ -3,10 +3,10 @@
 > **목적**: 이 문서는 Claude AI가 프로젝트를 빠르게 이해하고 작업을 이어서 수행할 수 있도록 작성되었습니다.
 
 **문서 작성일**: 2025-12-16
-**최종 업데이트**: 2025-12-29 (PACS 시스템 및 OHIF Viewer 구축 완료)
+**최종 업데이트**: 2025-12-29 (Nginx Gateway 아키텍처 정렬 및 Phase 1, 2 완료)
 **프로젝트 위치**: `d:\1222\NeuroNova_v1`
-**프로젝트 타입**: 임상 의사결정 지원 시스템(CDSS) - Django 백엔드 구현 중심
-**최신 변경**: PACS 인프라 구축 및 DICOM 시각화 시스템 완성 (Orthanc + OHIF Viewer + Nginx)
+**프로젝트 타입**: 임상 의사결정 지원 시스템(CDSS) - Django 백엔드 구현 및 시스템 통합
+**최신 변경**: Nginx 중점의 Gateway-Controller 아키텍처 수립 및 `/auth-check` 설계 완료
 
 ---
 
@@ -55,11 +55,11 @@
 | UC2 | EMR | EMR Proxy | OpenEMR 데이터 Pull, 캐싱 |
 | UC3 | OCS | Order Communication System | 처방 전달 |
 | UC04 | LIS | Lab Information System | 임상병리 검사 결과 및 이상치 알림 | ✅ 완료 |
-| UC05 | RIS | Radiology Information System | 영상 검사 오더, DICOM 연동 | ✅ 완료 |
+| UC05 | RIS | Radiology Information System | 영상 검사 오더, DICOM 연동 (OHIF Proxy) | ✅ 완료 |
 | UC06 | AI | AI Orchestration | AI 모델 호출, 결과 관리, 검토 프로세스 | ✅ 완료 |
-| UC07 | ALERT | Timeline/Alert Core | 이벤트 타임라인, 실시간 알림 | ✅ 완료 |
-| UC08 | FHIR | FHIR Gateway | FHIR 리소스 변환, 동기화 | 🔄 진행 중 |
-| UC09 | AUDIT | Audit/Admin | 전수 감사 로그, 보안 모니터링 뷰식 | ✅ 완료 |
+| UC07 | ALERT | Timeline/Alert Core | 이벤트 타임라인, 실시간 알림 (Channels) | ✅ 완료 |
+| UC08 | FHIR | FHIR Gateway | HAPI FHIR 연동 및 리소스 변환 | ✅ 완료 |
+| UC09 | AUDIT | Audit/Admin | 전수 감사 로그 및 로그 뷰어 | ✅ 완료 |
 
 ---
 
@@ -201,11 +201,43 @@ class PatientViewSet(viewsets.ModelViewSet):
 - 필수 필드 존재 여부 확인
 - 타임아웃 설정 (OpenEMR: 10초, Orthanc: 60초)
 
+### 3.4 로깅 및 모니터링 (Phase 2)
+- **표준화된 로깅**: `logs/` 디렉토리에 `app.log`, `access.log`, `error.log` 분할 관리.
+- **액세스 로그**: `AccessLogMiddleware`를 통해 모든 요청의 IP, 유저, 수행 시간 기록.
+- **개인정보 마스킹**: SSN, 전화번호, 이메일 등 민감 정보 자동 마스킹 (`utils/logging.py`).
+- **테스트 환경**: `pytest-django`, `pytest-cov` 기반의 유닛/통합 테스트 체계 구축.
+
+### 3.5 성능 최적화 정책 (Phase 2)
+- **캐싱**: Redis 기반의 API 결과 캐싱 (`django-redis`).
+- **ORM 최적화**: `select_related` 및 `prefetch_related` 필수 적용으로 N+1 문제 원천 차단.
+- **비동기 처리**: AI 분석 등 무거운 작업은 RabbitMQ/Celery 연동.
+
 ---
 
-## 4. 아키텍처 패턴 이해
+## 4. 아키텍처 패턴 이행 (Gateway-Controller)
 
-### 4.1 레이어 아키텍처 (공통)
+시스템은 Nginx를 단일 진입점(Unified Entry Point)으로 하는 Gateway-Controller 구조를 따릅니다. 상세 내용은 **[31_SYSTEM_ARCHITECTURE.md](31_SYSTEM_ARCHITECTURE.md)**를 참조하십시오.
+
+### 4.1 트래픽 흐름 (Traffic Flow)
+1. **정적 파일 (`/`)**: Nginx가 OHIF Viewer 빌드 파일을 직접 서비스.
+2. **API 요청 (`/api/`)**: Django 백엔드 서버(Port 8000)로 프록시.
+3. **이미지 요청 (`/orthanc/`)**: Orthanc PACS 서버(Port 8042)로 프록시.
+
+### 4.2 보안 및 인증 전략 (`auth_request`)
+Orthanc 서버에 대한 직접 접근을 차단하기 위해 Nginx의 `auth_request` 모듈을 사용합니다.
+- **동작**: Nginx가 `/orthanc/` 요청을 받으면 내부적으로 Django의 `/api/ris/auth-check/`를 호출하여 JWT 유효성을 검증합니다.
+- **결과**: Django가 200 OK를 반환하면 이미지를 전송하고, 401/403을 반환하면 접근을 차단합니다.
+
+### 4.3 데이터 조회 및 캐싱 전략 (Fallback)
+1. **MySQL (Cache Layer)**: 로컬 DB 우선 조회.
+2. **FHIR Server (Standard Layer)**: 상호운용성 서버 조회 및 Write-Back 캐싱.
+3. **OpenEMR (Source of Truth)**: 원천 시스템 조회, FHIR 변환 및 동기화.
+
+---
+
+## 5. 기존 설계 패턴 (Layered Architecture)
+
+### 5.1 레이어 아키텍처 (공통)
 
 모든 UC는 동일한 7-Layer 구조를 따릅니다:
 

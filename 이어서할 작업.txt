@@ -28,7 +28,7 @@
 "현 프로젝트를 확인하고 'REF_CLAUDE_CONTEXT.md, LOG_작업이력.md'를 업데이트 하라"
 
 
-1229 월 학원에서 명령 : 
+
 "01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악해줘"
 
 

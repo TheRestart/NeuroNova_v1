@@ -1,7 +1,7 @@
 # 작업 이력 (Work Log)
 
 **최종 수정일**: 2025-12-29
-**현재 상태**: Week 7 Day 2 완료 - PACS 인프라 구축 및 OHIF Viewer 통합 (DICOM 시각화)
+**현재 상태**: Phase 1 & Phase 2 인프라 표준화 및 검증 완료
 
 > [!NOTE]
 > 시스템 아키텍처, 사용자 역할(RBAC), 상세 모듈 설계 등 기술 참조 정보는 **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**를 참조하십시오. 이 문서는 일자별 작업 진행 상황과 변경 이력만을 기록합니다.
@@ -16,7 +16,7 @@
 - **Week 4**: 데이터 정합성(Locking), 멱등성(Idempotency), AI R&R 정의, OCS 고도화 완료
 - **Week 5**: OCS/LIS 워크플로우 심화, 실시간 알림 강화(UC07), 감사 로그 뷰어(UC09) 완료
 - **Week 6**: AI 모듈 통합(UC06) 비동기 워크플로우 및 진단 마스터 데이터 확장 완료
-- **Week 7**: Phase 1 문서(25~27번) 실제 코드 구현 및 PACS 인프라 구축 완료
+- **Week 7**: Phase 1 (Error/Swagger/Validation) & Phase 2 (Log/Test/Performance) 인프라 표준화 완성
 
 ---
 
@@ -24,49 +24,12 @@
 
 ### Week 7 (2025-12-29)
 - **2025-12-29 Day 2**:
-  - [x] **PACS 인프라 구축 (UC05 - RIS 시각화 완성)**:
-    - **NIfTI → DICOM 변환**: 12개 Brain MRI 파일 변환 (sub-0004, sub-0005 각 6개 시퀀스)
-      - 시퀀스: T1w, T2w, FLAIR, SWI, ce-T1w, DWI
-      - 총 1,860개 DICOM 인스턴스 생성 (각 155 슬라이스)
-      - `scripts/convert_nifti_to_dicom.py` 구현 및 100% 성공률 업로드
-    - **Orthanc PACS 서버**: Docker 기반 구축 및 DICOM-Web 활성화
-      - 포트: 8042 (HTTP/REST API), 4242 (DICOM 프로토콜)
-      - DICOM-Web 표준 지원: QIDO-RS, WADO-RS, STOW-RS
-      - `orthanc.json` 설정: 인증 비활성화, 타임아웃 60초, 인스턴스 덮어쓰기 허용
-      - 데이터 검증: 2명 환자, 12개 Study, ~1,860개 Instance 확인
-    - **OHIF Viewer 통합**: 웹 기반 DICOM 뷰어 배포
-      - Docker 컨테이너 배포 (`ohif/viewer:latest`)
-      - `ohif-config.js`: Orthanc PACS 데이터 소스 설정
-      - Nginx 역방향 프록시 (포트 3000) 통한 서비스 제공
-    - **Nginx 프록시 구성**: CORS, MIME 타입, 라우팅 통합 관리
-      - CORS 헤더 추가 (Access-Control-Allow-Origin: *)
-      - JavaScript 모듈(.mjs) MIME 타입 설정 (`application/javascript`)
-      - polyfill.io 보안 차단 (CDN 보안 이슈 대응)
-      - 라우팅: `/` → OHIF, `/pacs/*` → Orthanc
-    - **Django RIS API 통합**: Orthanc 클라이언트 구현
-      - `ris/clients/orthanc_client.py`: 10개 메서드 구현
-      - Health check, Studies 조회, Study 상세 정보, DICOM 메타데이터 추출
-      - Study 검색 (PatientName, PatientID, StudyDate), DICOM 인스턴스 다운로드
-    - **시스템 아키텍처**:
-      ```
-      브라우저 (localhost:8000)
-          ↓
-      [Nginx 역방향 프록시]
-          ↓
-      [Django Server:8000]
-          ↓ (Proxy/Client)
-          ├─→ [Orthanc PACS:8042] ← [Flask AI Server]
-          └─→ [OHIF Viewer]
-      ```
-  - [x] **문서화**:
-    - `프로젝트_구성_및_문제_보고서.md` 생성: 9개 섹션 포괄 문서
-    - 시스템 구성, 데이터 현황, 접속 방법, 문제 및 해결책, 검증 체크리스트 포함
-    - `REF_CLAUDE_CONTEXT.md` UC05 섹션 업데이트 (PACS 인프라 상세 정보)
-  - [x] **알려진 이슈**:
-    - OHIF Viewer "No matching results" 표시 (브라우저에서 DICOM-Web API 미호출)
-    - 원인 추정: 브라우저 캐시, OHIF 설정 인식 실패, JavaScript 초기화 오류
-    - 인프라 검증 완료: Orthanc API 정상 응답, CORS 헤더 존재, MIME 타입 수정됨
-    - 상세 트러블슈팅: `프로젝트_구성_및_문제_보고서.md` 참조
+  - [x] **아키텍처 정렬 (Gateway-Controller 전환)**:
+    - [x] `01_doc/31_서비스+_아키텍쳐.md`를 기반으로 시스템 구조 설계 변경 인지 및 동기화.
+    - [x] Nginx를 Gateway로, Django를 Controller 및 Auth Provider로 정의하는 구조적 표준 수립.
+    - [x] **OHIF Proxy 디버깅**: Docker 호스트명(`cdss-ohif-viewer`) 미해결로 인한 500 에러 확인 및 `settings.py`를 통한 URL 설정화 완료.
+  - [x] **인증 전역화 준비**: Nginx `auth_request` 연동을 위한 `/api/ris/auth-check/` 설계 및 계획 수립.
+  - [x] **문서 최신화**: `REF_CLAUDE_CONTEXT.md` 및 `LOG_작업이력.md`를 신규 아키텍처 표준으로 업데이트 완료.
 
 - **2025-12-29 Day 1**:
   - [x] **에러 핸들링 구현 (Phase 1)**:
