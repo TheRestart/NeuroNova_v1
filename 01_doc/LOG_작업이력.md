@@ -469,3 +469,47 @@
   - [x] 커스텀 에러 핸들링 시스템 (`CDSSException`, Global Handler) 구현 및 적용
   - [x] Swagger/OpenAPI 3.0 자동 문서화(`drf-spectacular`) 설정 및 주요 API 어노테이션 추가
   - [x] `PatientCache` 모델 및 시리얼라이저 데이터 검증 강화 (주민등록번호 필드 추가 및 유효성 체크)
+
+### Week 7-2 (2025-12-30 23:50)
+**정적 코드 개선 및 마스터 데이터 시딩 시스템 구축**
+
+- **환경 변수 검증 로직 추가**:
+  - [x] `settings.py`에 `require_env()` 함수 구현 (프로덕션 환경에서 필수 환경 변수 누락 시 즉시 오류)
+  - [x] SECRET_KEY, DB 연결 정보 (NAME, USER, PASSWORD, HOST)에 검증 적용
+  - [x] `.env.example` 파일 업데이트 (필수 변수 명시 및 주석 추가)
+
+- **마스터 데이터 시딩 시스템 구축** (최우선 과제 완료):
+  - [x] `data/medication_master.json` 생성 (30개 약물 데이터, KDC/EDI 코드 기반)
+  - [x] `data/lab_test_master.json` 생성 (50개 검사 항목, LOINC 코드 기반)
+  - [x] `ocs/management/commands/seed_master_data.py` Management Command 작성
+    - 진단(100개 ICD-10), 약물(30개), 검사(50개) 통합 시딩
+    - --diagnosis-only, --medication-only, --labtest-only, --force 옵션 지원
+    - 사용법: `python manage.py seed_master_data`
+
+- **공통 검증 유틸리티 생성**:
+  - [x] `utils/validators.py` 작성 (재사용 가능한 검증 함수 모음)
+    - `validate_ssn_kr()`: 주민등록번호 형식 + 체크섬 검증
+    - `validate_phone_kr()`: 한국 전화번호 형식 검증
+    - `validate_email()`: 이메일 형식 검증
+    - `validate_birth_date()`: 생년월일 검증 (미래 날짜 불가)
+    - `validate_icd10_code()`: ICD-10 진단 코드 형식 검증
+    - `validate_loinc_code()`: LOINC 검사 코드 형식 검증
+    - `UniqueFieldValidator`: 중복 필드 검증 클래스
+
+- **EMR Serializer 리팩토링**:
+  - [x] `emr/serializers.py`의 `PatientValidationMixin` 리팩토링
+  - [x] 중복 검증 로직 제거, 공통 validators 사용으로 변경
+  - [x] 코드 가독성 및 재사용성 개선
+
+- **문서 업데이트**:
+  - [x] `오류정리_antigra_1230.md` 업데이트 (환경 변수 검증, 마스터 데이터 시딩 기록)
+  - [x] `REF_CLAUDE_ONBOARDING_QUICK.md` 업데이트 (정적 코드 개선 완료 항목 추가)
+  - [x] `LOG_작업이력.md` 업데이트 (Week 7-2 작업 내역 기록)
+  - [x] `작업_계획_요약.md` 업데이트 예정 (다음 작업 체크리스트 반영)
+
+**다음 작업 (원본 PC 복귀 후)**:
+- [ ] 마스터 데이터 시딩 실행 (`python manage.py seed_master_data`)
+- [ ] Foreign Key 마이그레이션 dry-run 테스트
+- [ ] Django 서버 기동 및 환경 변수 검증 확인
+- [ ] N+1 쿼리 분석 (Django Debug Toolbar)
+- [ ] 인덱스 최적화 적용
