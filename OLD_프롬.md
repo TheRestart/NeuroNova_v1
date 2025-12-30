@@ -2,7 +2,7 @@
 ==
 데이터 사전 업로드 
 
-=== Claude AI 온보딩 방법 (2025-12-28 업데이트)
+=== Claude AI 온보딩 방법 
 
 🎯 **빠른 온보딩** (권장 - 토큰 80% 절약):
 1. **REF_CLAUDE_ONBOARDING_QUICK.md** 읽기 (5분) ← 핵심만 요약
@@ -20,6 +20,11 @@
 
 **빠른 온보딩**:
 "01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악해줘"
+
+01_doc\GIT_서브모듈_관리_가이드.md
+내용업데이트
+
+
 
 **상세 온보딩**:
             "01_doc/REF_CLAUDE_CONTEXT.md와 LOG_작업이력.md를 읽고 전체 시스템을 이해해줘"

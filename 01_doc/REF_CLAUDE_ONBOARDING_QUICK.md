@@ -75,10 +75,17 @@ NeuroNova_v1/
 │   ├── 05_orthanc_pacs/             # Orthanc PACS Docker 설정
 │   ├── 06_hapi_fhir/                # HAPI FHIR Server Docker 설정
 │   └── 07_redis/                    # Redis Docker 설정
-├── NeuroNova_03_front_end_react/
-│   └── 00_test_client/              # 🆕 임시 API 테스트 클라이언트
+├── NeuroNova_03_front_end_react/    # 🔗 Git 서브모듈 (독립 저장소)
+│   └── 00_test_client/              # 🆕 React + OHIF Viewer 통합
 ├── NeuroNova_04_front_end_flutter/  # Flutter 모바일 앱 (타 팀원)
+├── .gitmodules                      # Git 서브모듈 설정 파일
 └── CDSS 프로젝트 인수인계 문서.md    # 🔥 Quick Start
+
+**Git 서브모듈 구조**:
+- NeuroNova_03_front_end_react는 독립적인 Git 저장소로 관리됨
+- URL: https://github.com/TheRestart/NeuroNova_03_front_end_react.git
+- 프론트엔드와 백엔드를 각각 별도로 커밋/푸시 가능
+- 상세: [GIT_서브모듈_관리_가이드.md](GIT_서브모듈_관리_가이드.md)
 
 **주요 Docker 컨테이너** (별도 실행):
 - 05_orthanc_pacs: Orthanc PACS (DICOM 서버)
@@ -554,6 +561,41 @@ print("[INFO] Processing...")
 - ✅ WSL 실행 가이드
 - ✅ 로그 파일 에러 해결
 - ✅ 디렉토리 리넘버링 (프로젝트 구조 정리)
+- ✅ 코드 정적 분석 완료 (38_코드_정적_분석_보고서.md)
+
+**정적 코드 개선 완료 (2025-12-31 00:15):**
+- ✅ 환경 변수 검증 로직 추가 (settings.py의 require_env 함수)
+- ✅ 마스터 데이터 시딩 시스템 구축 (seed_master_data.py 명령)
+  - medication_master.json (30개 약물)
+  - lab_test_master.json (50개 검사 항목)
+  - 진단 데이터 (100개 ICD-10 코드) 통합
+- ✅ 공통 검증 유틸리티 생성 (utils/validators.py)
+  - 주민등록번호 체크섬 검증
+  - 전화번호/이메일 형식 검증
+  - ICD-10/LOINC 코드 검증
+- ✅ EMR Serializer 리팩토링 (공통 validators 사용)
+- ✅ 데이터베이스 인덱스 최적화
+  - PatientCache: ssn 인덱스 추가
+  - Order: status+order_type 복합 인덱스 추가
+- ✅ React 테스트 클라이언트 개선
+  - 토큰 자동 갱신 (Refresh Token) 로직 구현
+  - 네트워크 에러 처리 강화
+  - 에러 메시지 정규화
+
+**OHIF Viewer React 통합 완료 (2025-12-31 14:00):**
+- ✅ 서비스 구조 v3.0: Multi-SPA 폐기 → 단일 React 빌드 통합
+- ✅ OHIF Viewer npm 패키지 통합 (@ohif/viewer v3.8.0)
+  - @ohif/core, @ohif/ui, @ohif/extension-cornerstone
+  - cornerstone-core, cornerstone-tools, dicom-parser
+- ✅ DICOM Viewer 페이지 구현 (/viewer/:studyInstanceUID)
+  - Django Proxy를 통한 안전한 DICOM Web API 접근
+  - JWT 토큰 자동 인증
+  - Study 메타데이터 표시
+- ✅ Orthanc 환자 목록 UI (UC05RIS 페이지)
+  - 환자 정보 테이블 (환자명, 생년월일, 성별, Study 수)
+  - "View Study" 버튼으로 DICOM Viewer 연결
+- ✅ OHIF 설정 파일 (config/ohif.config.js)
+- ✅ 통합 가이드 문서 (README_OHIF_INTEGRATION.md)
 
 **배포 준비 완료 (2025-12-30):**
 - ✅ 12_GCP_배포_가이드.md (GCP VM + Docker + Cloudflare)
@@ -563,7 +605,48 @@ print("[INFO] Processing...")
 
 ---
 
-**문서 버전**: 1.4
-**작성일**: 2025-12-30
+## 🚀 원본 PC 복귀 후 즉시 실행 가이드
+
+### 1단계: React 패키지 설치
+```bash
+cd NeuroNova_03_front_end_react/00_test_client
+npm install
+```
+
+### 2단계: 데이터베이스 마이그레이션
+```bash
+cd NeuroNova_02_back_end/02_django_server
+python manage.py makemigrations
+python manage.py migrate
+python manage.py seed_master_data
+```
+
+### 3단계: 서비스 기동
+```bash
+# Redis
+cd NeuroNova_02_back_end/07_redis && docker-compose up -d
+
+# Orthanc PACS
+cd ../05_orthanc_pacs && docker-compose up -d
+
+# Django Server
+cd ../02_django_server && python manage.py runserver
+
+# React App (OHIF 포함)
+cd NeuroNova_03_front_end_react/00_test_client
+npm start
+```
+
+### 4단계: 기능 검증
+1. 브라우저에서 `http://localhost:3000` 접속
+2. 로그인 후 UC05: RIS 메뉴 클릭
+3. **Orthanc 환자 목록** 확인
+4. **"View Study" 버튼**으로 DICOM Viewer 접근
+5. Study 메타데이터 표시 확인
+
+---
+
+**문서 버전**: 1.5
+**작성일**: 2025-12-31
 **토큰 절약**: 이 문서는 REF_CLAUDE_CONTEXT.md (1000줄)의 핵심만 추출 (약 80% 토큰 절약)
 **대상 독자**: Claude AI 온보딩용
