@@ -512,4 +512,174 @@
 - [ ] Foreign Key 마이그레이션 dry-run 테스트
 - [ ] Django 서버 기동 및 환경 변수 검증 확인
 - [ ] N+1 쿼리 분석 (Django Debug Toolbar)
-- [ ] 인덱스 최적화 적용
+- [ ] 인덱스 최적화 마이그레이션 적용
+
+### Week 7-3 (2025-12-31 00:15)
+**프론트엔드 테스트 클라이언트 코드 개선**
+
+- **React 테스트 클라이언트 개선**:
+  - [x] `.env.example` 파일 생성 (환경 변수 설정 가이드)
+  - [x] `apiClient.js` 에러 처리 강화
+    - 네트워크 에러 처리 추가 (서버 미응답 시 명확한 메시지)
+    - 토큰 갱신 (Refresh Token) 로직 구현
+    - 에러 메시지 정규화 (백엔드 에러 응답 형식 대응)
+    - 401 Unauthorized 시 자동 토큰 갱신 재시도
+
+- **데이터베이스 인덱스 최적화** (서버 불필요):
+  - [x] `emr/models.py` - PatientCache 모델에 ssn 인덱스 추가
+  - [x] `emr/models.py` - Order 모델에 status+order_type 복합 인덱스 추가
+
+- **문서 업데이트**:
+  - [x] `LOG_작업이력.md` 업데이트
+  - [x] `REF_CLAUDE_ONBOARDING_QUICK.md` 업데이트 예정
+  - [x] `작업_계획_요약.md` 업데이트 예정
+
+**다음 작업 (원본 PC 복귀 후)**:
+- [ ] 인덱스 마이그레이션 생성 및 적용 (`python manage.py makemigrations && python manage.py migrate`)
+- [ ] 마스터 데이터 시딩 실행
+- [ ] React 테스트 클라이언트 실행 테스트 (WSL 또는 로컬)
+- [ ] 전체 통합 테스트
+
+---
+
+## Week 7-4 (2025-12-31) - OHIF Viewer React 통합
+
+### 🎯 목표
+React 테스트 클라이언트에 OHIF Viewer를 npm 패키지로 통합하여 Orthanc DICOM 이미지를 시각화
+
+### ✅ 완료 작업
+
+#### 1. 서비스 구조 문서 업데이트 (v3.0)
+**파일**: [07_서비스_구조_요약.md](07_서비스_구조_요약.md)
+- Multi-SPA 전략 폐기, 단일 React 빌드로 통합
+- OHIF Viewer를 npm 패키지로 React 프로젝트에 포함
+- 라우팅 규칙 간소화 (`/viewer/:studyInstanceUID`)
+- 빌드 배포 경로 통합 (`/var/www/react-build`)
+
+#### 2. OHIF Viewer 패키지 설치
+**파일**: [package.json](../NeuroNova_03_front_end_react/00_test_client/package.json)
+
+추가된 패키지:
+```json
+{
+  "@ohif/core": "^3.8.0",
+  "@ohif/ui": "^3.8.0",
+  "@ohif/viewer": "^3.8.0",
+  "@ohif/extension-cornerstone": "^3.8.0",
+  "@ohif/extension-default": "^3.8.0",
+  "@ohif/extension-cornerstone-dicom-sr": "^3.8.0",
+  "cornerstone-core": "^2.6.1",
+  "cornerstone-tools": "^6.0.9",
+  "cornerstone-wado-image-loader": "^4.13.3",
+  "dicom-parser": "^1.8.21"
+}
+```
+
+#### 3. OHIF 설정 파일 생성
+**파일**: [src/config/ohif.config.js](../NeuroNova_03_front_end_react/00_test_client/src/config/ohif.config.js)
+- Django Proxy를 통한 Orthanc DICOM-Web 접근 설정
+- JWT 토큰 자동 추가 (requestHeaders)
+- Data source 설정 (wadoUriRoot, qidoRoot, wadoRoot)
+
+#### 4. DICOM Viewer 페이지 구현
+**파일**:
+- [src/pages/ViewerPage.js](../NeuroNova_03_front_end_react/00_test_client/src/pages/ViewerPage.js)
+- [src/pages/ViewerPage.css](../NeuroNova_03_front_end_react/00_test_client/src/pages/ViewerPage.css)
+
+기능:
+- Study Instance UID 기반 DICOM 이미지 로드
+- Study 메타데이터 표시 (환자명, 검사일, Modality 등)
+- Django Proxy를 통한 안전한 접근
+- 로딩/에러 상태 처리
+- "목록으로 돌아가기" 버튼
+
+#### 5. 라우팅 추가
+**파일**: [src/App.js](../NeuroNova_03_front_end_react/00_test_client/src/App.js)
+- `/viewer/:studyInstanceUID` 라우트 추가
+- JWT 인증 통합 (isAuthenticated 체크)
+- ViewerPage 컴포넌트 import
+
+#### 6. RIS 테스트 페이지 개선
+**파일**: [src/pages/UC05RISTest.js](../NeuroNova_03_front_end_react/00_test_client/src/pages/UC05RISTest.js)
+
+추가 기능:
+- Orthanc 환자 목록 자동 로드 (`/api/ris/test-orthanc-patients/`)
+- 환자 정보 테이블 표시 (환자명, 생년월일, 성별, Study 수)
+- "View Study" 버튼으로 DICOM Viewer 연결
+- 로딩/에러 처리 및 재시도 버튼
+
+#### 7. 스타일링
+**파일**: [src/index.css](../NeuroNova_03_front_end_react/00_test_client/src/index.css)
+
+추가 스타일:
+- `.orthanc-patients-table` - 환자 목록 테이블
+- `.data-table` - 데이터 테이블 공통 스타일
+- `.viewer-page` - DICOM Viewer 전체 화면 레이아웃
+- `.error-box`, `.info-box` - 메시지 박스
+- `.btn-sm`, `.btn-secondary` - 버튼 스타일
+
+#### 8. 환경 변수 설정
+**파일**: [.env.example](../NeuroNova_03_front_end_react/00_test_client/.env.example)
+
+추가 설정:
+```bash
+PORT=3000
+REACT_APP_DICOM_WEB_ROOT=http://localhost:8000/api/ris/dicom-web
+# WSL: http://172.29.64.1:8000/api/ris/dicom-web
+```
+
+#### 9. 통합 가이드 문서 작성
+**파일**: [README_OHIF_INTEGRATION.md](../NeuroNova_03_front_end_react/00_test_client/README_OHIF_INTEGRATION.md)
+
+내용:
+- 아키텍처 설명 (React → Django → Orthanc)
+- 설치 및 실행 방법 (개발/프로덕션)
+- 주요 기능 설명
+- API 엔드포인트 목록
+- 트러블슈팅 가이드
+- 추가 개발 예정 사항
+
+### 📊 작업 통계
+- **수정된 파일**: 6개 (App.js, UC05RISTest.js, package.json, .env.example, index.css, 서비스구조문서)
+- **생성된 파일**: 4개 (ViewerPage.js, ViewerPage.css, ohif.config.js, README_OHIF_INTEGRATION.md)
+- **추가된 패키지**: 10개 (OHIF 및 Cornerstone 관련)
+- **새 라우트**: `/viewer/:studyInstanceUID`
+
+### 🔑 핵심 개선 사항
+
+1. **단일 빌드 배포**: React와 OHIF Viewer를 하나의 빌드로 통합
+2. **보안 강화**: Django Proxy를 통한 JWT 인증 기반 DICOM 접근
+3. **사용자 경험**: 환자 목록 → View Images → DICOM Viewer 원활한 흐름
+4. **개발 효율**: npm 패키지 관리로 의존성 일원화
+
+### 🚀 다음 단계 (서버 실행 필요)
+
+#### 원본 PC 복귀 후 실행:
+```bash
+# 1. 패키지 설치
+cd NeuroNova_03_front_end_react/00_test_client
+npm install
+
+# 2. 백엔드 서비스 시작
+cd NeuroNova_02_back_end/07_redis && docker-compose up -d
+cd ../05_orthanc_pacs && docker-compose up -d
+cd ../02_django_server && python manage.py runserver
+
+# 3. React 클라이언트 시작
+cd NeuroNova_03_front_end_react/00_test_client
+npm start
+```
+
+#### 테스트 항목:
+- [ ] Orthanc 환자 목록 조회 (`/uc05`)
+- [ ] "View Study" 버튼으로 Viewer 이동
+- [ ] Study 메타데이터 표시 확인
+- [ ] JWT 토큰 자동 갱신 동작 확인
+- [ ] OHIF Viewer 전체 기능 통합 (추가 개발)
+
+### 📖 관련 문서
+- [07_서비스_구조_요약.md](07_서비스_구조_요약.md) - v3.0 아키텍처
+- [README_OHIF_INTEGRATION.md](../NeuroNova_03_front_end_react/00_test_client/README_OHIF_INTEGRATION.md) - 통합 가이드
+- [12_GCP_배포_가이드.md](12_GCP_배포_가이드.md) - 프로덕션 배포 (업데이트 필요)
+
+---
