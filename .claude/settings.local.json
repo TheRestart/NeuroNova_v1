@@ -89,7 +89,8 @@
       "Bash(docker inspect:*)",
       "Bash(python -m json.tool:*)",
       "Bash(docker restart:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git submodule add:*)"
     ]
   }
 }
