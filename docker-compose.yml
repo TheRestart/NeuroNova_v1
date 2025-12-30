@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # 1. Database (MySQL)
+  db:
+    image: mysql:8.0
+    container_name: neuronova_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: neuronova_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"  # 로컬 Django가 접속할 수 있게 포트 개방
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # 2. Cache & Broker (Redis)
+  redis:
+    image: redis:alpine
+    container_name: neuronova_redis
+    restart: always
+    ports:
+      - "6379:6379"  # 로컬 Celery/Django가 접속할 수 있게 포트 개방
+    volumes:
+      - redis_data:/data
+
+  # 3. PACS Server (Orthanc) - HTJ2K/DICOM Storage
+  orthanc:
+    image: jodogne/orthanc-plugins
+    container_name: neuronova_orthanc
+    restart: always
+    ports:
+      - "8042:8042"  # HTTP Port (웹 UI 및 REST API)
+      - "4242:4242"  # DICOM Port
+    environment:
+      ORTHANC_NAME: "NeuroNova_PACS"
+      # 필요시 orthanc.json 설정 파일을 마운트하여 사용
+      # ORTHANC__REGISTERED_USERS: '{"user": "password"}' 
+    volumes:
+      - orthanc_storage:/var/lib/orthanc/db
+
+volumes:
+  db_data:
+  redis_data:
+  orthanc_storage:

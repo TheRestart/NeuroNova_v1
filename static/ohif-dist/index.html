@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OHIF Viewer - Placeholder</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        h1 { margin: 0 0 20px 0; font-size: 2.5em; }
+        p { font-size: 1.2em; margin: 10px 0; }
+        code {
+            background: rgba(0,0,0,0.3);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .build-path {
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Custom OHIF Viewer</h1>
+        <p>OHIF Viewer v3 Placeholder</p>
+        <div class="build-path">
+            <p>빌드 경로: <code>NeuroNova_02_back_end/04_ohif_viewer</code></p>
+            <p>빌드 명령: <code>yarn run build</code></p>
+            <p>결과물을 이 디렉토리(<code>static/ohif-dist</code>)에 복사하세요.</p>
+        </div>
+        <p style="margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
+            HTJ2K WASM Decoder + NeuroNova Extension
+        </p>
+    </div>
+</body>
+</html>

@@ -77,7 +77,15 @@
       "Bash(\"/d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/venv/Scripts/python.exe\" /d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/manage.py shell:*)",
       "Bash(\"/d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/venv/Scripts/python.exe\" /d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/manage.py shell -c \"from acct.models import User; u = User.objects.filter\\(username=''admin''\\).first\\(\\); u.set_password\\(''admin123!@#''\\); u.save\\(\\); print\\(''Password updated for admin''\\)\")",
       "Bash(for file in d:/1222/NeuroNova_v1/01_doc/*.md)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(find:*)",
+      "Bash(\"d:/1222/NeuroNova_v1/NeuroNova_02_back_end/06_hapi_fhir/docker-compose.yml\" )",
+      "Bash(\"d:/1222/NeuroNova_v1/NeuroNova_02_back_end/07_redis/docker-compose.yml\")",
+      "Bash(docker compose:*)",
+      "Bash(docker network create:*)",
+      "Bash(docker network rm:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)"
     ]
   }
 }
