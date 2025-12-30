@@ -75,10 +75,17 @@ NeuroNova_v1/
 │   ├── 05_orthanc_pacs/             # Orthanc PACS Docker 설정
 │   ├── 06_hapi_fhir/                # HAPI FHIR Server Docker 설정
 │   └── 07_redis/                    # Redis Docker 설정
-├── NeuroNova_03_front_end_react/
-│   └── 00_test_client/              # 🆕 임시 API 테스트 클라이언트
+├── NeuroNova_03_front_end_react/    # 🔗 Git 서브모듈 (독립 저장소)
+│   └── 00_test_client/              # 🆕 React + OHIF Viewer 통합
 ├── NeuroNova_04_front_end_flutter/  # Flutter 모바일 앱 (타 팀원)
+├── .gitmodules                      # Git 서브모듈 설정 파일
 └── CDSS 프로젝트 인수인계 문서.md    # 🔥 Quick Start
+
+**Git 서브모듈 구조**:
+- NeuroNova_03_front_end_react는 독립적인 Git 저장소로 관리됨
+- URL: https://github.com/TheRestart/NeuroNova_03_front_end_react.git
+- 프론트엔드와 백엔드를 각각 별도로 커밋/푸시 가능
+- 상세: [GIT_서브모듈_관리_가이드.md](GIT_서브모듈_관리_가이드.md)
 
 **주요 Docker 컨테이너** (별도 실행):
 - 05_orthanc_pacs: Orthanc PACS (DICOM 서버)
