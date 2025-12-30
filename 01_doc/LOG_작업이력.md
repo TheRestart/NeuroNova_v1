@@ -1,7 +1,7 @@
 # 작업 이력 (Work Log)
 
 **최종 수정일**: 2025-12-30
-**현재 상태**: 전체 UC (UC01~UC09) 구현 완료, React 테스트 클라이언트 추가
+**현재 상태**: Phase 2 완료 - 전체 UC 구현, 배포 준비 완료 (GCP VM + Docker + Nginx)
 
 > [!NOTE]
 > 시스템 아키텍처, 사용자 역할(RBAC), 상세 모듈 설계 등 기술 참조 정보는 **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**를 참조하십시오. 이 문서는 일자별 작업 진행 상황과 변경 이력만을 기록합니다.
@@ -16,13 +16,71 @@
 - **Week 4**: 데이터 정합성(Locking), 멱등성(Idempotency), AI R&R 정의, OCS 고도화 완료
 - **Week 5**: OCS/LIS 워크플로우 심화, 실시간 알림 강화(UC07), 감사 로그 뷰어(UC09) 완료
 - **Week 6**: AI 모듈 통합(UC06) 비동기 워크플로우 및 진단 마스터 데이터 확장 완료
-- **Week 7**: Phase 1 (Error/Swagger/Validation) 인프라 표준화 및 UC08(FHIR) 완료, 전체 UC 구현 완성
+- **Week 7**: Phase 1 (Error/Swagger/Validation) 인프라 표준화 및 UC08(FHIR) 완료, 전체 UC 구현 완성, Phase 2 배포 준비 완료
 
 ---
 
 ## 📅 상세 작업 로그
 
 ### Week 7 (2025-12-29 ~ 2025-12-30)
+- **2025-12-30 Day 8 (Phase 2 배포 준비 완료)**:
+  - [x] **GCP 배포 가이드 작성** (`01_doc/12_GCP_배포_가이드.md`):
+    - [x] GCP VM + Docker + Cloudflare 환경 전면 배포 가이드 (1,300줄+)
+    - [x] 13개 섹션 구성:
+      1. GCP VM 초기 설정 (PuTTY/WinSCP SSH 연동)
+      2. Docker 설치 및 설정 (from scratch)
+      3. GitHub 연동 및 배포 전략 (SSH 키 등록)
+      4. 환경 변수 관리 (.env 파일 VM 로컬 관리)
+      5. 데이터베이스 초기화 (MySQL DB 생성, 사용자 권한, Django 마이그레이션)
+      6. 초기 데이터 로드 (테스트 계정, Master 데이터)
+      7. Docker Compose 배포 (보안 강화 설정)
+      8. Nginx + React 빌드 배포
+      9. Cloudflare HTTPS 설정 (무료 SSL/TLS, WAF, Rate Limiting)
+      10. Celery 비동기 처리 (AI Inference, FHIR Sync)
+      11. 배포 체크리스트
+      12. 트러블슈팅
+      13. 시스템 다이어그램 (Phase 1-3 비교)
+    - [x] **문서 버전**: v2.1 (보안 강화 아키텍처 적용)
+  - [x] **Nginx 보안 아키텍처 강화**:
+    - [x] **외부 노출 최소화**: React SPA, Django API만 Nginx를 통해 외부 노출
+    - [x] **Django Proxy 경유**: Orthanc, HAPI FHIR는 Django를 통해서만 접근
+    - [x] **포트 바인딩 보안**:
+      - MySQL: `127.0.0.1:3306` (localhost 바인딩)
+      - Redis: `127.0.0.1:6379` (localhost 바인딩)
+      - Orthanc: `expose` 사용 (외부 포트 차단)
+      - HAPI FHIR: `expose` 사용 (외부 포트 차단)
+      - OpenEMR: `expose` 사용 (외부 포트 차단)
+    - [x] **Nginx 라우팅**:
+      - `/`: React SPA (정적 파일)
+      - `/api/`: Django API (JWT 인증 처리)
+      - `/pacs-viewer`: OHIF Viewer (React SPA 내부 경로)
+    - [x] **보안 원칙**: "모든 백엔드 서비스는 Django를 통해서만 접근"
+  - [x] **API Swagger 문서화 보강**:
+    - [x] `emr/views.py`: 6개 function-based views에 @extend_schema 추가
+    - [x] `ocs/views.py`: MedicationMasterViewSet, DiagnosisMasterViewSet에 문서화 추가
+    - [x] `lis/views.py`: LabOrderViewSet, LabResultViewSet 전체 CRUD 문서화
+    - [x] `ris/views.py`: RadiologyStudyViewSet, RadiologyReportViewSet, DICOMImageViewSet 문서화
+    - [x] `ai/views.py`: AIJobViewSet, review 액션 문서화
+    - [x] `audit/views.py`: AuditLogViewSet 필터링 파라미터 문서화
+    - [x] **커버리지**: UC01-UC09 전체 API 엔드포인트 Swagger 문서 완료
+  - [x] **.gitignore 정리**:
+    - [x] `NeuroNova_02_back_end/02_django_server/.gitignore`: `logs/` 디렉토리 추가
+    - [x] 루트 `.gitignore`: 서브 리포지토리 제외 설정 확인
+  - [x] **다음 작업 계획 문서 작성** (`01_doc/다음_작업_계획.md`):
+    - [x] Phase 3-1: 배포 준비 (Week 8-9)
+    - [x] Phase 3-2: 성능 최적화 (Week 10-11)
+    - [x] Phase 3-3: 보안 강화 (Week 12)
+    - [x] Phase 4: 운영 준비 (Week 13-14)
+  - [x] **핵심 문서 업데이트**:
+    - [x] `REF_CLAUDE_ONBOARDING_QUICK.md` (v1.3):
+      - 최신 변경 사항 반영 (GCP 배포, Nginx 보안)
+      - 핵심 아키텍처 다이어그램 업데이트
+      - 배포 가이드 링크 추가
+      - Phase 2 완료 항목 추가
+    - [x] `LOG_작업이력.md`:
+      - Week 7 Day 8 작업 내용 추가
+      - Phase 2 배포 준비 완료 상태 반영
+
 - **2025-12-30 Day 7**:
   - [x] **디렉토리 리넘버링 (프로젝트 구조 정리)**:
     - [x] **Backend 디렉토리 변경**:

@@ -2,7 +2,7 @@
 
 **최종 수정일**: 2025-12-30
 **목적**: 최소 토큰으로 프로젝트 핵심만 빠르게 파악
-**최신 변경**: React 테스트 클라이언트 구현, 테스트 계정 관리 개선
+**최신 변경**: GCP 배포 가이드 완성, Nginx 보안 아키텍처 강화
 
 > **원칙**: 이 문서만 읽으면 즉시 작업 가능. 상세 내용은 필요 시 참조 문서 확인.
 
@@ -13,8 +13,9 @@
 - **프로젝트명**: NeuroNova CDSS (Clinical Decision Support System)
 - **현재 위치**: `d:\1222\NeuroNova_v1`
 - **프로젝트 성격**: **연습, 시연, 취업준비용** (포트폴리오 프로젝트)
-- **현재 단계**: Week 7 완료 - 전체 UC 구현 완료, React 테스트 클라이언트 추가
+- **현재 단계**: Week 7 완료, Phase 2 마무리 - GCP 배포 준비 완료
 - **주요 기술**: Django REST Framework + OpenEMR + Orthanc + Redis/Celery + React
+- **배포 환경**: GCP VM + Docker + Nginx + Cloudflare (HTTPS)
 
 ---
 
@@ -47,12 +48,14 @@ NeuroNova_v1/
 ├── 01_doc/                          # 📚 모든 문서 (31개)
 │   ├── REF_CLAUDE_ONBOARDING_QUICK.md # 🔥 빠른 온보딩 (이 문서)
 │   ├── REF_CLAUDE_CONTEXT.md        # 🔥 상세 참조 (1000줄+)
-│   ├── LOG_작업이력.md               # 🔥 Week 1~6 작업 기록
+│   ├── LOG_작업이력.md               # 🔥 Week 1~7 작업 기록
 │   ├── 00_업무계획서.md              # 전체 계획
 │   ├── 08_API_명세서.md              # API 명세
-│   ├── 25_에러_핸들링_가이드.md      # 🆕 에러 응답 표준
-│   ├── 26_API_자동문서화_가이드.md   # 🆕 Swagger 설정
-│   └── 27_데이터_검증_정책.md        # 🆕 데이터 검증 규칙
+│   ├── 11_배포_가이드.md              # 배포 가이드 (구버전)
+│   ├── 12_GCP_배포_가이드.md          # 🆕 GCP VM + Docker 배포
+│   ├── 25_에러_핸들링_가이드.md      # 에러 응답 표준
+│   ├── 26_API_자동문서화_가이드.md   # Swagger 설정
+│   └── 27_데이터_검증_정책.md        # 데이터 검증 규칙
 ├── 05_ai_core/                      # AI 코어 모듈
 ├── NeuroNova_02_back_end/
 │   ├── 01_ai_core/                  # AI 코어 모듈 (FastAPI)
@@ -93,19 +96,77 @@ NeuroNova_v1/
 
 ---
 
-## 🏗️ 4. 핵심 아키텍처 (Gateway-Controller Pattern)
+## 🏗️ 4. 핵심 아키텍처 (Microservices for Medical CDSS & PACS)
 
-**Nginx는 Django 서버와만 연결되며, Django가 모든 외부 시스템의 허브 역할을 수행합니다.**
+**시스템 타입**: Microservices Architecture
+**Gateway**: Nginx (Reverse Proxy) behind Cloudflare
+**Main Backend**: Django REST Framework
+**AI/Computation**: FastAPI (AI Core), Celery (Async Tasks)
 
 ```
-[Nginx] → [Django REST Framework] ← [Celery Workers (로컬 venv)]
-               ↓                          ↑
-    ┌──────────┼──────────┐               │
-    ↓          ↓          ↓               ↓
-[OpenEMR]  [Orthanc]  [Redis (Docker)]  [AI Core]
-                                          ↓
-                                    [AI Inference]
+┌─────────────────────────────────────────────────────────────────┐
+│                    Ingress Layer                                │
+│  Internet → Cloudflare (HTTPS/WAF) → Nginx :80                 │
+│              Routes:                                            │
+│              - / → React SPA                                    │
+│              - /api/* → Django :8000                            │
+│              - /pacs-viewer/* → OHIF Viewer                     │
+└─────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                  Application Layer                              │
+│  ┌──────────────┬──────────────┬──────────────┐                │
+│  │  React SPA   │  Django API  │ OHIF Viewer  │                │
+│  │  (UI)        │  :8000       │ (DICOM View) │                │
+│  │              │  Auth/Logic  │              │                │
+│  └──────────────┴──────────────┴──────────────┘                │
+└─────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────┐
+│              Data & Integration Layer                           │
+│  ┌─────────┬─────────┬──────────┬─────────────┐                │
+│  │  MySQL  │  Redis  │ Orthanc  │ HAPI FHIR/  │                │
+│  │  :3306  │  :6379  │  :8042   │  OpenEMR    │                │
+│  │  (DB)   │ (Cache) │  (PACS)  │  :8080      │                │
+│  │         │ (Broker)│  (DICOM) │  (EMR)      │                │
+│  └─────────┴─────────┴──────────┴─────────────┘                │
+└─────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────┐
+│           AI & Async Processing Layer                           │
+│  ┌──────────────────────┬──────────────────────┐               │
+│  │  FastAPI (AI Core)   │  Celery Workers      │               │
+│  │  - Brain Tumor Seg   │  - AI Trigger        │               │
+│  │  - Metastasis        │  - FHIR Sync         │               │
+│  │                      │  - Data Cleanup      │               │
+│  └──────────────────────┴──────────────────────┘               │
+└─────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────┐
+│              Observability Layer (Optional)                     │
+│  Prometheus → Grafana → Alertmanager                           │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+**데이터 흐름**:
+
+1. **사용자 요청**: Internet → Cloudflare → Nginx → Django
+2. **API 로직**: Django → MySQL/Redis (동기)
+3. **의료 영상**:
+   - 업로드: Django → Orthanc (동기)
+   - 뷰잉: OHIF Viewer → Orthanc (동기)
+   - AI 분석: Celery → FastAPI → Orthanc (비동기)
+4. **EMR 동기화**: Django/Celery → HAPI FHIR/OpenEMR (동기/주기)
+
+**동기 vs 비동기**:
+- **동기**: Django ↔ MySQL, Redis, Orthanc, HAPI FHIR, OpenEMR (HTTP 직접 호출)
+- **비동기**: Celery → FastAPI (AI 추론만, Redis Queue 사용)
+
+**보안**:
+- Nginx: React, Django만 외부 노출
+- Django: JWT 인증 + 모든 백엔드 Gateway
+- Orthanc/HAPI FHIR/OpenEMR: expose만 사용, 외부 차단
+- MySQL/Redis: 127.0.0.1 바인딩
 
 **비동기 작업 흐름** (Celery):
 - **AI 분석 요청**: Django → Redis Queue → Celery Worker → AI Core
@@ -329,6 +390,9 @@ npm start
 ### 레이어 아키텍처 규칙
 → **[24_레이어_아키텍처_가이드.md](24_레이어_아키텍처_가이드.md)**
 
+### 배포 가이드 (GCP)
+→ **[12_GCP_배포_가이드.md](12_GCP_배포_가이드.md)** (GCP VM + Docker + Cloudflare)
+
 ---
 
 ## ⚡ 11. 자주 묻는 질문 (FAQ)
@@ -421,17 +485,21 @@ print("[INFO] Processing...")
 - ✅ 28_테스트_전략_가이드.md
 - ✅ 29_로깅_전략_문서.md
 - ✅ 30_성능_최적화_가이드.md
-
-**추가 완료 (2025-12-30):**
 - ✅ React 테스트 클라이언트 (00_test_client)
 - ✅ 테스트 계정 관리 시스템
 - ✅ WSL 실행 가이드
 - ✅ 로그 파일 에러 해결
 - ✅ 디렉토리 리넘버링 (프로젝트 구조 정리)
 
+**배포 준비 완료 (2025-12-30):**
+- ✅ 12_GCP_배포_가이드.md (GCP VM + Docker + Cloudflare)
+- ✅ Nginx 보안 아키텍처 강화 (Django Proxy 경유)
+- ✅ API Swagger 문서화 완료 (UC01-UC09)
+- ✅ .gitignore 정리
+
 ---
 
-**문서 버전**: 1.2
+**문서 버전**: 1.3
 **작성일**: 2025-12-30
 **토큰 절약**: 이 문서는 REF_CLAUDE_CONTEXT.md (1000줄)의 핵심만 추출 (약 80% 토큰 절약)
 **대상 독자**: Claude AI 온보딩용
