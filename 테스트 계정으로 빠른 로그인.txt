@@ -1,0 +1,12 @@
+  // 테스트 계정으로 빠른 로그인
+  const quickLogin = (role) => {
+    const testAccounts = {
+      admin: { username: 'admin', password: 'admin123!@#' },
+      doctor: { username: 'doctor', password: 'doctor123!@#' },
+      nurse: { username: 'nurse', password: 'nurse123!@#' },
+      patient: { username: 'patient', password: 'patient123!@#' },
+      rib: { username: 'radiologist', password: 'rib123!@#' },
+      lab: { username: 'labtech', password: 'lab123!@#' },
+    };
+
+

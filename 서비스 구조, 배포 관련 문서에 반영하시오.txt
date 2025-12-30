@@ -1,0 +1,164 @@
+서비스 구조, 배포 관련 문서에 반영하시오
+---
+마이크로서비스 아키텍처 (Microservices Architecture, MSA)
+**OHIF 확장(방식 A)**와 **HTJ2K 고속 압축/전송** 로직을 반영하여 아키텍처를 업데이트했습니다.
+---
+---
+
+# NeuroNova Microservices Architecture (v2.1)
+
+*Reflecting Secure Proxy (X-Accel-Redirect), Multi-SPA Build Strategy & HTJ2K Integration*
+
+## 1. System Overview
+
+* **Type**: Microservices Architecture for Medical CDSS & PACS
+* **Gateway**: Nginx (Reverse Proxy) behind Cloudflare
+* **Frontend Strategy**: **Multi-SPA** (Main React App + Custom OHIF Viewer separated builds)
+* **Main Backend**: Django REST Framework (**Secure Proxy & Auth Delegate**)
+* **AI/Computation**: FastAPI (AI Core), Celery (Async Tasks - **incl. HTJ2K Conversion**)
+* **Medical Standards**: Orthanc (DICOM, **Internal Access Only**), OpenEMR/HAPI FHIR (HL7/FHIR R4)
+
+## 2. Component Details & Network Topology
+
+### Ingress Layer
+
+* **Cloudflare**:
+* Role: HTTPS termination, WAF.
+* Target: Nginx.
+
+
+* **Nginx**:
+* Port: 80 (Internal)
+* Role: Reverse Proxy, Static File Serving, **Internal Routing (X-Accel)**.
+* **Routes**:
+* `/` → **Main React SPA** (Static Files, `/var/www/react-main`)
+* `/pacs-viewer/` → **Custom OHIF Build** (Static Files, `/var/www/ohif-dist`)
+* `/api/*` → Django API Container (:8000)
+* `/internal-orthanc/*` → **Orthanc** (:8042, **Internal Only**, Triggered by Django)
+
+
+
+
+
+### Application Layer
+
+* **React SPA (Main)**:
+* Role: Main User Interface (Dashboard, Patient List).
+* Dependencies: Calls Django API.
+
+
+* **Django API (Backend)**:
+* Port: 8000
+* Role: Main Business Logic, Auth, Orchestration.
+* **Key Feature**: **Smart Proxying** (Verifies JWT, returns `X-Accel-Redirect` for DICOM data).
+* Dependencies: MySQL, Redis, Orthanc (Control), HAPI FHIR.
+
+
+* **Custom OHIF Viewer (Updated)**:
+* **Type**: Static Web App (Separate Build)
+* **Role**: Specialized DICOM Viewer with **NeuroNova Extensions**.
+* **Features**:
+* **Mode**: Custom Layout (Viewer + Right Panel for AI).
+* **Decoding**: **HTJ2K WASM Decoder** enabled.
+
+
+* **Data Source**: Requests data via Django Proxy (`/api/pacs/proxy/...`), **NOT** directly to Orthanc.
+
+
+
+### Data & Integration Layer
+
+* **MySQL**:
+* Port: 3306
+* Role: Primary Relational Database (User, Patient Metadata, AI Report Meta).
+
+
+* **Redis**:
+* Port: 6379
+* Role: Caching, Celery Message Broker.
+
+
+* **Orthanc**:
+* Port: 8042
+* Role: PACS Server (DICOM Storage).
+* **Security**: **No Public Access**. Accessible only via Nginx internal routing.
+* **Storage Format**: **HTJ2K (Primary)**.
+
+
+* **OpenEMR / HAPI FHIR**:
+* Port: 8080
+* Role: Medical Data Interoperability (EMR Source).
+
+
+
+### AI & Async Processing Layer
+
+* **FastAPI (AI Core)**:
+* Role: Heavy AI Inference (Brain Tumor Segmentation/Metastasis).
+* **Input Handling**: **Decodes HTJ2K** (via `pylibjpeg`) -> Model Inference.
+
+
+* **Celery Workers**:
+* Role: Asynchronous Task Execution.
+* **Key Tasks**:
+1. **DICOM Transcoding**: Raw DICOM Upload → **Convert to HTJ2K** → Save to Orthanc.
+2. AI Inference Trigger.
+3. FHIR Synchronization.
+
+
+* Broker: Redis.
+
+
+
+### Observability Layer (Monitoring)
+
+* **Prometheus**: Metrics collection.
+* **Grafana**: Dashboard visualization.
+* **Alertmanager**: Critical alerts.
+
+## 3. Data Flow Description (Updated)
+
+1. **User Request**: Internet -> Cloudflare -> Nginx.
+2. **API Logic**: Nginx -> Django -> MySQL/Redis.
+3. **Medical Image Flow (Secure HTJ2K Pipeline)**:
+* **Upload & Optimize**:
+1. User uploads Raw DICOM -> Django.
+2. Django triggers **Celery Task**.
+3. **Celery converts Raw DICOM to HTJ2K**.
+4. Celery saves HTJ2K file to Orthanc.
+
+
+* **Viewing (Secure & High Performance)**:
+1. User opens OHIF Viewer (`/pacs-viewer/`).
+2. OHIF requests image via **Django Proxy** (e.g., `GET /api/pacs/dicom-web/...`).
+3. Django verifies JWT Auth -> Returns header **`X-Accel-Redirect: /internal-orthanc/...`** (Zero Body).
+4. Nginx intercepts header -> Fetches **HTJ2K** data from Orthanc (Internal) -> Streams to Client.
+5. OHIF uses **WASM** to decode and render instantly.
+
+
+* **AI Analysis**:
+1. Celery triggers AI Task.
+2. FastAPI fetches HTJ2K from Orthanc (Internal Network).
+3. FastAPI decodes HTJ2K to Numpy -> Inference -> Generate Mask.
+4. Result sent back to DB/Orthanc.
+
+
+
+
+4. **EMR Sync**: Django/Celery -> HAPI FHIR/OpenEMR.
+
+---
+
+### 주요 변경 사항 요약 (v2.0)
+
+1. **Celery 역할 확대:** 단순 작업 처리뿐만 아니라 **"이미지 변환 공장(Raw → HTJ2K)"** 역할을 부여하여 서버 부하를 분산하고 뷰어 성능을 보장합니다.
+2. **OHIF 정의 구체화:** 단순 뷰어가 아닌 **NeuroNova Extension이 포함된 커스텀 빌드**로 정의하고, **WASM 디코더**를 통해 HTJ2K를 처리함을 명시했습니다.
+3. **FastAPI 기능 추가:** AI 모델이 압축된 HTJ2K 데이터를 읽을 수 있는 전처리 로직(Decoding)이 포함됨을 명시했습니다.
+
+### 주요 변경 사항 요약 (v2.1)
+
+1. **보안 강화 (Secure Proxy):** Orthanc의 외부 직접 접속을 차단하고, **Django가 인증(JWT)을 수행한 후 Nginx에게 전송을 위임(`X-Accel-Redirect`)**하는 구조로 변경하여 보안과 성능을 모두 확보했습니다.
+2. **프론트엔드 빌드 전략 확정:** 메인 React 앱과 OHIF Viewer를 **별도로 빌드**하여 Nginx에서 경로(`alias`)로 구분해 서비스합니다. 이는 의존성 충돌을 방지하고 유지보수를 용이하게 합니다.
+3. **Nginx 라우팅 구체화:** `/internal-orthanc/`라는 내부 전용 라우트를 신설하여 Django의 위임 요청을 처리하도록 명시했습니다.
+
+

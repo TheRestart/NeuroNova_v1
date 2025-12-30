@@ -23,6 +23,61 @@
 ## 📅 상세 작업 로그
 
 ### Week 7 (2025-12-29 ~ 2025-12-30)
+- **2025-12-30 Day 10 (문서 재구성 완료)**:
+  - [x] **문서 디렉토리 재구성 (01_doc)**:
+    - [x] **구버전 파일 삭제 (3개)**:
+      - `11_배포_가이드.md` - 12_GCP_배포_가이드.md로 대체
+      - `04_수정_지침서.md` - 사용하지 않음
+      - `07_일일_체크리스트.md` - 사용하지 않음
+    - [x] **파일 리넘버링 완료**:
+      - 번호 중복 해결: 12번(3개), 13번(2개), 15번(2개), 32번(2개) 중복 제거
+      - 논리적 그룹화: 아키텍처(06-08), 명세서(09-11), 배포(12-15), 패턴(19-22), AI(23-24)
+      - 최종 구조: 00-37 순차 번호 (총 38개 넘버링 문서)
+    - [x] **README.md 전면 개편 (v7.0)**:
+      - 9개 카테고리로 논리적 분류 (A~I)
+      - Use Case별 빠른 찾기 섹션 추가
+      - 문서 줄 수 정보 추가
+      - 문서 작성 규칙 명시 (500줄 기준, 중복 방지)
+    - [x] **특수 문서 구분**:
+      - 넘버링 제외 문서 명시: REF_CLAUDE_CONTEXT, REF_CLAUDE_ONBOARDING_QUICK, LOG_작업이력
+      - REF_ 접두사 문서 6개 유지
+    - [x] **문서 정리 효과**:
+      - 총 문서 수: 50개 → 44개 (6개 감소)
+      - 중복 제거 및 논리적 구조화 완료
+      - 접근성 향상 (Use Case별 빠른 찾기)
+
+- **2025-12-30 Day 9 (아키텍처 v2.1 문서화 완료)**:
+  - [x] **서비스 구조 변경 반영 (v2.1 업그레이드)**:
+    - [x] **핵심 변경사항**:
+      - **Secure Proxy Pattern**: Orthanc 외부 직접 접속 차단, Django JWT 검증 후 Nginx X-Accel-Redirect 방식으로 전송 위임
+      - **Multi-SPA Build Strategy**: React Main App과 OHIF Viewer를 별도로 빌드하여 독립적으로 배포
+      - **Internal Routing**: `/internal-orthanc/*` 내부 전용 라우트 신설 (`internal;` 디렉티브)
+  - [x] **문서 업데이트 (6개 문서)**:
+    - [x] `06_시스템_아키텍처_v2.md` → v2.1:
+      - 보안 아키텍처 섹션 추가 (Secure Proxy Pattern, Network Segmentation)
+      - Multi-SPA 프론트엔드 전략 명시
+      - Data Flow 섹션 재구성 (Secure HTJ2K Pipeline)
+      - Mermaid 다이어그램 업데이트 (Secure Proxy Flow 추가)
+    - [x] `07_서비스_구조_요약.md` → v2.1:
+      - 프론트엔드/백엔드/인프라 테이블에 v2.1 보안 정책 컬럼 추가
+      - Nginx 라우팅 규칙 테이블 업데이트
+      - 서비스 실행 순서 가이드 추가
+    - [x] `08_배포_와_운영_요약.md` → v2.1:
+      - Nginx 설정 예시 추가 (X-Accel-Redirect, internal 디렉티브)
+      - Multi-SPA 빌드 전략 섹션 추가 (React Main + OHIF Viewer)
+      - 보안 강화 섹션 추가 (Network Segmentation, Secure Proxy Pattern)
+      - 트러블슈팅 섹션 확장 (OHIF 이미지 로딩, Multi-SPA 빌드 이슈)
+      - CI/CD 파이프라인 예시 추가 (GitHub Actions)
+    - [x] `REF_CLAUDE_ONBOARDING_QUICK.md` → v2.1:
+      - 핵심 아키텍처 다이어그램 업데이트 (Ingress Layer, Application Layer)
+      - 핵심 워크플로우 업데이트 (Secure Viewing 추가)
+      - 보안 섹션 Enhanced로 업그레이드
+  - [x] **변경 이력 요약**:
+    - **v2.1 주요 변경**: Secure Proxy (보안 + 성능), Multi-SPA (유지보수성), Internal Routing (접근 제어)
+    - **v2.0 주요 변경**: HTJ2K Pipeline, Celery 역할 확대, OHIF/FastAPI 정의 구체화
+  - [x] **관련 문서 링크 업데이트**:
+    - 모든 문서에서 상호 참조 링크 정확성 검증 및 업데이트
+
 - **2025-12-30 Day 8 (Phase 2 배포 준비 완료)**:
   - [x] **GCP 배포 가이드 작성** (`01_doc/12_GCP_배포_가이드.md`):
     - [x] GCP VM + Docker + Cloudflare 환경 전면 배포 가이드 (1,300줄+)
@@ -71,15 +126,16 @@
     - [x] Phase 3-2: 성능 최적화 (Week 10-11)
     - [x] Phase 3-3: 보안 강화 (Week 12)
     - [x] Phase 4: 운영 준비 (Week 13-14)
+  - [x] **리액트 테스트 클라이언트 고도화 및 트러블슈팅**:
+    - [x] **포트 충돌 해결**: OHIF Viewer와의 충돌 방지를 위해 포트를 `3001`로 변경.
+    - [x] **WSL 통신 최적화**: WSL 환경에서 Windows 호스트 Django 서버로의 프록시 연결 문제 해결 (호스트 IP `172.29.64.1` 적용).
+    - [x] **API 엔드포인트 동기화**: 백엔드 라우터 구조(OCS -> EMR 통합, RIS 간소화)에 맞춰 프론트엔드 호출 경로 전수 수정.
+    - [x] **에러 핸들링 UI 개선**: 백엔드 표준 에러 형식(`code`, `message`, `detail`)을 반영한 직관적인 에러 박스 구현.
+    - [x] **예시 데이터 입력 기능**: `APITester` 컴포넌트에 '예시 입력' 버튼을 추가하여 테스트 편의성 증대.
+    - [x] **오류 정리 문서 작성**: `오류정리_antigra_1230.md`를 통해 발생한 주요 기술적 이슈와 해결책 자산화.
   - [x] **핵심 문서 업데이트**:
-    - [x] `REF_CLAUDE_ONBOARDING_QUICK.md` (v1.3):
-      - 최신 변경 사항 반영 (GCP 배포, Nginx 보안)
-      - 핵심 아키텍처 다이어그램 업데이트
-      - 배포 가이드 링크 추가
-      - Phase 2 완료 항목 추가
-    - [x] `LOG_작업이력.md`:
-      - Week 7 Day 8 작업 내용 추가
-      - Phase 2 배포 준비 완료 상태 반영
+    - [x] `REF_CLAUDE_ONBOARDING_QUICK.md` (v1.4): 최신 아키텍처 및 테스트 클라이언트 실행 정보 업데이트.
+    - [x] `LOG_작업이력.md`: 12월 30일자 상세 작업 내용 추가 및 Phase 2 완료 반영.
 
 - **2025-12-30 Day 7**:
   - [x] **디렉토리 리넘버링 (프로젝트 구조 정리)**:
@@ -144,6 +200,17 @@
     - [x] **코딩 규칙 수립**:
       - Python/JavaScript 코드에서 이모지 사용 금지 (Windows cp949 인코딩 오류 방지)
       - Markdown 문서에서는 이모지 사용 허용
+
+  - [x] **시스템 아키텍처 v2.0 업데이트 (2025-12-30)**:
+    - [x] **핵심 변경 사항 반영**:
+      - **HTJ2K 파이프라인**: Celery를 "이미지 변환 공장(Raw → HTJ2K)"으로 재정의 (뷰어 성능 최적화).
+      - **Custom OHIF**: 단순 뷰어가 아닌 NeuroNova Extension(AI 패널, WASM 디코더) 포함 커스텀 빌드 정의.
+      - **FastAPI 역할 확장**: HTJ2K 디코딩(pylibjpeg) 후 추론 로직 명시.
+    - [x] **문서 업데이트**:
+      - `REF_CLAUDE_ONBOARDING_QUICK.md`: v2.0 아키텍처 다이어그램 및 데이터 흐름 전면 수정.
+    - [x] **배포 문서 고도화**:
+      - `08_배포_와_운영_요약.md`: v2.0(Static Serving, Celery Factory) 반영 배포 요약본 생성.
+      - 기존 배포 가이드(`11`, `12`) 정리 및 통합.
 
 - **2025-12-29 Day 5**:
   - [x] **Orthanc JWT URL 관리 기능 구현 (보안 강화)**:

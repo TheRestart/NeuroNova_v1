@@ -111,11 +111,14 @@
 00_UML/                          # UML 설계 파일
 01_doc/                          # 프로젝트 문서 및 스크립트
 ├── 01_프로젝트_개요.md           # 프로젝트 전체 개요
-├── 17_프로젝트_RR_역할분담.md    # 🔥 [NEW] R&R 정의 및 개발 전략
-├── 18_AI_개발_가이드.md          # 🔥 [NEW] AI 코어 개발 가이드
-├── REF_CLAUDE_CONTEXT.md        # Claude AI 온보딩 문서
-├── LOG_작업이력.md               # 작업 이력 및 현황
-└── ... (기타 문서)
+├── 06_시스템_아키텍처_v2.md      # 🔥 [NEW] Microservices Arch v2.0
+├── 07_서비스_구조_요약.md        # 🔥 [NEW] 서비스 역할 요약
+├── 08_배포_와_운영_요약.md       # 🔥 [NEW] 배포/운영 요약 (v2.0)
+├── 17_프로젝트_RR_역할분담.md    # R&R 정의 및 개발 전략
+├── 18_AI_개발_가이드.md          # AI 코어 개발 가이드
+├── 32_권한_정의_요약.md          # 사용자 역할/권한 명세
+├── REF_CLAUDE_ONBOARDING_QUICK.md # Claude AI 온보딩 (최신)
+└── ... (기타 세부 기술 문서)
 NeuroNova_02_back_end/           # 백엔드 서버 (Django + OpenEMR)
 ├── 01_django_server/            # Django REST API (UC01~UC06 완성)
 └── 02_openemr_server/           # OpenEMR Docker 구성
