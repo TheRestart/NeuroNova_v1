@@ -85,7 +85,11 @@
       "Bash(docker network create:*)",
       "Bash(docker network rm:*)",
       "Bash(docker logs:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(docker inspect:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(docker restart:*)",
+      "Bash(git rm:*)"
     ]
   }
 }

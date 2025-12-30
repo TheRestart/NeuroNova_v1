@@ -1,0 +1,169 @@
+# ============================================
+# NeuroNova CDSS - Infrastructure Only
+# Django와 MySQL은 로컬에서 수동 실행
+# ============================================
+#
+# 사용 목적:
+# - Django 개발 중: 로컬에서 Django 수동 실행
+# - MySQL 기존 사용: 컴퓨터에 설치된 MySQL 사용
+# - 인프라만 필요: Orthanc, Redis, OpenEMR, FHIR만 Docker로 실행
+#
+# 사용 방법:
+#   docker compose -f docker-compose.infra.yml up -d
+#
+# ============================================
+
+networks:
+  neuronova_network:
+    driver: bridge
+
+volumes:
+  # Django/MySQL 제외, 인프라 서비스만
+  openemr_mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  orthanc_data:
+    driver: local
+  hapi_fhir_data:
+    driver: local
+  openemr_logs:
+    driver: local
+  openemr_sites:
+    driver: local
+
+services:
+  # ============================================
+  # 1. Cache & Message Broker - Redis
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: neuronova-redis-infra
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - neuronova_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # 2. PACS - Orthanc
+  # ============================================
+  orthanc:
+    image: orthancteam/orthanc:latest
+    container_name: neuronova-orthanc-infra
+    environment:
+      - ORTHANC_AUTHENTICATION_ENABLED=${ORTHANC_AUTHENTICATION_ENABLED:-false}
+      - ORTHANC_NAME=${ORTHANC_NAME:-NeuroNova Orthanc Infra}
+      - ORTHANC__HTTP_VERBOSE=${ORTHANC_HTTP_VERBOSE:-true}
+      - ORTHANC__HTTP_CORS_ENABLED=${ORTHANC_HTTP_CORS_ENABLED:-true}
+    ports:
+      - "${ORTHANC_HOST_PORT_HTTP:-8042}:8042"
+      - "${ORTHANC_HOST_PORT_DICOM:-4242}:4242"
+    volumes:
+      - orthanc_data:/var/lib/orthanc/db
+      - ./NeuroNova_02_back_end/05_orthanc_pacs/orthanc.json:/etc/orthanc/orthanc.json:ro
+    networks:
+      - neuronova_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8042/system\")' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================
+  # 3. EMR - OpenEMR + Database
+  # ============================================
+  openemr-mysql:
+    image: mariadb:11.8
+    container_name: neuronova-openemr-mysql-infra
+    command: ['mariadbd', '--character-set-server=utf8mb4']
+    environment:
+      MYSQL_ROOT_PASSWORD: ${OPENEMR_DB_ROOT_PASSWORD}
+    ports:
+      - "${OPENEMR_DB_HOST_PORT:-3307}:3306"
+    volumes:
+      - openemr_mysql_data:/var/lib/mysql
+    networks:
+      - neuronova_network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - /usr/local/bin/healthcheck.sh
+        - --su-mysql
+        - --connect
+        - --innodb_initialized
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  openemr:
+    image: openemr/openemr:7.0.3
+    container_name: neuronova-openemr-infra
+    ports:
+      - "${OPENEMR_HOST_PORT_HTTP:-8081}:80"
+      - "${OPENEMR_HOST_PORT_HTTPS:-4443}:443"
+    volumes:
+      - openemr_logs:/var/log
+      - openemr_sites:/var/www/localhost/htdocs/openemr/sites
+    environment:
+      MYSQL_HOST: ${OPENEMR_DB_SERVICE_NAME}
+      MYSQL_ROOT_PASS: ${OPENEMR_DB_ROOT_PASSWORD}
+      MYSQL_USER: ${OPENEMR_DB_USER}
+      MYSQL_PASS: ${OPENEMR_DB_PASSWORD}
+      OE_USER: ${OPENEMR_OE_USER}
+      OE_PASS: ${OPENEMR_OE_PASS}
+    depends_on:
+      openemr-mysql:
+        condition: service_healthy
+    networks:
+      - neuronova_network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - /usr/bin/curl
+        - --fail
+        - --insecure
+        - --silent
+        - https://localhost/
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+
+  # ============================================
+  # 4. FHIR Server - HAPI FHIR
+  # ============================================
+  hapi-fhir:
+    image: hapiproject/hapi:latest
+    container_name: neuronova-hapi-fhir-infra
+    environment:
+      - hapi.fhir.fhir_version=${FHIR_VERSION:-R4}
+      - hapi.fhir.allow_multiple_delete=${FHIR_ALLOW_MULTIPLE_DELETE:-true}
+      - hapi.fhir.allow_cascading_deletes=${FHIR_ALLOW_CASCADING_DELETES:-true}
+      - hapi.fhir.reuse_cached_search_results_millis=${FHIR_REUSE_CACHED_SEARCH_RESULTS_MILLIS:--1}
+    ports:
+      - "${FHIR_HOST_PORT:-8080}:8080"
+    volumes:
+      - hapi_fhir_data:/data/hapi
+    networks:
+      - neuronova_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/8080' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s

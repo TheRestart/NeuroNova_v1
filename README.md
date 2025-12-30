@@ -22,15 +22,15 @@ HTJ2K 기반 초고속 DICOM 뷰어와 AI 기반 병변 탐지 기능을 제공�
 
 ---
 
-## 🚀 빠른 시작 (Docker - 권장)
+## 🚀 빠른 시작 (Docker)
 
-### 1. 사전 준비
+### 📌 2가지 실행 방법
 
-- Docker Desktop 또는 Docker Engine (v20.10+)
-- Git
-- 최소 8GB RAM, 20GB 디스크
+NeuroNova는 **개발 환경**과 **완전한 Docker 환경** 2가지 방식을 지원합니다:
 
-### 2. 설치 및 실행
+#### 방법 1: 개발 환경 (권장 - Django/MySQL 로컬 실행) ⭐
+
+**사용 상황**: Django 개발 중, 로컬 MySQL 사용
 
 ```bash
 # 1. 저장소 클론
@@ -39,10 +39,30 @@ cd NeuroNova_v1
 
 # 2. 환경변수 설정
 cp .env.example .env
-# .env 파일을 열어 비밀번호를 변경하세요!
+# .env 파일 수정: DB_HOST=localhost
 
 # 3. Docker 네트워크 생성
 docker network create neuronova_network
+
+# 4. 인프라만 실행 (Redis, Orthanc, OpenEMR, FHIR)
+docker compose -f docker-compose.infra.yml up -d
+
+# 5. Django 로컬 실행
+cd NeuroNova_02_back_end/02_django_server
+python manage.py runserver
+```
+
+**접속**:
+- Django: http://localhost:8000/
+- Orthanc: http://localhost:8042/
+- OpenEMR: http://localhost:8081/
+
+#### 방법 2: 완전한 Docker 환경 (새 PC, 배포 테스트)
+
+**사용 상황**: 전체 서비스를 Docker로 실행
+
+```bash
+# 1-3. 위와 동일
 
 # 4. 전체 스택 실행
 docker compose -f docker-compose.dev.yml up -d --build
@@ -52,14 +72,16 @@ docker compose -f docker-compose.dev.yml exec django python manage.py migrate
 docker compose -f docker-compose.dev.yml exec django python manage.py createsuperuser
 ```
 
-### 3. 접속
+**접속**:
+- Django API: http://localhost/api/
+- Django Admin: http://localhost/admin/
+- API Swagger: http://localhost/api/docs/
 
-- **Django API**: http://localhost/api/
-- **Django Admin**: http://localhost/api/admin/
-- **API Swagger**: http://localhost/api/swagger/
-- **Flower (Celery)**: http://localhost/flower/
+### 📚 상세 가이드
 
-**상세 가이드**: [DOCKER_DEV_GUIDE.md](DOCKER_DEV_GUIDE.md)
+- **Docker 사용법**: [DOCKER_USAGE_GUIDE.md](DOCKER_USAGE_GUIDE.md) - 2가지 방법 비교
+- **빠른 시작**: [DOCKER_QUICKSTART.md](DOCKER_QUICKSTART.md) - 전체 스택 가이드
+- **개발 가이드**: [DOCKER_DEV_GUIDE.md](DOCKER_DEV_GUIDE.md)
 
 ---
 
