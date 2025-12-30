@@ -165,9 +165,10 @@ Cloudflare (HTTPS/WAF)
 ### 필수 문서 (시작 전 꼭 읽기)
 
 1. **[REF_CLAUDE_ONBOARDING_QUICK.md](01_doc/REF_CLAUDE_ONBOARDING_QUICK.md)** - 5분 빠른 온보딩
-2. **[DOCKER_DEV_GUIDE.md](DOCKER_DEV_GUIDE.md)** - Docker 개발 환경 가이드
-3. **[06_시스템_아키텍처_v2.md](01_doc/06_시스템_아키텍처_v2.md)** - v2.1 아키텍처 상세
-4. **[LOG_작업이력.md](01_doc/LOG_작업이력.md)** - Week 1-7 작업 완료 내역
+2. **[DOCKER_USAGE_GUIDE.md](DOCKER_USAGE_GUIDE.md)** ⭐ - Docker 2가지 사용법
+3. **[DATA_INITIALIZATION_GUIDE.md](DATA_INITIALIZATION_GUIDE.md)** ⭐ - 데이터 초기화 (재설치 후)
+4. **[06_시스템_아키텍처_v2.md](01_doc/06_시스템_아키텍처_v2.md)** - v2.1 아키텍처 상세
+5. **[LOG_작업이력.md](01_doc/LOG_작업이력.md)** - Week 1-7 작업 완료 내역
 
 ### 전체 문서 목록
 
