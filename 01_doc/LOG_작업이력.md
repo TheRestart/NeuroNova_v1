@@ -1,7 +1,7 @@
 # 작업 이력 (Work Log)
 
-**최종 수정일**: 2025-12-29
-**현재 상태**: 전체 UC (UC01~UC09) 구현 완료 및 시스템 고도화 준비 단계
+**최종 수정일**: 2025-12-30
+**현재 상태**: 전체 UC (UC01~UC09) 구현 완료, React 테스트 클라이언트 추가
 
 > [!NOTE]
 > 시스템 아키텍처, 사용자 역할(RBAC), 상세 모듈 설계 등 기술 참조 정보는 **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**를 참조하십시오. 이 문서는 일자별 작업 진행 상황과 변경 이력만을 기록합니다.
@@ -22,7 +22,71 @@
 
 ## 📅 상세 작업 로그
 
-### Week 7 (2025-12-29)
+### Week 7 (2025-12-29 ~ 2025-12-30)
+- **2025-12-30 Day 7**:
+  - [x] **디렉토리 리넘버링 (프로젝트 구조 정리)**:
+    - [x] **Backend 디렉토리 변경**:
+      - `NeuroNova_02_back_end/01_django_server` → `02_django_server`
+      - `NeuroNova_02_back_end/00_ai_core` → `01_ai_core`
+      - `NeuroNova_02_back_end/02_orthanc_pacs` → `05_orthanc_pacs`
+      - `NeuroNova_02_back_end/06_ohif_viewer` 중복 제거 (04_ohif_viewer 유지)
+    - [x] **현재 프로젝트 구조**:
+      - `01_ai_core/`: AI 코어 모듈 (FastAPI)
+      - `02_django_server/`: Django 프로젝트 루트
+      - `03_openemr_server/`: OpenEMR Docker 설정
+      - `04_ohif_viewer/`: OHIF Viewer Docker 설정
+      - `05_orthanc_pacs/`: Orthanc PACS Docker 설정
+      - `06_hapi_fhir/`: HAPI FHIR Server Docker 설정
+      - `07_redis/`: Redis Docker 설정
+    - [x] **문서 업데이트**: REF_CLAUDE_ONBOARDING_QUICK.md 프로젝트 구조 반영
+  - [x] **React 테스트 클라이언트 구현 (NeuroNova_03_front_end_react/00_test_client)**:
+    - [x] **프로젝트 초기화**: package.json, 프록시 설정 (http://localhost:8000)
+    - [x] **API 클라이언트 구현** (`src/api/apiClient.js`):
+      - axios 인터셉터를 통한 JWT 토큰 자동 주입
+      - 9개 UC별 API 함수 구현 (authAPI, emrAPI, ocsAPI, lisAPI, risAPI, aiAPI, alertAPI, fhirAPI, auditAPI)
+      - 총 60+ API 엔드포인트 커버
+    - [x] **공통 컴포넌트**:
+      - `APITester.js`: 재사용 가능한 API 테스트 폼 (동적 필드 생성, 응답 표시)
+      - `LoginPage.js`: JWT 로그인 + 빠른 테스트 계정 버튼 (admin, doctor, nurse, patient 등)
+      - `DashboardPage.js`: UC01~UC09 테스트 페이지 그리드 레이아웃
+    - [x] **UC 테스트 페이지 구현** (9개):
+      - `UC01AuthTest.js`: 인증/권한 (회원가입, 사용자 조회)
+      - `UC02EMRTest.js`: EMR (환자 CRUD, 진료 기록, 처방)
+      - `UC03OCSTest.js`: 처방전달 (처방 생성, 상태 변경)
+      - `UC04LISTest.js`: 검체검사 (검사 결과 CRUD, 검사 항목)
+      - `UC05RISTest.js`: 영상검사 (영상 검사 CRUD, DICOM 업로드, 판독 보고서)
+      - `UC06AITest.js`: AI 추론 (뇌졸중 위험도, 의료 영상 분석)
+      - `UC07AlertTest.js`: 알림 관리 (알림 CRUD, 읽음 처리)
+      - `UC08FHIRTest.js`: FHIR 표준 (9개 리소스 검색, Bundle 생성)
+      - `UC09AuditTest.js`: 감사 로그 (접근 이력, 보안 이벤트, 규정 준수)
+    - [x] **문서화**:
+      - `README.md`: 종합 설치 및 사용 가이드, 테스트 계정, 문제 해결
+      - `WSL_실행_가이드.md`: WSL에서 npm 사용 방법, Docker Desktop 통합
+      - `.gitignore`: node_modules, build 파일 제외
+    - [x] **목적**: 팀원의 React 통합 작업 전 API 기능 검증용 임시 클라이언트
+  - [x] **로그 파일 에러 해결 (Windows PermissionError)**:
+    - [x] **문제**: `TimedRotatingFileHandler`가 자정 로그 롤링 시 Windows 파일 잠금 문제 발생
+    - [x] **해결**: `RotatingFileHandler`로 변경 (시간 기반 → 파일 크기 기반)
+    - [x] **설정 변경** (`cdss_backend/settings.py`):
+      - `maxBytes`: 10MB (파일 크기 제한)
+      - `backupCount`: 30/60 (앱/에러 로그 백업 개수)
+    - [x] **효과**: Windows에서 로그 파일 잠금 문제 원천 차단
+  - [x] **테스트 계정 관리 개선**:
+    - [x] **Management Command 수정** (`acct/management/commands/create_test_users.py`):
+      - 기존 사용자 업데이트 기능 추가 (비밀번호 재설정 포함)
+      - React 테스트 클라이언트용 6개 계정 추가 (admin, doctor, nurse, patient, radiologist, labtech)
+      - 생성/업데이트 통계 출력 개선
+    - [x] **LoginPage 자동 로그인 구현** (`src/pages/LoginPage.js`):
+      - 빠른 로그인 버튼 클릭 시 즉시 로그인 (입력만 하는 것이 아님)
+      - 로딩 상태 표시 및 에러 처리
+      - 6개 역할별 버튼 제공 (Admin, Doctor, Nurse, Patient, Radiologist, Lab Tech)
+    - [x] **테스트 계정 비밀번호 검증**:
+      - `test_passwords.py` 스크립트 생성 (비밀번호 정합성 확인)
+      - 모든 테스트 계정 비밀번호 정상 확인 (admin123!@# 형식)
+    - [x] **코딩 규칙 수립**:
+      - Python/JavaScript 코드에서 이모지 사용 금지 (Windows cp949 인코딩 오류 방지)
+      - Markdown 문서에서는 이모지 사용 허용
+
 - **2025-12-29 Day 5**:
   - [x] **Orthanc JWT URL 관리 기능 구현 (보안 강화)**:
     - [x] **JWT URL 생명주기 설정**: 1시간 생명주기 (24시간 → 1시간으로 변경, 보안 강화)

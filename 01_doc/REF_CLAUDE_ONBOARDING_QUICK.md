@@ -1,8 +1,8 @@
 # Claude AI 빠른 온보딩 가이드 (Quick Onboarding)
 
-**최종 수정일**: 2025-12-29
+**최종 수정일**: 2025-12-30
 **목적**: 최소 토큰으로 프로젝트 핵심만 빠르게 파악
-**최신 변경**: Redis/Celery 아키텍처 개선 (Docker → 로컬 venv)
+**최신 변경**: React 테스트 클라이언트 구현, 테스트 계정 관리 개선
 
 > **원칙**: 이 문서만 읽으면 즉시 작업 가능. 상세 내용은 필요 시 참조 문서 확인.
 
@@ -13,8 +13,8 @@
 - **프로젝트명**: NeuroNova CDSS (Clinical Decision Support System)
 - **현재 위치**: `d:\1222\NeuroNova_v1`
 - **프로젝트 성격**: **연습, 시연, 취업준비용** (포트폴리오 프로젝트)
-- **현재 단계**: Week 6 완료 - AI 모듈 통합 완료
-- **주요 기술**: Django REST Framework + OpenEMR + Orthanc + Redis/Celery
+- **현재 단계**: Week 7 완료 - 전체 UC 구현 완료, React 테스트 클라이언트 추가
+- **주요 기술**: Django REST Framework + OpenEMR + Orthanc + Redis/Celery + React
 
 ---
 
@@ -55,25 +55,34 @@ NeuroNova_v1/
 │   └── 27_데이터_검증_정책.md        # 🆕 데이터 검증 규칙
 ├── 05_ai_core/                      # AI 코어 모듈
 ├── NeuroNova_02_back_end/
-│   └── 01_django_server/            # 🔥 Django 프로젝트 루트
-│       ├── cdss_backend/            # Django 설정
-│       ├── acct/                    # UC01: 인증/권한
-│       ├── emr/                     # UC02: EMR (OpenEMR 연동)
-│       ├── ocs/                     # UC03: 처방 (Order)
-│       ├── lis/                     # UC04: 검사
-│       ├── ris/                     # UC05: 영상 (Orthanc)
-│       ├── ai/                      # UC06: AI Job
-│       ├── alert/                   # UC07: 알림
-│       ├── audit/                   # UC09: 감사 로그
-│       └── utils/                   # 공통 유틸리티
-├── NeuroNova_03_front_end_react/    # React 프론트엔드 (타 팀원)
+│   ├── 01_ai_core/                  # AI 코어 모듈 (FastAPI)
+│   ├── 02_django_server/            # 🔥 Django 프로젝트 루트
+│   │   ├── cdss_backend/            # Django 설정
+│   │   ├── acct/                    # UC01: 인증/권한
+│   │   ├── emr/                     # UC02: EMR (OpenEMR 연동)
+│   │   ├── ocs/                     # UC03: 처방 (Order)
+│   │   ├── lis/                     # UC04: 검사
+│   │   ├── ris/                     # UC05: 영상 (Orthanc)
+│   │   ├── ai/                      # UC06: AI Job
+│   │   ├── alert/                   # UC07: 알림
+│   │   ├── audit/                   # UC09: 감사 로그
+│   │   └── utils/                   # 공통 유틸리티
+│   ├── 03_openemr_server/           # OpenEMR Docker 설정
+│   ├── 04_ohif_viewer/              # OHIF Viewer Docker 설정
+│   ├── 05_orthanc_pacs/             # Orthanc PACS Docker 설정
+│   ├── 06_hapi_fhir/                # HAPI FHIR Server Docker 설정
+│   └── 07_redis/                    # Redis Docker 설정
+├── NeuroNova_03_front_end_react/
+│   └── 00_test_client/              # 🆕 임시 API 테스트 클라이언트
 ├── NeuroNova_04_front_end_flutter/  # Flutter 모바일 앱 (타 팀원)
 └── CDSS 프로젝트 인수인계 문서.md    # 🔥 Quick Start
 
 **주요 Docker 컨테이너** (별도 실행):
-- Orthanc PACS (DICOM 서버)
-- Redis (캐시 + Celery 브로커)
-- OpenEMR (외부 EMR 시스템)
+- 05_orthanc_pacs: Orthanc PACS (DICOM 서버)
+- 07_redis: Redis (캐시 + Celery 브로커)
+- 03_openemr_server: OpenEMR (외부 EMR 시스템)
+- 06_hapi_fhir: HAPI FHIR Server (FHIR R4 표준)
+- 04_ohif_viewer: OHIF Viewer (의료 영상 뷰어)
 
 **로컬 가상환경** (venv - Django와 동일 환경):
 - Django Server
@@ -211,43 +220,65 @@ Client (clients/)         ← 외부 시스템 (OpenEMR, Orthanc)
 cd NeuroNova_02_back_end/07_redis
 docker-compose up -d
 
-# Orthanc PACS
-cd ../02_orthanc_pacs
+# Orthanc PACS (DICOM 서버)
+cd ../05_orthanc_pacs
 docker-compose up -d
+
+# OpenEMR (외부 EMR 시스템)
+cd ../03_openemr_server
+docker-compose up -d
+
+# HAPI FHIR Server (선택사항)
+cd ../06_hapi_fhir
+docker-compose up -d
+
+# 모든 컨테이너 상태 확인
+docker ps
 ```
 
 ### 8.2 Backend (Django + Celery) - 로컬 venv
 
 **Terminal 1 - Django Server:**
 ```powershell
-cd NeuroNova_02_back_end/01_django_server
+cd NeuroNova_02_back_end/02_django_server
 venv\Scripts\python manage.py runserver
 ```
 
 **Terminal 2 - Celery Worker (비동기 작업 처리):**
 ```powershell
-cd NeuroNova_02_back_end/01_django_server
+cd NeuroNova_02_back_end/02_django_server
 venv\Scripts\celery -A cdss_backend worker -l info --concurrency=4
 ```
 
 **Terminal 3 - Celery Beat (주기 작업 스케줄러):**
 ```powershell
-cd NeuroNova_02_back_end/01_django_server
+cd NeuroNova_02_back_end/02_django_server
 venv\Scripts\celery -A cdss_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 ```
 
 **Terminal 4 - Flower (선택사항, Celery 모니터링):**
 ```powershell
-cd NeuroNova_02_back_end/01_django_server
+cd NeuroNova_02_back_end/02_django_server
 venv\Scripts\celery -A cdss_backend flower --port=5555
 ```
 
-### 8.3 API 및 모니터링 접속
+### 8.3 React 테스트 클라이언트 (선택사항)
+
+**Terminal 5 - React Test Client (WSL 권장):**
+```bash
+# WSL에서 실행
+cd /mnt/d/1222/NeuroNova_v1/NeuroNova_03_front_end_react/00_test_client
+npm install  # 최초 1회만
+npm start
+```
+
+### 8.4 API 및 모니터링 접속
 
 - **Swagger UI**: http://localhost:8000/api/docs/
 - **ReDoc**: http://localhost:8000/api/redoc/
 - **Django Admin**: http://localhost:8000/admin/
 - **Flower (Celery)**: http://localhost:5555 (선택사항)
+- **React Test Client**: http://localhost:3000 (선택사항)
 
 ---
 
@@ -274,7 +305,7 @@ venv\Scripts\celery -A cdss_backend flower --port=5555
 → **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)** (1000줄 상세 참조)
 
 ### 현재 진행 상황 확인
-→ **[LOG_작업이력.md](LOG_작업이력.md)** (Week 1~6 작업 기록)
+→ **[LOG_작업이력.md](LOG_작업이력.md)** (Week 1~7 작업 기록)
 
 ### API 명세 확인
 → **[08_API_명세서.md](08_API_명세서.md)** (수동 작성 버전)
@@ -317,27 +348,90 @@ A: 커스텀 Exception 사용 (`utils/exceptions.py`에서 import)
 ### Q4. OpenEMR 연동이 실패하면?
 A: Docker 컨테이너 상태 확인 (`docker ps`), 로그 확인 (`docker logs`)
 
-### Q5. 프론트엔드 팀에게 API 공유 방법?
+### Q5. 테스트 계정 비밀번호는?
+A:
+- `admin` / `admin123!@#`
+- `doctor` / `doctor123!@#`
+- `nurse` / `nurse123!@#`
+- `patient` / `patient123!@#`
+- `radiologist` / `rib123!@#`
+- `labtech` / `lab123!@#`
+
+생성: `python manage.py create_test_users`
+
+### Q6. React 테스트 클라이언트 사용법?
+A:
+1. Django 서버 실행 (`python manage.py runserver`)
+2. WSL에서 `cd 00_test_client && npm start`
+3. http://localhost:3000 접속
+4. 빠른 로그인 버튼 클릭 (자동 로그인)
+
+상세: `NeuroNova_03_front_end_react/00_test_client/README.md`
+
+### Q7. 프론트엔드 팀에게 API 공유 방법?
 A: Swagger UI URL 공유 (`http://localhost:8000/api/docs/`)
    또는 OpenAPI Schema 파일 export (`python manage.py spectacular --file schema.json`)
 
 ---
 
-## 🎯 12. 다음 작업 (Phase 2 예정)
+## 🚨 12. 코딩 규칙 (CRITICAL)
 
-Phase 1 완료 (2025-12-28):
+### 이모지 사용 금지 (코드 파일)
+**Windows cp949 인코딩 오류 방지를 위해 필수 준수**
+
+**[금지] Python, JavaScript, TypeScript 코드:**
+```python
+# [BAD] 이모지 사용 금지
+print("User created!")  # UnicodeEncodeError 발생
+
+# [GOOD] 대괄호 텍스트 사용
+print("[SUCCESS] User created!")
+print("[ERROR] Failed to create user")
+print("[INFO] Processing...")
+```
+
+**[허용] Markdown 문서 (.md 파일):**
+```markdown
+## Project Status
+- Task 1 완료
+- Task 2 진행 중
+```
+
+**적용 대상:**
+- Python 코드 (.py)
+- JavaScript/TypeScript 코드 (.js, .jsx, .ts, .tsx)
+- Django templates (.html)
+- 설정 파일 (.json, .yaml, .env)
+
+**예외:**
+- Markdown 문서 (.md)
+- README 파일
+- 문서화 파일
+
+---
+
+## 🎯 13. 완료된 Phase (Phase 1 & 2)
+
+**Phase 1 완료 (2025-12-28):**
 - ✅ 25_에러_핸들링_가이드.md
 - ✅ 26_API_자동문서화_가이드.md
 - ✅ 27_데이터_검증_정책.md
 
-Phase 2 예정 (3-4일):
-- [ ] 28_테스트_전략_가이드.md
-- [ ] 29_로깅_전략_문서.md
-- [ ] 30_성능_최적화_가이드.md
+**Phase 2 완료 (2025-12-30):**
+- ✅ 28_테스트_전략_가이드.md
+- ✅ 29_로깅_전략_문서.md
+- ✅ 30_성능_최적화_가이드.md
+
+**추가 완료 (2025-12-30):**
+- ✅ React 테스트 클라이언트 (00_test_client)
+- ✅ 테스트 계정 관리 시스템
+- ✅ WSL 실행 가이드
+- ✅ 로그 파일 에러 해결
+- ✅ 디렉토리 리넘버링 (프로젝트 구조 정리)
 
 ---
 
-**문서 버전**: 1.0
-**작성일**: 2025-12-28
+**문서 버전**: 1.2
+**작성일**: 2025-12-30
 **토큰 절약**: 이 문서는 REF_CLAUDE_CONTEXT.md (1000줄)의 핵심만 추출 (약 80% 토큰 절약)
 **대상 독자**: Claude AI 온보딩용

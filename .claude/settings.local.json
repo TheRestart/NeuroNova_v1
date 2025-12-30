@@ -69,7 +69,13 @@
       "Bash(venvScriptspython -c \"import redis; r = redis.Redis\\(host=''localhost'', port=6379\\); print\\(''Redis 연결 성공:'', r.ping\\(\\)\\)\")",
       "Bash(\"/d/1222/NeuroNova_v1/NeuroNova_02_back_end/01_django_server/venv/Scripts/python.exe\" -c \"import redis; r = redis.Redis\\(host=''localhost'', port=6379\\); print\\(''Redis 연결 성공:'', r.ping\\(\\)\\)\")",
       "Bash(29_)",
-      "Bash(30_ \")"
+      "Bash(30_ \")",
+      "Bash(venvScriptspython manage.py shell -c \"from acct.models import User; users = User.objects.all\\(\\); print\\(f''Total users: {users.count\\(\\)}''\\); [print\\(f''{u.username} - {u.role}''\\) for u in users[:10]]\")",
+      "Bash(d:\\\\\\\\1222\\\\\\\\NeuroNova_v1\\\\\\\\NeuroNova_02_back_end\\\\\\\\02_django_server\\\\\\\\venv\\\\\\\\Scripts\\\\\\\\python.exe:*)",
+      "Bash(\"/d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/venv/Scripts/python.exe\" /d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/create_test_users.py)",
+      "Bash(\"/d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/venv/Scripts/python.exe\":*)",
+      "Bash(\"/d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/venv/Scripts/python.exe\" /d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/manage.py shell:*)",
+      "Bash(\"/d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/venv/Scripts/python.exe\" /d/1222/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/manage.py shell -c \"from acct.models import User; u = User.objects.filter\\(username=''admin''\\).first\\(\\); u.set_password\\(''admin123!@#''\\); u.save\\(\\); print\\(''Password updated for admin''\\)\")"
     ]
   }
 }
