@@ -90,6 +90,7 @@
       "Bash(python -m json.tool:*)",
       "Bash(docker restart:*)",
       "Bash(git rm:*)",
+<<<<<<< HEAD
       "Bash(python manage.py migrate:*)",
       "Bash(python manage.py makemigrations:*)",
       "Bash(python manage.py check:*)",
@@ -99,6 +100,9 @@
       "Bash(docker-compose:*)",
       "Bash(netstat -ano)",
       "Bash(findstr \":8000\")"
+=======
+      "Bash(git submodule add:*)"
+>>>>>>> a08415e8236783a1c1745aa7e17029a0e56cedb6
     ]
   }
 }
