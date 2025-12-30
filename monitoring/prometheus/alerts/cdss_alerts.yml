@@ -1,0 +1,90 @@
+# ============================================
+# NeuroNova CDSS Alert Rules
+# Critical alerts for medical system
+# ============================================
+
+groups:
+  - name: cdss_critical_alerts
+    interval: 30s
+    rules:
+      # Code Blue: Django service down
+      - alert: DjangoServiceDown
+        expr: up{job="django"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          code: blue
+        annotations:
+          summary: "CODE BLUE: Django backend is DOWN"
+          description: "Django service has been down for more than 1 minute. Immediate action required."
+
+      # Code Blue: Database connection lost
+      - alert: DatabaseConnectionLost
+        expr: up{job="mysql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          code: blue
+        annotations:
+          summary: "CODE BLUE: Database connection lost"
+          description: "MySQL database is unreachable for more than 1 minute."
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(django_http_responses_total_by_status{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP 5xx error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      # High response time
+      - alert: HighResponseTime
+        expr: django_http_request_duration_seconds{quantile="0.95"} > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time (p95 > 2s)"
+          description: "95th percentile response time is {{ $value }}s."
+
+      # Redis down
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis cache/broker is down"
+          description: "Redis has been down for more than 2 minutes. Celery tasks may fail."
+
+      # Celery queue backed up
+      - alert: CeleryQueueBackedUp
+        expr: celery_queue_length > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Celery task queue is backed up"
+          description: "Celery queue has {{ $value }} pending tasks."
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage (< 10% available)"
+          description: "Only {{ $value | humanizePercentage }} memory available."
+
+      # Disk space low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space (< 10% available)"
+          description: "Only {{ $value | humanizePercentage }} disk space available."

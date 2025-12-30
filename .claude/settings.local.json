@@ -89,7 +89,16 @@
       "Bash(docker inspect:*)",
       "Bash(python -m json.tool:*)",
       "Bash(docker restart:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(python manage.py migrate:*)",
+      "Bash(python manage.py makemigrations:*)",
+      "Bash(python manage.py check:*)",
+      "Bash(python manage.py create_test_users:*)",
+      "Bash(python manage.py init_sample_data:*)",
+      "Bash(python manage.py:*)",
+      "Bash(docker-compose:*)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":8000\")"
     ]
   }
 }

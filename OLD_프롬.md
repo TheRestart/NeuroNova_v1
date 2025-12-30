@@ -22,12 +22,20 @@
 "01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악해줘"
 
 **상세 온보딩**:
-"01_doc/REF_CLAUDE_CONTEXT.md와 LOG_작업이력.md를 읽고 전체 시스템을 이해해줘"
+            "01_doc/REF_CLAUDE_CONTEXT.md와 LOG_작업이력.md를 읽고 전체 시스템을 이해해줘"
 
 **문서 업데이트 요청**:
 (빠르게)
 핵심 2개 문서를 업데이트 하시오 
 01_doc/REF_CLAUDE_ONBOARDING_QUICK.md, LOG_작업이력.md
+
+
+
+
+
+
+
+
 
 (정밀)
 핵심 3개 문서를 업데이트 하시오 

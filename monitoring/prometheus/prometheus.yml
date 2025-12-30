@@ -1,0 +1,60 @@
+# ============================================
+# Prometheus Configuration
+# NeuroNova CDSS - Monitoring Stack
+# ============================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'neuronova-dev'
+    environment: 'development'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - '/etc/prometheus/alerts/*.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Django application metrics (requires django-prometheus)
+  - job_name: 'django'
+    static_configs:
+      - targets: ['django:8000']
+    metrics_path: '/metrics'
+
+  # Redis metrics (requires redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+  # MySQL metrics (requires mysqld_exporter)
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['cdss-mysql:3306']
+
+  # Celery metrics (requires celery-prometheus-exporter)
+  - job_name: 'celery'
+    static_configs:
+      - targets: ['celery-worker:8888']
+
+  # Nginx metrics (requires nginx-prometheus-exporter)
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:9113']
+
+  # Node exporter for system metrics (optional)
+  # - job_name: 'node'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']

@@ -106,6 +106,16 @@ docker-compose.dev.yml  ← 하나의 통합 파일
 │ │         │ (Broker)│ HTJ2K    │ +MariaDB  │             │  │
 │ └─────────┴─────────┴──────────┴───────────┴─────────────┘  │
 └─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Layer 4: Observability (Monitoring & Alerting)              │
+│ ┌────────────────┬────────────────┬───────────────────────┐  │
+│ │ Prometheus     │ Grafana        │ Alertmanager          │  │
+│ │ :9090          │ :3000          │ :9093                 │  │
+│ │ (Metrics)      │ (Dashboard)    │ (Alert Routing)       │  │
+│ │ Time-series DB │ Visualization  │ Code Blue Alerts      │  │
+│ └────────────────┴────────────────┴───────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### 계층별 책임
@@ -115,6 +125,7 @@ docker-compose.dev.yml  ← 하나의 통합 파일
 | **Ingress** | 트래픽 라우팅, 정적 파일 서빙, 보안 프록시 | ✅ Port 80 | 정적 파일 (ro) | django, orthanc |
 | **Application** | 비즈니스 로직, 인증, 비동기 작업 | ⚠️ 개발용만 | 소스 코드 (rw) | MySQL, Redis, Orthanc |
 | **Data** | 데이터 저장, 의료 표준 연동 | ❌ 내부 전용 | DB/PACS 데이터 | - |
+| **Observability** | 시스템 모니터링, 알림, 메트릭 수집 | ⚠️ 개발용만 | 메트릭 데이터 | Prometheus |
 
 ---
 
@@ -511,6 +522,151 @@ FHIR Resource 생성
 
 ---
 
+### 11. Prometheus (Metrics Collection)
+
+**Docker 설정**:
+```yaml
+prometheus:
+  image: prom/prometheus:latest
+  command:
+    - '--config.file=/etc/prometheus/prometheus.yml'
+    - '--storage.tsdb.path=/prometheus'
+    - '--web.enable-lifecycle'
+  ports:
+    - "9090:9090"
+  volumes:
+    - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - ./monitoring/prometheus/alerts:/etc/prometheus/alerts:ro
+    - prometheus_data:/prometheus
+  healthcheck:
+    test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+```
+
+**핵심 역할**:
+- **시계열 메트릭 수집** (Pull 방식)
+  - Django: HTTP 요청, 응답 시간, 에러율
+  - Redis: 메모리 사용량, 히트율
+  - MySQL: 커넥션 수, 쿼리 성능
+  - Celery: 큐 길이, 작업 성공/실패율
+  - 시스템: CPU, Memory, Disk, Network
+
+**Scrape 설정** (`prometheus.yml`):
+```yaml
+scrape_configs:
+  - job_name: 'django'
+    static_configs:
+      - targets: ['django:8000']
+    metrics_path: '/metrics'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+```
+
+**Alert Rules** (`alerts/cdss_alerts.yml`):
+```yaml
+- alert: DjangoServiceDown
+  expr: up{job="django"} == 0
+  for: 1m
+  labels:
+    severity: critical
+    code: blue
+  annotations:
+    summary: "CODE BLUE: Django backend is DOWN"
+```
+
+---
+
+### 12. Grafana (Visualization Dashboard)
+
+**Docker 설정**:
+```yaml
+grafana:
+  image: grafana/grafana:latest
+  environment:
+    - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+    - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+    - GF_SERVER_ROOT_URL=http://localhost:3000
+    - GF_INSTALL_PLUGINS=redis-datasource,grafana-clock-panel
+  ports:
+    - "3000:3000"
+  volumes:
+    - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    - grafana_data:/var/lib/grafana
+  depends_on:
+    prometheus:
+      condition: service_healthy
+```
+
+**핵심 역할**:
+- **대시보드 시각화**
+  - 시스템 상태 대시보드 (RPS, 에러율, 응답 시간)
+  - 리소스 모니터링 (CPU, Memory, Disk)
+  - AI 작업 모니터링 (GPU 사용량 - 확장 가능)
+  - 데이터베이스 모니터링 (커넥션, 슬로우 쿼리)
+
+**자동 프로비저닝**:
+- Prometheus 데이터 소스 자동 연결
+- 대시보드 JSON 파일 자동 로드
+- 플러그인 자동 설치
+
+**접속 정보**:
+- URL: http://localhost:3000
+- 기본 계정: admin / admin123
+
+---
+
+### 13. Alertmanager (Alert Routing)
+
+**Docker 설정**:
+```yaml
+alertmanager:
+  image: prom/alertmanager:latest
+  command:
+    - '--config.file=/etc/alertmanager/alertmanager.yml'
+    - '--storage.path=/alertmanager'
+  ports:
+    - "9093:9093"
+  volumes:
+    - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    - alertmanager_data:/alertmanager
+  healthcheck:
+    test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+```
+
+**핵심 역할**:
+- **알림 라우팅 및 전송**
+  - **CODE BLUE**: 시스템 다운, DB 연결 끊김 (즉시 알림)
+  - **CRITICAL**: 높은 에러율, 응답 지연 (30초 대기)
+  - **WARNING**: 리소스 부족, 큐 백업 (5분 대기)
+
+**알림 채널** (`alertmanager.yml`):
+```yaml
+receivers:
+  - name: 'code-blue-team'
+    email_configs:
+      - to: 'oncall@neuronova.com'
+        subject: 'CODE BLUE: {{ .GroupLabels.alertname }}'
+
+    # Slack (설정 시)
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK'
+
+    # SMS (Webhook)
+    webhook_configs:
+      - url: 'http://sms-gateway:8080/send'
+```
+
+**알림 우선순위**:
+| 레벨 | 대기 시간 | 반복 간격 | 용도 |
+|------|-----------|-----------|------|
+| CODE BLUE | 0초 | 5분 | 치명적 장애 |
+| CRITICAL | 30초 | 1시간 | 심각한 문제 |
+| WARNING | 5분 | 12시간 | 경고 |
+
+---
+
 ## 🌐 네트워크 설계
 
 ### 네트워크 토폴로지
@@ -564,6 +720,7 @@ ORTHANC_API_URL = 'http://orthanc:8042'  # 컨테이너명 = 호스트명
 **Named Volumes (데이터 영속성)**:
 ```yaml
 volumes:
+  # Data Layer
   cdss_mysql_data:      # CDSS 데이터베이스
   openemr_mysql_data:   # OpenEMR 데이터베이스
   redis_data:           # Redis AOF/RDB
@@ -571,6 +728,11 @@ volumes:
   hapi_fhir_data:       # FHIR 리소스
   openemr_logs:         # OpenEMR 로그
   openemr_sites:        # OpenEMR 사이트 설정
+
+  # Monitoring Layer
+  prometheus_data:      # 메트릭 시계열 데이터
+  grafana_data:         # 대시보드 및 설정
+  alertmanager_data:    # 알림 상태 저장소
 ```
 
 **Bind Mounts (개발용)**:
@@ -906,7 +1068,13 @@ docker compose -f docker-compose.dev.yml logs -f mysql
 
 ---
 
-**문서 버전**: 1.0
+**총 서비스 수**: 14개 (Nginx + Django/Celery 4개 + Data Layer 5개 + Monitoring 3개)
+
+**문서 버전**: 1.1
 **최종 수정**: 2025-12-30
 **작성자**: NeuroNova Development Team
+**변경 이력**:
+- v1.1 (2025-12-30): Observability Layer 추가 (Prometheus, Grafana, Alertmanager)
+- v1.0 (2025-12-30): 초기 작성
+
 **다음 읽기**: [DOCKER_DEV_GUIDE.md](DOCKER_DEV_GUIDE.md) - 실습 가이드

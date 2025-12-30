@@ -23,6 +23,73 @@
 ## 📅 상세 작업 로그
 
 ### Week 7 (2025-12-29 ~ 2025-12-30)
+- **2025-12-30 Day 11 (Docker 통합 환경 완성 + 모니터링 스택)**:
+  - [x] **Docker 환경 통합 완료** (`docker-compose.dev.yml`):
+    - [x] **구버전 파일 백업**:
+      - `docker-compose.yml` → `docker-compose.OLD.yml`
+      - `docker-compose.infra.yml` → `docker-compose.infra.OLD.yml`
+    - [x] **단일 파일로 통합**: docker-compose.dev.yml (14개 컨테이너)
+    - [x] **계층 구조** (Architecture v2.1):
+      1. Ingress Layer (1개): nginx
+      2. Application Layer (5개): django, celery-worker, celery-beat, flower, redis
+      3. Data Layer (5개): cdss-mysql, openemr-mysql, orthanc, openemr, hapi-fhir
+      4. Observability Layer (3개): prometheus, grafana, alertmanager
+  - [x] **Observability Layer 추가** (시스템 모니터링 및 알림):
+    - [x] **Prometheus** (시계열 메트릭 수집):
+      - Port: 9090
+      - Scrape Targets: Django, Redis, MySQL, Celery, Nginx
+      - Alert Rules: CODE BLUE (치명적 장애), CRITICAL (심각), WARNING (경고)
+      - Health Check: wget healthcheck
+    - [x] **Grafana** (대시보드 시각화):
+      - Port: 3000 (admin/admin123)
+      - 자동 프로비저닝: Prometheus 데이터 소스, 대시보드 JSON
+      - 플러그인: redis-datasource, grafana-clock-panel, grafana-simple-json-datasource
+      - 대시보드: 시스템 상태, 리소스, AI 작업, DB 모니터링
+    - [x] **Alertmanager** (알림 라우팅):
+      - Port: 9093
+      - 알림 채널: Email, Slack (설정 시), SMS (Webhook)
+      - 우선순위 라우팅: CODE BLUE (0초 대기, 5분 반복), CRITICAL (30초 대기), WARNING (5분 대기)
+      - Inhibition Rules: Critical 발생 시 Warning 억제
+    - [x] **모니터링 설정 파일 생성**:
+      - `monitoring/prometheus/prometheus.yml`: Scrape 설정 (5개 job)
+      - `monitoring/prometheus/alerts/cdss_alerts.yml`: 8개 알림 규칙
+      - `monitoring/alertmanager/alertmanager.yml`: 라우팅 및 리시버 설정
+      - `monitoring/grafana/provisioning/`: 데이터 소스 및 대시보드 자동 설정
+      - `monitoring/README.md`: 모니터링 스택 사용 가이드
+  - [x] **Docker 관련 문서 업데이트** (3개):
+    - [x] `DOCKER_ARCHITECTURE.md` (v1.0 → v1.1):
+      - Layer 4 Observability 추가 (계층 다이어그램 업데이트)
+      - 서비스별 상세 설명: Prometheus, Grafana, Alertmanager (3개 섹션 추가)
+      - 볼륨 관리: 모니터링 레이어 볼륨 추가 (prometheus_data, grafana_data, alertmanager_data)
+      - 총 서비스 수: 11개 → 14개
+    - [x] `01_doc/REF_CLAUDE_ONBOARDING_QUICK.md` (v1.4):
+      - 섹션 8.1 전면 개편: "통합 Docker 환경 (권장)" 신설
+      - 14개 컨테이너 구성 명시
+      - 주요 접속 URL 테이블 추가 (Grafana, Prometheus, Alertmanager 포함)
+      - 데이터 초기화 명령어 추가 (docker exec 방식)
+      - 레거시 방식을 8.2로 이동 (접기 가능하도록 `<details>` 태그 사용)
+    - [x] `01_doc/LOG_작업이력.md` (이 문서):
+      - Week 7 Day 11 작업 추가
+  - [x] **데이터 초기화 스크립트 수정** (Windows cp949 인코딩 대응):
+    - [x] `acct/management/commands/init_sample_data.py`: 전면 재작성
+      - 기존 문제: UserProfile, Role 모델이 존재하지 않아 ImportError 발생
+      - 해결: User, PatientCache 모델만 사용하도록 단순화
+      - 기능: 7개 역할 사용자 7명, 환자 5명 생성
+    - [x] `ris/management/commands/upload_sample_dicoms.py`: 이모지 제거
+      - 기존 문제: Windows cp949 codec이 이모지(🔍, ✅, ❌) 인코딩 불가
+      - 해결: 모든 이모지를 ASCII 텍스트로 변경 ([INFO], [SUCCESS], [ERROR], [WARNING])
+      - 결과: 1,860개 DICOM 파일 검출 성공 (dry-run 모드)
+  - [x] **데이터 업로드 실행** (3개 스크립트):
+    - [x] `create_test_users.py`: 13개 테스트 사용자 업데이트 (admin, doctor, nurse, patient, radiologist, labtech 등)
+    - [x] `init_sample_data.py`: 6개 사용자, 5개 환자 생성
+    - [x] `upload_sample_dicoms.py --dry-run`: 1,860개 DICOM 파일 확인 (sub-0004, sub-0005)
+  - [x] **Docker Compose 실행 완료**:
+    - [x] 모든 14개 컨테이너 healthy 또는 running 상태 확인
+    - [x] Observability Layer 접속 확인:
+      - Prometheus: http://localhost:9090/-/healthy (OK)
+      - Grafana: http://localhost:3000/api/health (OK)
+      - Alertmanager: http://localhost:9093/-/healthy (OK)
+
 - **2025-12-30 Day 10 (문서 재구성 완료)**:
   - [x] **문서 디렉토리 재구성 (01_doc)**:
     - [x] **구버전 파일 삭제 (3개)**:

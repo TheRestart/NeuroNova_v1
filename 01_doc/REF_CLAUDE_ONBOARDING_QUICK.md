@@ -270,7 +270,65 @@ Client (clients/)         ← 외부 시스템 (OpenEMR, Orthanc)
 
 ## 🚀 8. 빠른 시작 (서버 실행)
 
-### 8.1 Infrastructure (Docker) - PowerShell
+### 8.1 통합 Docker 환경 (권장) ⭐
+
+**전체 스택을 하나의 명령어로 실행**:
+
+```powershell
+# 루트 디렉토리에서 실행
+cd d:\1222\NeuroNova_v1
+
+# 전체 스택 시작 (14개 컨테이너)
+docker-compose -f docker-compose.dev.yml up -d
+
+# 컨테이너 상태 확인
+docker-compose -f docker-compose.dev.yml ps
+
+# 로그 확인 (실시간)
+docker-compose -f docker-compose.dev.yml logs -f
+
+# 특정 서비스 로그만 확인
+docker-compose -f docker-compose.dev.yml logs -f django
+docker-compose -f docker-compose.dev.yml logs -f celery-worker
+
+# 전체 스택 종료
+docker-compose -f docker-compose.dev.yml down
+```
+
+**14개 컨테이너 구성**:
+- **Ingress**: nginx (1개)
+- **Application**: django, celery-worker, celery-beat, flower, redis (5개)
+- **Data**: cdss-mysql, openemr-mysql, orthanc, openemr, hapi-fhir (5개)
+- **Observability**: prometheus, grafana, alertmanager (3개)
+
+**주요 접속 URL**:
+| 서비스 | URL | 계정 | 비고 |
+|--------|-----|------|------|
+| Django API | http://localhost:8000 | - | REST API |
+| Swagger UI | http://localhost:8000/api/docs/ | - | API 문서 |
+| **Grafana** | http://localhost:3000 | admin/admin123 | 시스템 대시보드 |
+| **Prometheus** | http://localhost:9090 | - | 메트릭 조회 |
+| **Alertmanager** | http://localhost:9093 | - | 알림 관리 |
+| Flower | http://localhost:5555 | - | Celery 모니터링 |
+| Orthanc PACS | http://localhost:8042 | orthanc/orthanc | DICOM 서버 |
+| OpenEMR | http://localhost:8081 | admin/pass | EMR 시스템 |
+
+**데이터 초기화 (최초 1회)**:
+```powershell
+# Django 컨테이너에 접속하여 실행
+docker-compose -f docker-compose.dev.yml exec django python manage.py create_test_users
+docker-compose -f docker-compose.dev.yml exec django python manage.py init_sample_data
+docker-compose -f docker-compose.dev.yml exec django python manage.py upload_sample_dicoms --dry-run
+```
+
+---
+
+### 8.2 레거시 방식 (더 이상 권장하지 않음)
+
+<details>
+<summary>개별 Docker + 로컬 Django/Celery 실행 (클릭하여 펼치기)</summary>
+
+**Infrastructure (Docker) - PowerShell**:
 
 ```powershell
 # Redis (캐시 + Celery 브로커)
@@ -293,7 +351,7 @@ docker-compose up -d
 docker ps
 ```
 
-### 8.2 Backend (Django + Celery) - 로컬 venv
+**Backend (Django + Celery) - 로컬 venv**:
 
 **Terminal 1 - Django Server:**
 ```powershell
@@ -319,9 +377,13 @@ cd NeuroNova_02_back_end/02_django_server
 venv\Scripts\celery -A cdss_backend flower --port=5555
 ```
 
+</details>
+
+---
+
 ### 8.3 React 테스트 클라이언트 (선택사항)
 
-**Terminal 5 - React Test Client (WSL 권장):**
+**Terminal (WSL 권장):**
 ```bash
 # WSL에서 실행
 cd /mnt/d/1222/NeuroNova_v1/NeuroNova_03_front_end_react/00_test_client
@@ -329,13 +391,7 @@ npm install  # 최초 1회만
 npm start    # 포트 3001 사용
 ```
 
-### 8.4 API 및 모니터링 접속
-
-- **Swagger UI**: http://localhost:8000/api/docs/
-- **ReDoc**: http://localhost:8000/api/redoc/
-- **Django Admin**: http://localhost:8000/admin/
-- **Flower (Celery)**: http://localhost:5555 (선택사항)
-- **React Test Client**: http://localhost:3001 (예시 입력 기능 포함)
+**접속**: http://localhost:3001
 
 ---
 
