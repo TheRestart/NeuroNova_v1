@@ -61,6 +61,23 @@
     - [x] `REF_CLAUDE_ONBOARDING_QUICK.md`: API URL 수정 (Nginx 경유)
     - [x] `OLD_오류정리_antigra_1230.md`: #9 API 접근 경로 문제 기록
     - [x] `배포전_테스트_결과_1231.md`: 신규 작성 (테스트 요약 및 체크리스트)
+  - [x] **브라우저 기반 API 테스트 도구 개발** (2025-12-31 오후):
+    - [x] **HTML API 테스트 페이지 생성**:
+      - 파일: `NeuroNova_03_front_end_react/00_test_client/public/api_test.html`
+      - Node.js 없이 브라우저에서 직접 실행 가능
+      - UC01-UC09 전체 API 엔드포인트 테스트 기능
+      - JWT 토큰 자동 관리 (로그인 → Access/Refresh Token 표시)
+      - 시각적 결과 표시 (성공: 초록색, 실패: 빨간색)
+      - 실시간 JSON 응답 데이터 표시
+    - [x] **React 서버 실행 가이드 작성**:
+      - 파일: `01_doc/90_작업이력/React_테스트_실행_가이드.md`
+      - 2가지 테스트 방법 제공:
+        1. HTML API 테스트 페이지 (즉시 실행 가능, 권장)
+        2. React 개발 서버 (WSL Ubuntu-22.04 필요)
+      - WSL Ubuntu-22.04에서 `PORT=3001 npm start` 명령 안내
+      - 자동 로그인 기능 설명 (REACT_APP_DEV_AUTO_LOGIN=true)
+      - 문제 해결 가이드 포함
+      - 테스트 체크리스트 및 결과 기록 양식 제공
 
 - **2025-12-31 Day 12 (React 테스트 클라이언트 OHIF 통합 + 로그인 문제 해결)**:
   - [x] **React 패키지 설치 및 실행** (WSL Ubuntu-22.04 LTS):
