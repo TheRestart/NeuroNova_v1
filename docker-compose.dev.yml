@@ -56,7 +56,7 @@ services:
       - neuronova_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 80 || exit 1"]
+      test: [ "CMD-SHELL", "nc -z localhost 80 || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -102,8 +102,8 @@ services:
 
       # External Services
       - ORTHANC_API_URL=http://${ORTHANC_SERVICE_NAME}:${ORTHANC_CONTAINER_PORT_HTTP}
-      - ORTHANC_USERNAME=${ORTHANC_USERNAME}
-      - ORTHANC_PASSWORD=${ORTHANC_PASSWORD}
+      - ORTHANC_USERNAME=${ORTHANC_USERNAME:-admin}
+      - ORTHANC_PASSWORD=${ORTHANC_PASSWORD:-admin123}
       - FHIR_SERVER_URL=http://${FHIR_SERVICE_NAME}:${FHIR_CONTAINER_PORT}/fhir
       - OPENEMR_BASE_URL=http://${OPENEMR_SERVICE_NAME}:${OPENEMR_CONTAINER_PORT_HTTP}
 
@@ -123,7 +123,7 @@ services:
       - neuronova_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c 'import socket; s=socket.socket(); s.settimeout(1); s.connect((\"127.0.0.1\", 8000))' || exit 1"]
+      test: [ "CMD-SHELL", "python3 -c 'import socket; s=socket.socket(); s.settimeout(1); s.connect((\"127.0.0.1\", 8000))' || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -242,7 +242,7 @@ services:
       - neuronova_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -260,7 +260,7 @@ services:
       - neuronova_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -288,7 +288,7 @@ services:
       - neuronova_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8042/system\")' || exit 1"]
+      test: [ "CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8042/system\")' || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -297,7 +297,7 @@ services:
   openemr-mysql:
     image: mariadb:11.8
     container_name: neuronova-openemr-mysql-dev
-    command: ['mariadbd', '--character-set-server=utf8mb4']
+    command: [ 'mariadbd', '--character-set-server=utf8mb4' ]
     environment:
       MYSQL_ROOT_PASSWORD: ${OPENEMR_DB_ROOT_PASSWORD}
     ports:
@@ -333,8 +333,8 @@ services:
       MYSQL_ROOT_PASS: ${OPENEMR_DB_ROOT_PASSWORD}
       MYSQL_USER: ${OPENEMR_DB_USER}
       MYSQL_PASS: ${OPENEMR_DB_PASSWORD}
-      OE_USER: ${OPENEMR_OE_USER}
-      OE_PASS: ${OPENEMR_OE_PASS}
+      OE_USER: ${OPENEMR_OE_USER:-admin}
+      OE_PASS: ${OPENEMR_OE_PASS:-admin123}
     depends_on:
       openemr-mysql:
         condition: service_healthy
@@ -370,7 +370,7 @@ services:
       - neuronova_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/8080' || exit 1"]
+      test: [ "CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/8080' || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -398,7 +398,7 @@ services:
       - neuronova_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -413,7 +413,7 @@ services:
       - GF_SERVER_ROOT_URL=http://localhost:3000
       - GF_INSTALL_PLUGINS=redis-datasource,grafana-clock-panel,grafana-simple-json-datasource
     ports:
-      - "3000:3000"
+      - "3002:3000"
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
@@ -425,7 +425,7 @@ services:
       - neuronova_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      test: [ "CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/api/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -446,12 +446,11 @@ services:
       - neuronova_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-
   # ============================================
   # 7. Development Tools (Optional)
   # ============================================
