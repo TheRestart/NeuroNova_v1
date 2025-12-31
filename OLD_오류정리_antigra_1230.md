@@ -62,3 +62,8 @@
 **현상:** 로그인 페이지의 역할별 빠른 로그인 버튼 클릭 시 로그인이 실패하고 에러 메시지가 표시됨.
 **원인:** 백엔드의 테스트 유저 생성 스크립트와 프론트엔드 `LoginPage.js`의 하드코딩된 비밀번호가 서로 달랐으며, 특수문자 처리 문제도 복합적으로 작용함.
 **해결:** 백엔드(`create_test_users.py`)와 프론트엔드(`LoginPage.js`)의 비밀번호를 단순한 형태(`username` + `123`)로 통일하고, Docker 컨테이너에서 사용자 데이터를 재생성하여 해결함.
+
+### 11. Django ��Ʈ ���� ���� (Connection Refused)
+**����:** React Ŭ���̾�Ʈ���� http://localhost:8000/api ȣ�� �� ���� ����.
+**����:** Docker ȯ�濡�� Django �����̳�(8000)�� �ܺ� ���� ���� Nginx(80)�͸� ����ϵ��� ������.
+**�ذ�:** API ȣ�� �ּҸ� Nginx ���Ͻ��� http://localhost/api�� �����Ͽ� �ذ���.

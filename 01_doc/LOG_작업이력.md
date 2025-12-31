@@ -78,6 +78,44 @@
       - 자동 로그인 기능 설명 (REACT_APP_DEV_AUTO_LOGIN=true)
       - 문제 해결 가이드 포함
       - 테스트 체크리스트 및 결과 기록 양식 제공
+  - [x] **React 테스트 클라이언트 최종 검증** (2025-12-31 저녁):
+    - [x] **[진단] 코드 분석 및 상태 확인**:
+      - 프로젝트 구조 정상 (index.js, App.js, pages/, api/, utils/)
+      - `.env.local` 환경 변수 정상 (자동 로그인 활성화, API URL 정상)
+      - API 클라이언트 정상 (Axios 인터셉터, JWT 토큰 자동 관리)
+      - 자동 로그인 기능 정상 (devAutoLogin.js)
+      - 라우팅 설정 정상 (React Router v6, 인증 상태 제어)
+      - 결론: **코드는 이미 정상 작동 가능한 상태** ✅
+    - [x] **[실행] Phase 1: 필수 파일 존재 확인**:
+      - `src/index.css` 존재 확인 ✅
+      - `public/index.html` 존재 확인, `<div id="root"></div>` 확인 ✅
+      - 빈 파일 검색: 0개 (0 byte JavaScript/JSX 파일 없음) ✅
+      - 모든 페이지 파일 존재 확인: 12개 파일 정상 크기 ✅
+    - [x] **[실행] Phase 2: WSL React 서버 실행 준비**:
+      - Django 백엔드 정상 확인 (로그인 API 200 OK) ✅
+      - `.env.local` 설정 확인 (자동 로그인, API URL) ✅
+      - `node_modules` 설치 확인 (1168개 패키지) ✅
+      - `START_REACT_SERVER.md` 실행 가이드 생성 ✅
+    - [x] **[실행] Phase 3: 브라우저 테스트 준비**:
+      - `BROWSER_TEST_CHECKLIST.md` 체크리스트 생성 ✅
+      - UC01-UC09 각 페이지별 테스트 항목 정의
+      - Console/Network 탭 확인 항목 정의
+      - 성공/실패 기준 명시
+  - [x] **추가 기능 구현** (2025-12-31 밤):
+    - [x] **기능 1: 전체 API 자동 테스트 페이지** (`src/pages/AllAPITest.js`):
+      - 14개 API 엔드포인트 순차 자동 테스트
+      - 실시간 프로그레스 바 및 결과 테이블
+      - 응답 시간 측정 (색상 구분: <500ms 녹색, 500-1000ms 노란색, >1000ms 빨간색)
+      - 테스트 요약 통계 (성공률, 총/평균 소요 시간)
+      - JSON 리포트 다운로드 기능
+      - 네비게이션 바에 "🚀 전체 API 테스트" 추가
+    - [x] **기능 2: 대시보드 시스템 상태 요약** (`DashboardPage.js` 업데이트):
+      - 실시간 Django 백엔드 상태 확인 (온라인/오프라인 표시)
+      - 샘플 환자 데이터 수 표시 (5명 정상 확인)
+      - 자동 로그인 모드 표시
+      - 상태 새로고침 버튼
+      - 전체 API 테스트 바로가기 카드
+      - UC 카드 아이콘 및 호버 효과 개선
 
 - **2025-12-31 Day 12 (React 테스트 클라이언트 OHIF 통합 + 로그인 문제 해결)**:
   - [x] **React 패키지 설치 및 실행** (WSL Ubuntu-22.04 LTS):
@@ -1052,3 +1090,9 @@ Git 서브모듈 관리 문서화가 완료되었습니다. 개발자는 이제:
 - VSCode에서 발생하는 서브모듈 문제 해결 가능
 
 ---
+
+  - [x] **React Client Port Fix** (2025-12-31):
+    - [x] **Diagnosis**: React client was trying to connect to Django port 8000, which is not exposed.
+    - [x] **Fix**: Updated REACT_APP_API_URL to http://localhost/api (Nginx proxy) in .env.local.
+    - [x] **Verification**: Confirmed API endpoint accessibility via curl (405 Method Not Allowed on GET login implies server reachable).
+
