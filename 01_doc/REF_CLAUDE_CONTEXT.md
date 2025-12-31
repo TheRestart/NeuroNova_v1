@@ -230,7 +230,7 @@ class PatientViewSet(viewsets.ModelViewSet):
 **시스템 타입**: Microservices Architecture
 **Gateway**: Nginx (Reverse Proxy with X-Accel-Redirect) behind Cloudflare
 **Main Backend**: Django REST Framework (Secure Proxy & Auth Delegate)
-**App Layer**: Multi-SPA (React Main + Custom OHIF Viewer, separated builds)
+**App Layer**: **Single-SPA** (Unified React App with OHIF Viewer Integration)
 **AI/Computation**: FastAPI (AI Core), Celery (Image Processing Factory)
 
 ### 4.1 아키텍처 다이어그램 (v2.1)
@@ -240,20 +240,18 @@ class PatientViewSet(viewsets.ModelViewSet):
 │                    Ingress Layer (v2.1)                         │
 │  Internet → Cloudflare (HTTPS/WAF) → Nginx :80 (Secure Proxy)  │
 │              Routes:                                            │
-│              - / → React Main SPA (/var/www/react-main)         │
+│              - / → React SPA (Main + Viewer) (/var/www/react-build)     │
 │              - /api/* → Django :8000 (Smart Proxy)              │
-│              - /pacs-viewer/ → Custom OHIF (/var/www/ohif-dist) │
 │              - /internal-orthanc/* → Orthanc :8042 (INTERNAL)   │
 └─────────────────────────────────────────────────────────────────┘
                              ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│              Application Layer (Multi-SPA)                      │
-│  ┌──────────────┬──────────────┬─────────────────────────────┐  │
-│  │  React Main  │  Django API  │ Custom OHIF (Separate Build)│  │
-│  │  (UI)        │  :8000       │ - HTJ2K WASM Decoder        │  │
-│  │              │  JWT Auth    │ - AI Result Panel           │  │
-│  │              │  Proxy       │ - Django Proxy 경유         │  │
-│  └──────────────┴──────────────┴─────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │  Unified React App (v3.0)                                 │  │
+│  │  - Main Dashboard (UI)                                    │  │
+│  │  - Embedded OHIF Viewer (@ohif/viewer)                    │  │
+│  │  - Django Proxy Integration (JWT)                         │  │
+│  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                              ↓
 ┌─────────────────────────────────────────────────────────────────┐
