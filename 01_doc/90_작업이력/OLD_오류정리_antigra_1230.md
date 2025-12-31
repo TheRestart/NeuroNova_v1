@@ -48,11 +48,16 @@
 ## 2025-12-31 트러블슈팅
 
 ### 8. create_test_users.py 비밀번호 해싱 버그 (치명적)
-**현상:** `python manage.py create_test_users`로 생성된 계정으로 로그인 불가 (401 에러).
-**원인:** `create_user` 함수 호출 시 비밀번호 인자가 누락되어, Django가 사용할 수 없는 비밀번호로 설정함. 나중에 `set_password`를 호출하려 했으나 변수가 이미 pop되어 사라짐.
-**해결:** `create_user`에 `password` 인자를 명시적으로 전달하도록 수정하고, 특수문자 처리를 위해 raw string(`r''`)을 사용함.
+**현상:** React 로그인 시 모든 테스트 계정이 401 Unauthorized 에러 발생. Django 로그에서 "ERR_001 - 인증에 실패했습니다" 반환.
+**원인:** create_test_users.py 162-164번 줄에서 `password = user_data.pop('password')` 후 `User.objects.create_user(**user_data)` 호출 시 password가 전달되지 않음. create_user()가 password 없이 호출되어 사용 불가능한 비밀번호 설정.
+**해결:** create_user() 호출 시 password를 명시적으로 전달하도록 수정. 비밀번호를 단순화(`admin123`, `doctor123` 등)하여 특수문자 처리 문제 제거. 13명 테스트 사용자 재생성 후 check_password() 검증 완료.
 
-### 9. 빠른 로그인(Quick Login) 작동 실패
+### 9. React API 접근 경로 문제 (Docker 네트워크)
+**현상:** React에서 `http://localhost:8000/api`로 호출하지만 Django 컨테이너 포트 8000이 호스트에 노출되지 않아 연결 실패. `django.contrib.auth.authenticate()`는 정상 작동하지만 HTTP 요청이 Django에 도달하지 못함.
+**원인:** Docker Compose 설정에서 django 컨테이너는 내부 네트워크만 사용하고 포트를 호스트에 매핑하지 않음. Nginx가 Reverse Proxy로 포트 80에서 Django로 프록시하는 구조.
+**해결:** `.env.local` 파일에서 `REACT_APP_API_URL`을 `http://localhost/api`로 변경하여 Nginx (포트 80) 경유하도록 수정. DICOM URL도 `http://localhost/api/ris/dicom-web`로 변경. curl 테스트 결과 로그인 API 정상 작동 확인 (JWT 토큰 발급 성공).
+
+### 10. 빠른 로그인(Quick Login) 작동 실패
 **현상:** 로그인 페이지의 역할별 빠른 로그인 버튼 클릭 시 아무 반응이 없거나 로그인이 실패함.
 **원인:** (분석 결과) 빠른 로그인 핸들러에서 호출하는 `authAPI.login` 함수의 매개변수 전달 방식이나, 하드코딩된 비밀번호가 백엔드 데이터와 불일치할 가능성.
 **해결:** (진행 중) `LoginPage.js`의 `handleQuickLogin` 함수를 분석하고, 백엔드에 설정된 올바른 자격증명으로 수정할 예정.

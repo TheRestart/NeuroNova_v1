@@ -311,8 +311,8 @@ docker-compose -f docker-compose.dev.yml down
 **주요 접속 URL**:
 | 서비스 | URL | 계정 | 비고 |
 |--------|-----|------|------|
-| Django API | http://localhost:8000 | - | REST API |
-| Swagger UI | http://localhost:8000/api/docs/ | - | API 문서 |
+| Django API | http://localhost/api | - | REST API (Nginx 경유) |
+| Swagger UI | http://localhost/api/docs/ | - | API 문서 (Nginx 경유) |
 | **Grafana** | http://localhost:3000 | admin/admin123 | 시스템 대시보드 |
 | **Prometheus** | http://localhost:9090 | - | 메트릭 조회 |
 | **Alertmanager** | http://localhost:9093 | - | 알림 관리 |

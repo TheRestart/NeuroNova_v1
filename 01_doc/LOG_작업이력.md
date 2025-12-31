@@ -24,6 +24,44 @@
 
 ### Week 7 (2025-12-29 ~ 2025-12-31)
 
+- **2025-12-31 Day 13 (React 테스트 클라이언트 오류 수정 및 배포 전 검증)**:
+  - [x] **React 테스트 클라이언트 진단 및 수정**:
+    - [x] **WSL Ubuntu 환경 확인**:
+      - Node.js v20.19.6, npm 10.8.2 정상 설치 확인
+      - node_modules 디렉토리 이미 설치됨
+      - `.env.local` 파일 존재 확인
+    - [x] **빈 파일 검색 및 제거**:
+      - React src/ 디렉토리: 0 byte 파일 없음 (모든 파일 정상)
+      - Django 백엔드: `__init__.py` 빈 파일 20개 (정상적인 Python 패키지 구조)
+    - [x] **Django 백엔드 API 검증**:
+      - Docker 컨테이너 상태: 14개 실행 중, 2개 unhealthy (Nginx, HAPI FHIR)
+      - 테스트 사용자 17명 존재 확인
+      - `create_test_users.py` 실행하여 13명 업데이트 완료
+    - [x] **API 접근 경로 문제 발견 및 해결**:
+      - **문제**: React가 `http://localhost:8000/api`로 호출하지만 Django는 Nginx를 통해서만 접근 가능
+      - **원인**: django 컨테이너는 포트 8000을 호스트에 노출하지 않음 (내부 네트워크만)
+      - **해결**: `.env.local` 파일에서 API URL 변경:
+        - 이전: `REACT_APP_API_URL=http://localhost:8000/api`
+        - 수정: `REACT_APP_API_URL=http://localhost/api` (Nginx 포트 80 경유)
+        - DICOM URL도 수정: `REACT_APP_DICOM_WEB_ROOT=http://localhost/api/ris/dicom-web`
+    - [x] **로그인 API 테스트 성공**:
+      - Nginx를 통한 로그인: `curl http://localhost/api/acct/login/` → 200 OK
+      - Access Token 및 Refresh Token 정상 발급
+      - 사용자 정보 반환: `{username: "doctor", role: "doctor", ...}`
+    - [x] **핵심 기능 API 테스트**:
+      - UC01 (인증): 로그인 성공, JWT 토큰 발급 확인
+      - UC02 (EMR): 환자 목록 조회 (`/api/emr/patients/`) → 5명 환자 반환
+  - [x] **배포 전 검증 테스트 완료**:
+    - [x] **컨테이너 상태**: 14개 실행 중 (Nginx, HAPI FHIR unhealthy는 health check 스크립트 문제, 실제 정상)
+    - [x] **API 테스트**: UC01-05, UC09 정상 (UC06만 500 에러, 배포 범위 외)
+    - [x] **샘플 데이터**: 사용자 13명, 환자 5명 확인
+  - [x] **문서 업데이트 완료**:
+    - [x] `LOG_작업이력.md`: Week 7 Day 13 추가
+    - [x] `36_다음_작업_계획.md`: 배포 전 체크리스트 업데이트
+    - [x] `REF_CLAUDE_ONBOARDING_QUICK.md`: API URL 수정 (Nginx 경유)
+    - [x] `OLD_오류정리_antigra_1230.md`: #9 API 접근 경로 문제 기록
+    - [x] `배포전_테스트_결과_1231.md`: 신규 작성 (테스트 요약 및 체크리스트)
+
 - **2025-12-31 Day 12 (React 테스트 클라이언트 OHIF 통합 + 로그인 문제 해결)**:
   - [x] **React 패키지 설치 및 실행** (WSL Ubuntu-22.04 LTS):
     - [x] **Dependency 충돌 해결**:
