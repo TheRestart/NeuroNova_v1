@@ -1,8 +1,8 @@
 # Claude AI 빠른 온보딩 가이드 (Quick Onboarding)
 
-**최종 수정일**: 2025-12-30
+**최종 수정일**: 2025-12-31
 **목적**: 최소 토큰으로 프로젝트 핵심만 빠르게 파악
-**최신 변경**: GCP 배포 가이드 완성, Nginx 보안 아키텍처 강화
+**최신 변경**: React 테스트 클라이언트 OHIF 통합 완료, 로그인 인증 문제 해결 중
 
 > **원칙**: 이 문서만 읽으면 즉시 작업 가능. 상세 내용은 필요 시 참조 문서 확인.
 
@@ -388,17 +388,33 @@ venv\Scripts\celery -A cdss_backend flower --port=5555
 
 ---
 
-### 8.3 React 테스트 클라이언트 (선택사항)
+### 8.3 React 테스트 클라이언트 (WSL 필수)
 
-**Terminal (WSL 권장):**
+**CRITICAL**: React는 반드시 **WSL Ubuntu-22.04 LTS** 환경에서 실행해야 합니다.
+
+**Terminal (WSL Ubuntu-22.04):**
 ```bash
-# WSL에서 실행
+# WSL Ubuntu 진입
+wsl -d Ubuntu-22.04
+
+# 프로젝트 디렉토리 이동
 cd /mnt/d/1222/NeuroNova_v1/NeuroNova_03_front_end_react/00_test_client
-npm install  # 최초 1회만
-npm start    # 포트 3001 사용
+
+# 패키지 설치 (최초 1회, --legacy-peer-deps 필수)
+npm install --legacy-peer-deps
+
+# 개발 서버 시작 (포트 3001)
+PORT=3001 npm start
 ```
 
 **접속**: http://localhost:3001
+
+**주요 이슈 해결**:
+- OHIF Viewer 3.11.11이 React 16.8.6 요구하나 프로젝트는 React 18.3.1 사용 → `--legacy-peer-deps` 플래그로 해결
+- cornerstone-wado-image-loader 4.13.3 버전 없음 → package.json에서 4.13.2로 수정 완료
+- WSL에서 localhost:8000 연결 불가 → package.json proxy를 172.29.64.1:8000으로 설정 완료
+
+**상세 가이드**: `NeuroNova_03_front_end_react/00_test_client/사용방법_설명문서.md`
 
 ---
 
@@ -480,7 +496,13 @@ A:
 - `radiologist` / `rib123!@#`
 - `labtech` / `lab123!@#`
 
-생성: `python manage.py create_test_users`
+생성: `docker exec neuronova-django-dev python manage.py create_test_users`
+
+**CRITICAL 이슈 (2025-12-31)**:
+- create_test_users.py에 버그 발견: password가 create_user()에 전달되지 않음
+- 코드 수정 완료: 162-172번 줄, raw string 사용
+- 비밀번호 검증 보류: Python shell escape 문제로 정확한 테스트 불가
+- **해결 방법**: 브라우저에서 실제 로그인 테스트 또는 비밀번호 단순화 필요
 
 ### 8.6 로그인 테스트 (계정 정보)
 

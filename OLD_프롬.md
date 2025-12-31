@@ -19,10 +19,9 @@
 === Claude에게 작업 시작 요청 시 프롬프트 예시:
 
 **빠른 온보딩**:
-"01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악해줘"
+"01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 01_doc\LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악해줘"
 
-01_doc\GIT_서브모듈_관리_가이드.md
-내용업데이트
+
 
 
 
@@ -35,7 +34,10 @@
 01_doc/REF_CLAUDE_ONBOARDING_QUICK.md, LOG_작업이력.md
 
 
-
+현제 문제를 정리하고 
+4개 문서를 업데이트 하시오 
+01_doc/REF_CLAUDE_ONBOARDING_QUICK.md, LOG_작업이력.md, 
+작업_계획_요약.md, OLD_오류정리_antigra_1230.md
 
 
 
