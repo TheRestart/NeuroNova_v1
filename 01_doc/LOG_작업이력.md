@@ -1096,3 +1096,9 @@ Git 서브모듈 관리 문서화가 완료되었습니다. 개발자는 이제:
     - [x] **Fix**: Updated REACT_APP_API_URL to http://localhost/api (Nginx proxy) in .env.local.
     - [x] **Verification**: Confirmed API endpoint accessibility via curl (405 Method Not Allowed on GET login implies server reachable).
 
+
+  - [x] **React Client Stability Fix** (2025-12-31):
+    - [x] **Fix**: Initialized App.js isAuthenticated from localStorage to prevent redirect loop.
+    - [x] **Fix**: Added BROWSER=none to .env.local to stop multi-tab opening.
+    - [x] **Verification**: Browser test stable. API Test Record: 10/13 Success (Warning: LIS/Alert 404s).
+

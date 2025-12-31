@@ -36,6 +36,12 @@ npm run dev 를 실행할때는 Ubuntu-22.04 LTS를 사용하시오
 **빠른 온보딩**:
 "01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 01_doc\LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악해줘"
 
+01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 01_doc\LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악후
+
+
+
+orthance, ohir 을 중심으로 
+실제 서비스가 어떻게 동작하는지 설명하라
 
 
 
