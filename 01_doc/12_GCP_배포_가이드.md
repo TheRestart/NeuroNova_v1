@@ -40,7 +40,7 @@
          ┌─────────────────────────┐
          │     GCP VM Instance     │
          │   (Ubuntu 22.04 LTS)    │
-         │   Public IP: X.X.X.X    │
+         │ IP: 34.71.151.117 (고정)│
          └─────────────────────────┘
                        ↓
          ┌─────────────────────────┐
@@ -79,12 +79,14 @@
 - **OS**: Ubuntu 22.04 LTS
 - **Region**: asia-northeast3 (서울)
 - **방화벽**: HTTP(80), HTTPS(443), SSH(22) 허용
+- **External IP**: 34.71.151.117 (고정 IP 할당됨)
 
 **권장 사양 (운영)**
 - **Machine Type**: n2-standard-8 (8 vCPU, 32GB RAM)
 - **Boot Disk**: 200GB SSD Persistent Disk
 - **Additional Disk**: 500GB Standard Persistent Disk (DICOM 저장용)
 - **GPU**: NVIDIA T4 (AI 추론용, 선택사항)
+- **External IP**: 34.71.151.117 (고정 IP - 이미 예약됨)
 
 ### 1.3 접속 도구
 
@@ -99,6 +101,14 @@
 
 ### 2.1 GCP VM 인스턴스 생성
 
+**고정 외부 IP 주소 (Static External IP)**
+- **IP 주소**: `34.71.151.117`
+- **이름**: `neuronova-static-ip`
+- **Region**: `asia-northeast3` (서울)
+- **상태**: ✅ 이미 예약됨
+
+**중요**: VM 재부팅 시에도 이 IP 주소가 유지됩니다.
+
 ```bash
 # GCP Console에서 수동 생성 또는 gcloud CLI 사용
 
@@ -106,7 +116,7 @@ gcloud compute instances create neuronova-cdss-vm \
   --project=YOUR_PROJECT_ID \
   --zone=asia-northeast3-a \
   --machine-type=e2-standard-4 \
-  --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default \
+  --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default,address=34.71.151.117 \
   --maintenance-policy=MIGRATE \
   --provisioning-model=STANDARD \
   --create-disk=auto-delete=yes,boot=yes,device-name=neuronova-cdss-vm,image=projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20231213,mode=rw,size=100,type=projects/YOUR_PROJECT_ID/zones/asia-northeast3-a/diskTypes/pd-ssd \
@@ -114,6 +124,17 @@ gcloud compute instances create neuronova-cdss-vm \
   --shielded-integrity-monitoring \
   --labels=env=production,app=cdss \
   --reservation-affinity=any
+```
+
+**고정 IP 주소 확인**
+```bash
+# 현재 할당된 IP 확인
+gcloud compute addresses describe neuronova-static-ip --region=asia-northeast3
+
+# 출력 예시:
+# address: 34.71.151.117
+# addressType: EXTERNAL
+# status: IN_USE
 ```
 
 **방화벽 규칙 생성**

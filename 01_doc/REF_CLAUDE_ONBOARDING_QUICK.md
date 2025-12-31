@@ -489,28 +489,27 @@ A: Docker 컨테이너 상태 확인 (`docker ps`), 로그 확인 (`docker logs`
 
 ### Q5. 테스트 계정 비밀번호는?
 A:
-- `admin` / `admin123!@#`
-- `doctor` / `doctor123!@#`
-- `nurse` / `nurse123!@#`
-- `patient` / `patient123!@#`
-- `radiologist` / `rib123!@#`
-- `labtech` / `lab123!@#`
+- `admin` / `admin123`
+- `doctor` / `doctor123`
+- `nurse` / `nurse123`
+- `patient` / `patient123`
+- `radiologist` / `radiologist123`
+- `labtech` / `labtech123`
 
 생성: `docker exec neuronova-django-dev python manage.py create_test_users`
 
-**CRITICAL 이슈 (2025-12-31)**:
-- create_test_users.py에 버그 발견: password가 create_user()에 전달되지 않음
-- 코드 수정 완료: 162-172번 줄, raw string 사용
-- 비밀번호 검증 보류: Python shell escape 문제로 정확한 테스트 불가
-- **해결 방법**: 브라우저에서 실제 로그인 테스트 또는 비밀번호 단순화 필요
+**비밀번호 규칙 변경 (2025-12-31)**:
+- 이전: `*123!@#` → 현재: `*123` (특수문자 완전 제거)
+- 변경 이유: Python escape sequence 문제 및 로그인 인증 실패 해결
+- 상세: PASSWORD_CHANGE_PLAN.md 참조
 
 ### 8.6 로그인 테스트 (계정 정보)
 
 **테스트 계정 목록** (상세: [32_권한_정의_요약.md](32_권한_정의_요약.md#8-테스팅용-임시-계정-test-accounts))
 
-- **Admin**: `admin` / `admin123!@#`
-- **Doctor**: `doctor` / `doctor123!@#`
-- **Patient**: `patient` / `patient123!@#`
+- **Admin**: `admin` / `admin123`
+- **Doctor**: `doctor` / `doctor123`
+- **Patient**: `patient` / `patient123`
 
 1. http://localhost:3000 접속 (React App)
 2. 위 계정으로 로그인 시도

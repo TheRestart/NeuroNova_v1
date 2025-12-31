@@ -49,16 +49,10 @@
 
 ### 8. create_test_users.py 비밀번호 해싱 버그 (치명적)
 **현상:** `python manage.py create_test_users`로 생성된 계정으로 로그인 불가 (401 에러).
-**원인:** `create_user` 함수 호출 시 비밀번호 인자가 누락되어, Django가 사용할 수 없는 비밀번호로 설정함.
-**해결:** `create_user`에 `password` 인자를 명시적으로 전달하도록 수정하고, 특수문자 처리를 위해 raw string을 사용하려 했으나, 최종적으로 특수문자를 제거한 단순 비밀번호(`admin123`)로 변경하여 문제를 원천 해결함.
-- **데이터 초기화**: `python manage.py create_test_users`를 재실행하여 백엔드 데이터를 갱신했습니다.
+**원인:** `create_user` 함수 호출 시 비밀번호 인자가 누락되어, Django가 사용할 수 없는 비밀번호로 설정함. 나중에 `set_password`를 호출하려 했으나 변수가 이미 pop되어 사라짐.
+**해결:** `create_user`에 `password` 인자를 명시적으로 전달하도록 수정하고, 특수문자 처리를 위해 raw string(`r''`)을 사용함.
 
-### 10. API URL 경로 불일치 (Login 404 Not Found)
-**현상:** 로그인 시도 시 `POST http://localhost:8000/acct/login/` 요청이 404 (Not Found) 반환.
-**원인:** 백엔드 API는 `/api/` 접두사를 사용하지만(`http://localhost:8000/api/acct/login/`), 프론트엔드 환경 변수 `REACT_APP_API_URL`이 `http://localhost:8000`으로 설정되어 있어 `/api`가 누락됨.
-**해결:** `.env` 파일의 `REACT_APP_API_URL`을 `http://localhost:8000/api`로 수정하고 서버를 재시작하여 해결함.
-
-### 9. 빠른 로그인(Quick Login) 작동 실패 (해결됨)
-**현상:** 로그인 페이지의 역할별 빠른 로그인 버튼 클릭 시 로그인이 실패하고 에러 메시지가 표시됨.
-**원인:** 백엔드의 테스트 유저 생성 스크립트와 프론트엔드 `LoginPage.js`의 하드코딩된 비밀번호가 서로 달랐으며, 특수문자 처리 문제도 복합적으로 작용함.
-**해결:** 백엔드(`create_test_users.py`)와 프론트엔드(`LoginPage.js`)의 비밀번호를 단순한 형태(`username` + `123`)로 통일하고, Docker 컨테이너에서 사용자 데이터를 재생성하여 해결함.
+### 9. 빠른 로그인(Quick Login) 작동 실패
+**현상:** 로그인 페이지의 역할별 빠른 로그인 버튼 클릭 시 아무 반응이 없거나 로그인이 실패함.
+**원인:** (분석 결과) 빠른 로그인 핸들러에서 호출하는 `authAPI.login` 함수의 매개변수 전달 방식이나, 하드코딩된 비밀번호가 백엔드 데이터와 불일치할 가능성.
+**해결:** (진행 중) `LoginPage.js`의 `handleQuickLogin` 함수를 분석하고, 백엔드에 설정된 올바른 자격증명으로 수정할 예정.

@@ -88,6 +88,122 @@
     - [x] `작업_계획_요약.md`: 현재 상태 및 다음 작업 업데이트
     - [x] `OLD_오류정리_antigra_1230.md`: 로그인 인증 문제 상세 기록 (#8)
 
+  - [x] **비밀번호 규칙 변경** (특수문자 제거):
+    - [x] **변경 이유**:
+      - Python escape sequence 경고 (`!@#` → `\!` 문제)
+      - 로그인 인증 실패 해결 (특수문자 처리 과정에서 해시 불일치 추정)
+      - 입력 편의성 향상 (Shift 키 불필요)
+    - [x] **비밀번호 변경**:
+      - 이전: `admin123!@#`, `doctor123!@#`, `nurse123!@#`, ...
+      - 최종: `admin123`, `doctor123`, `nurse123`, `patient123`, `radiologist123`, `labtech123`
+    - [x] **파일 수정** (6개):
+      - create_test_users.py: 6개 비밀번호 필드 업데이트
+      - REF_CLAUDE_ONBOARDING_QUICK.md: Q5 FAQ, 8.6 로그인 테스트 섹션
+      - 사용방법_설명문서.md: 4-2 수동 로그인, 부록 테스트 계정 표
+      - README.md: 테스트 계정 표
+      - PASSWORD_CHANGE_PLAN.md: 최종 확정 비밀번호 업데이트
+    - [ ] **Phase 2-4 보류** (서버 필요):
+      - 기존 사용자 삭제 및 신규 사용자 생성
+      - check_password() 검증
+      - 실제 브라우저 로그인 테스트
+
+  - [x] **프로젝트 개선 작업 (문서/구조/보안)**:
+    - [x] **문서 구조 개선**:
+      - 01_doc/90_작업이력/ 디렉토리 생성
+      - PASSWORD_CHANGE_PLAN.md 이동 (루트 → 01_doc/90_작업이력/)
+      - OLD_오류정리_antigra_1230.md 이동 (01_doc/ → 01_doc/90_작업이력/)
+    - [x] **DICOM 샘플 데이터 가이드** (sample_dicoms/README.md, 282줄):
+      - 추천 데이터셋 3곳 (TCIA, OpenNeuro, Kaggle) 다운로드 링크
+      - 시나리오별 추천 (신경외과, 흉부외과, 응급의학)
+      - 빠른 시작 가이드 (다운로드 → 배치 → Orthanc 업로드 → OHIF 확인)
+      - 트러블슈팅 (DICOM 미감지, Orthanc 업로드 실패, OHIF 로딩 실패)
+      - sample_dicoms/.gitignore 생성 (DICOM 파일 제외)
+    - [x] **Git 커밋 규칙** (01_doc/90_작업이력/GIT_COMMIT_CONVENTION.md, 300+줄):
+      - Conventional Commits 형식 정의 (type, scope, subject, body, footer)
+      - Type 정의 (feat, fix, docs, refactor, test, chore, perf, style, ci, build)
+      - 좋은 예시 / 나쁜 예시 비교
+      - 브랜치 네이밍 규칙 (feature/, bugfix/, hotfix/)
+      - 도구 추천 (Commitlint, Commitizen)
+    - [x] **보안 체크리스트** (01_doc/13_배포전_보안_체크리스트.md, 440줄):
+      - 8개 카테고리 (인증/권한, 환경변수, Django 설정, DB 보안, 네트워크, 로깅, 코드 보안, 파일 검증)
+      - Critical 항목: DEBUG=False, SECRET_KEY 환경변수, ALLOWED_HOSTS, DB 비밀번호 변경
+      - JWT 토큰 만료 시간 단축 (24h → 1h, 30d → 7d)
+      - HTTPS 설정 (Let's Encrypt, Nginx 리디렉션)
+      - 의존성 취약점 검사 (pip-audit, npm audit)
+      - Phase별 체크리스트 (설정 확인, 보안 점검, 모니터링 설정, 최종 검증)
+    - [x] **사용자 스토리 문서** (01_doc/05_사용자_스토리.md, 500+줄):
+      - UC02-UC09 각 Use Case별 사용자 스토리 정의
+      - 역할 정의 (admin, doctor, nurse, patient, radiologist, labtech, external)
+      - Acceptance Criteria (AC) 명시 (완료 기준 체크리스트)
+      - Business Rules 정의 (비즈니스 규칙 및 제약사항)
+      - Performance Requirements (응답 시간, 동시 사용자 등)
+      - 17개 User Story 작성 (환자 등록, 처방 생성, 검사 오더, DICOM 조회, AI 분석 등)
+    - [x] **비기능 요구사항 문서** (01_doc/06_비기능_요구사항.md, 400+줄):
+      - 7개 NFR 카테고리 (Performance, Availability, Security, Scalability, Usability, Maintainability, Compliance)
+      - 성능 목표: API 평균 200ms, 최대 1000ms
+      - 가용성 목표: 99% Uptime, RPO 24시간, RTO 4시간
+      - 보안 요구사항: 비밀번호 12자, AES-256 암호화, TLS 1.3
+      - 확장성 계획: Phase 1 (100명), Phase 2 (500명), Phase 3 (1000명)
+      - 데이터 증가율: 환자 50건/일, 처방 200건/일, DICOM 1GB/일
+      - 모니터링 알림: CPU > 80%, Memory > 90%, Disk > 85%
+      - 규정 준수: 개인정보보호법, 의료법 제21/22조, HIPAA (선택)
+      - NFR 우선순위: High (즉시), Medium (3개월), Low (6개월)
+      - 검증 계획: Locust 부하 테스트, OWASP ZAP 보안 스캔, Chaos Engineering
+
+  - [x] **비밀번호 변경 Phase 2 완료 (서버 기동 후)**:
+    - [x] 기존 테스트 사용자 6개 삭제 (admin, doctor, nurse, patient, radiologist, labtech)
+    - [x] 신규 사용자 13명 생성/업데이트 (새 비밀번호 admin123 등)
+    - [x] 비밀번호 검증 성공 (check_password 6개 계정 모두 True)
+    - [ ] React 로그인 테스트 (사용자 확인 대기 중)
+
+  - [x] **아키텍처 개선 계획 수립**:
+    - [x] **FHIR-Orthanc 연동** (ARCHITECTURE_IMPROVEMENTS.md):
+      - orthanc-fhir 플러그인 설치 계획
+      - DICOM → FHIR ImagingStudy 자동 매핑
+      - HAPI FHIR 동기화 전략 (Subscription vs Celery)
+      - 예상 효과: 표준 FHIR API, 변환 로직 자동화
+    - [x] **GCP 배포 IP 변경 대응** (ARCHITECTURE_IMPROVEMENTS.md):
+      - 내부 통신: Docker Service Name 사용 (IP 금지)
+      - 외부 접근: GCP 고정 외부 IP 예약
+      - 프론트엔드: Nginx Reverse Proxy + 상대 경로
+      - .env.docker 생성 (Service Name으로 설정)
+      - .env.production 생성 (React 상대 경로)
+      - 예상 효과: VM 재부팅 시에도 안정적 운영
+
+  - [x] **DICOM 샘플 데이터 준비 가이드**:
+    - [x] **빠른 시작 가이드** (sample_dicoms/QUICK_START.md, 400+줄):
+      - 3가지 다운로드 방법 (MedMNIST 50MB, TCIA 500MB, Orthanc 샘플 20MB)
+      - upload_sample_dicoms.py 스크립트 사용법
+      - OHIF Viewer 테스트 절차
+      - 트러블슈팅 (4가지 일반 문제)
+      - 개발/데모 환경별 권장 워크플로우
+    - [x] **upload_sample_dicoms.py 스크립트** (이미 구현됨):
+      - DICOM 파일 자동 스캔 (sub-* 디렉토리)
+      - Orthanc PACS 업로드
+      - Dry-run 모드, 환자별 필터링, 진행 상황 표시
+      - 업로드 후 Orthanc 통계 자동 조회
+
+  - [x] **개발 환경 자동 로그인 구현** (로그인 우회):
+    - [x] **React 자동 로그인 유틸리티** (src/utils/devAutoLogin.js):
+      - REACT_APP_DEV_AUTO_LOGIN=true 환경변수로 활성화
+      - 가짜 JWT 토큰 자동 생성 및 localStorage 저장
+      - 역할별 Mock User 선택 가능 (doctor, nurse, admin 등)
+    - [x] **App.js 자동 로그인 통합**:
+      - useEffect에서 devAutoLogin() 호출
+      - 로그인 페이지 건너뛰고 바로 대시보드 접근
+    - [x] **.env.local 생성** (개발 환경 전용):
+      - REACT_APP_DEV_AUTO_LOGIN=true
+      - REACT_APP_DEV_MOCK_USER=doctor
+    - [x] **사용 가이드** (DEV_AUTO_LOGIN_GUIDE.md, 300+줄):
+      - 빠른 시작 (3분)
+      - 역할별 사용자 변경 방법
+      - 동작 원리 (Django ENABLE_SECURITY + React devAutoLogin)
+      - 트러블슈팅 및 FAQ
+      - 프로덕션 배포 시 보안 체크리스트
+    - [x] **백엔드 설정 확인**:
+      - Django .env: ENABLE_SECURITY=False (이미 설정됨)
+      - REST_FRAMEWORK 권한: AllowAny (보안 비활성화 시)
+
 - **2025-12-30 Day 11 (Docker 통합 환경 완성 + 모니터링 스택)**:
   - [x] **Docker 환경 통합 완료** (`docker-compose.dev.yml`):
     - [x] **구버전 파일 백업**:
