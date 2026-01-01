@@ -102,92 +102,20 @@ NeuroNova_v1/
 
 ---
 
-## 🏗️ 4. 핵심 아키텍처 (Microservices for Medical CDSS & PACS v2.1)
+## 🏗️ 4. 핵심 아키텍처 (요약)
 
-**시스템 타입**: Microservices Architecture
-**Gateway**: Nginx (Reverse Proxy with **X-Accel-Redirect**) behind Cloudflare
-**Main Backend**: Django REST Framework (**Secure Proxy & Auth Delegate**)
-**App Layer**: **Single-SPA** (Unified React App with OHIF Viewer Integration)
-**AI/Computation**: FastAPI (AI Core), Celery (Image Processing Factory)
+> **상세 아키텍처 및 다이어그램은 [REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)를 참조하십시오.**
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Ingress Layer (v2.1)                         │
-│  Internet → Cloudflare (HTTPS/WAF) → Nginx :80 (Secure Proxy)  │
-│              Routes:                                            │
-│              - / → React SPA (Main + Viewer) (/var/www/react-build)     │
-│              - /api/* → Django :8000 (Smart Proxy)              │
-│              - /internal-orthanc/* → Orthanc :8042 (INTERNAL)   │
-└─────────────────────────────────────────────────────────────────┘
-                             ↓
-┌─────────────────────────────────────────────────────────────────┐
-│              Application Layer (Multi-SPA)                      │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  Unified React App (v3.0)                                 │  │
-│  │  - Main Dashboard (UI)                                    │  │
-│  │  - Embedded OHIF Viewer (@ohif/viewer)                    │  │
-│  │  - Django Proxy Integration (JWT)                         │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                             ↓
-┌─────────────────────────────────────────────────────────────────┐
-│              Data & Integration Layer                           │
-│  ┌─────────┬─────────┬──────────┬─────────────┐                │
-│  │  MySQL  │  Redis  │ Orthanc  │ HAPI FHIR/  │                │
-│  │  :3306  │  :6379  │  :8042   │  OpenEMR    │                │
-│  │  (DB)   │ (Cache) │  (PACS)  │  :8080      │                │
-│  │         │ (Broker)│ (HTJ2K)  │  (EMR)      │                │
-│  │         │         │**INTERNAL**│**INTERNAL**│                │
-│  └─────────┴─────────┴──────────┴─────────────┘                │
-└─────────────────────────────────────────────────────────────────┘
-                             ↓
-┌─────────────────────────────────────────────────────────────────┐
-│           AI & Async Processing Layer                           │
-│  ┌──────────────────────┬────────────────────────────────────┐  │
-│  │  FastAPI (AI Core)   │  Celery Workers (Factory)          │  │
-│  │  - HTJ2K Decoding    │  - Raw DICOM → HTJ2K Conversion    │  │
-│  │  - AI Inference      │  - AI Trigger                      │  │
-│  │                      │  - FHIR Sync                       │  │
-│  └──────────────────────┴────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
+**핵심 요약**:
+- **Gateway**: Nginx (Reverse Proxy with **X-Accel-Redirect**)
+- **Backend**: Django REST Framework (Secure Proxy & Auth Delegate)
+- **Frontend**: Single-SPA (Unified React App with OHIF Viewer)
+- **DICOM**: Orthanc (Internal) + HTJ2K Conversion (Celery)
+- **AI**: FastAPI (Inference) + Celery (Async Processing)
 
-**핵심 워크플로우 (v2.1 Updated)**:
+**데이터 흐름**:
+Internet -> Cloudflare -> Nginx -> Django (Auth) -> Proxied Services (Orthanc/OHIF)
 
-1. **HTJ2K 파이프라인 (속도 최적화)**:
-   - **Upload**: 사용자 Raw DICOM 업로드 → Django → **Celery (HTJ2K 변환)** → Orthanc 저장
-   - **Viewing (Secure)**: OHIF Viewer → Django Proxy (JWT 검증) → Nginx (X-Accel-Redirect) → Orthanc (Internal) → **WASM 디코딩** (초고속 로딩)
-
-2. **AI 분석 (비동기)**:
-   - Celery 트리거 → FastAPI (Orthanc에서 HTJ2K 조회 → pylibjpeg 디코딩 → 추론) → 결과 저장
-
-3. **데이터 흐름**:
-   - **User Request**: Internet -> Cloudflare -> Nginx -> Django
-   - **EMR Sync**: Django/Celery -> HAPI FHIR/OpenEMR (동기/주기)
-
-**동기 vs 비동기**:
-- **동기**: Django ↔ MySQL, Redis, Orthanc, HAPI FHIR (HTTP 직접 호출)
-- **비동기**: Celery (이미지 변환, AI 추론, 데이터 동기화)
-
-**보안 (v2.1 Enhanced)**:
-- **외부 노출**: Nginx만 (React, OHIF, Django API)
-- **Secure Proxy**: Django가 JWT 검증 후 X-Accel-Redirect로 Nginx에 전송 위임
-- **내부 전용**: Orthanc, MySQL, Redis, HAPI FHIR, OpenEMR (외부 직접 접속 차단)
-
-
-**모든 앱(UC)은 동일한 레이어 구조**:
-```
-Controller (views.py)     ← REST API 엔드포인트
-    ↓
-Service (services.py)     ← 비즈니스 로직
-    ↓
-Repository (repositories.py) ← DB 접근 (Django ORM)
-Client (clients/)         ← 외부 시스템 (OpenEMR, Orthanc)
-```
-
-> 상세: [24_레이어_아키텍처_가이드.md](24_레이어_아키텍처_가이드.md)
-
----
 
 ## 🔑 5. 핵심 정책 (즉시 적용)
 
@@ -329,61 +257,9 @@ docker-compose -f docker-compose.dev.yml exec django python manage.py upload_sam
 
 ---
 
-### 8.2 레거시 방식 (더 이상 권장하지 않음)
+### 8.2 레거시 방식 (Deprecated)
 
-<details>
-<summary>개별 Docker + 로컬 Django/Celery 실행 (클릭하여 펼치기)</summary>
-
-**Infrastructure (Docker) - PowerShell**:
-
-```powershell
-# Redis (캐시 + Celery 브로커)
-cd NeuroNova_02_back_end/07_redis
-docker-compose up -d
-
-# Orthanc PACS (DICOM 서버)
-cd ../05_orthanc_pacs
-docker-compose up -d
-
-# OpenEMR (외부 EMR 시스템)
-cd ../03_openemr_server
-docker-compose up -d
-
-# HAPI FHIR Server (선택사항)
-cd ../06_hapi_fhir
-docker-compose up -d
-
-# 모든 컨테이너 상태 확인
-docker ps
-```
-
-**Backend (Django + Celery) - 로컬 venv**:
-
-**Terminal 1 - Django Server:**
-```powershell
-cd NeuroNova_02_back_end/02_django_server
-venv\Scripts\python manage.py runserver
-```
-
-**Terminal 2 - Celery Worker (비동기 작업 처리):**
-```powershell
-cd NeuroNova_02_back_end/02_django_server
-venv\Scripts\celery -A cdss_backend worker -l info --concurrency=4
-```
-
-**Terminal 3 - Celery Beat (주기 작업 스케줄러):**
-```powershell
-cd NeuroNova_02_back_end/02_django_server
-venv\Scripts\celery -A cdss_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-```
-
-**Terminal 4 - Flower (선택사항, Celery 모니터링):**
-```powershell
-cd NeuroNova_02_back_end/02_django_server
-venv\Scripts\celery -A cdss_backend flower --port=5555
-```
-
-</details>
+> 더 이상 권장하지 않습니다. 개별 컨테이너 실행 방식은 [LOG_작업이력.md](LOG_작업이력.md)의 과거 기록이나 [REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)를 참조하십시오.
 
 ---
 
@@ -565,61 +441,13 @@ print("[INFO] Processing...")
 
 ---
 
-## 🎯 13. 완료된 Phase (Phase 1 & 2)
+## 🎯 13. 완료된 Phase (요약)
 
-**Phase 1 완료 (2025-12-28):**
-- ✅ 25_에러_핸들링_가이드.md
-- ✅ 26_API_자동문서화_가이드.md
-- ✅ 27_데이터_검증_정책.md
-
-**Phase 2 완료 (2025-12-31):**
-- ✅ Foreign Key 마이그레이션 적용 (CharField → ForeignKey)
-- ✅ N+1 쿼리 최적화 적용 (select_related / prefetch_related)
-- ✅ React 테스트 클라이언트 Nginx 배포 완료 (Port 80)
-- ✅ Redis-only 아키텍처 검증 완료
-- ✅ 28_테스트_전략_가이드.md / 29_로깅_전략_문서.md / 30_성능_최적화_가이드.md
-- ✅ 코드 정적 분석 완료 (38_코드_정적_분석_보고서.md)
-- ✅ **React 무한 새로고침(Infinite Refresh) 긴급 해결** (2026-01-01)
-
-**정적 코드 개선 완료 (2025-12-31 00:15):**
-- ✅ 환경 변수 검증 로직 추가 (settings.py의 require_env 함수)
-- ✅ 마스터 데이터 시딩 시스템 구축 (seed_master_data.py 명령)
-  - medication_master.json (30개 약물)
-  - lab_test_master.json (50개 검사 항목)
-  - 진단 데이터 (100개 ICD-10 코드) 통합
-- ✅ 공통 검증 유틸리티 생성 (utils/validators.py)
-  - 주민등록번호 체크섬 검증
-  - 전화번호/이메일 형식 검증
-  - ICD-10/LOINC 코드 검증
-- ✅ EMR Serializer 리팩토링 (공통 validators 사용)
-- ✅ 데이터베이스 인덱스 최적화
-  - PatientCache: ssn 인덱스 추가
-  - Order: status+order_type 복합 인덱스 추가
-- ✅ React 테스트 클라이언트 개선
-  - 토큰 자동 갱신 (Refresh Token) 로직 구현
-  - 네트워크 에러 처리 강화
-  - 에러 메시지 정규화
-
-**OHIF Viewer React 통합 완료 (2025-12-31 14:00):**
-- ✅ 서비스 구조 v3.0: Multi-SPA 폐기 → 단일 React 빌드 통합
-- ✅ OHIF Viewer npm 패키지 통합 (@ohif/viewer v3.8.0)
-  - @ohif/core, @ohif/ui, @ohif/extension-cornerstone
-  - cornerstone-core, cornerstone-tools, dicom-parser
-- ✅ DICOM Viewer 페이지 구현 (/viewer/:studyInstanceUID)
-  - Django Proxy를 통한 안전한 DICOM Web API 접근
-  - JWT 토큰 자동 인증
-  - Study 메타데이터 표시
-- ✅ Orthanc 환자 목록 UI (UC05RIS 페이지)
-  - 환자 정보 테이블 (환자명, 생년월일, 성별, Study 수)
-  - "View Study" 버튼으로 DICOM Viewer 연결
-- ✅ OHIF 설정 파일 (config/ohif.config.js)
-- ✅ 통합 가이드 문서 (README_OHIF_INTEGRATION.md)
-
-**배포 준비 완료 (2025-12-30):**
-- ✅ 12_GCP_배포_가이드.md (GCP VM + Docker + Cloudflare)
-- ✅ Nginx 보안 아키텍처 강화 (Django Proxy 경유)
-- ✅ API Swagger 문서화 완료 (UC01-UC09)
-- ✅ .gitignore 정리
+**Phase 1 & 2 완료 (2025-12-31)**:
+- ✅ **API 표준화**: 에러 핸들링, Swagger, 데이터 검증 완료
+- ✅ **아키텍처**: Redis-only 마이그레이션, Secure Proxy 적용, OHIF v3.0 통합
+- ✅ **배포**: React 테스트 클라이언트 Nginx 배포, 무한 새로고침 해결
+- ✅ **문서화**: 온보딩 가이드 및 아키텍처 문서 최신화
 
 ---
 

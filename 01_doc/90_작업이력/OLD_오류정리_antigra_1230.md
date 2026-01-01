@@ -1,4 +1,4 @@
-# CDSS 오류 정리 및 해결 내역 (2025-12-30)
+# CDSS 오류 정리 및 해결 내역 (2026-01-01)
 
 이 문서는 개발 과정에서 발생한 주요 오류와 해결 방안을 300자 내외로 정리한 기록입니다.
 
@@ -48,21 +48,48 @@
 ## 2025-12-31 트러블슈팅
 
 ### 8. create_test_users.py 비밀번호 해싱 버그 (치명적)
-**현상:** React 로그인 시 모든 테스트 계정이 401 Unauthorized 에러 발생. Django 로그에서 "ERR_001 - 인증에 실패했습니다" 반환.
-**원인:** create_test_users.py 162-164번 줄에서 `password = user_data.pop('password')` 후 `User.objects.create_user(**user_data)` 호출 시 password가 전달되지 않음. create_user()가 password 없이 호출되어 사용 불가능한 비밀번호 설정.
-**해결:** create_user() 호출 시 password를 명시적으로 전달하도록 수정. 비밀번호를 단순화(`admin123`, `doctor123` 등)하여 특수문자 처리 문제 제거. 13명 테스트 사용자 재생성 후 check_password() 검증 완료.
+**현상:** `python manage.py create_test_users`로 생성된 계정으로 로그인 불가 (401 에러).
+**원인:** `create_user` 함수 호출 시 비밀번호 인자가 누락되어, Django가 사용할 수 없는 비밀번호로 설정함.
+**해결:** `create_user`에 `password` 인자를 명시적으로 전달하도록 수정하고, 특수문자 처리를 위해 raw string을 사용하려 했으나, 최종적으로 특수문자를 제거한 단순 비밀번호(`admin123`)로 변경하여 문제를 원천 해결함.
+- **데이터 초기화**: `python manage.py create_test_users`를 재실행하여 백엔드 데이터를 갱신했습니다.
 
-### 9. React API 접근 경로 문제 (Docker 네트워크)
-**현상:** React에서 `http://localhost:8000/api`로 호출하지만 Django 컨테이너 포트 8000이 호스트에 노출되지 않아 연결 실패. `django.contrib.auth.authenticate()`는 정상 작동하지만 HTTP 요청이 Django에 도달하지 못함.
-**원인:** Docker Compose 설정에서 django 컨테이너는 내부 네트워크만 사용하고 포트를 호스트에 매핑하지 않음. Nginx가 Reverse Proxy로 포트 80에서 Django로 프록시하는 구조.
-**해결:** `.env.local` 파일에서 `REACT_APP_API_URL`을 `http://localhost/api`로 변경하여 Nginx (포트 80) 경유하도록 수정. DICOM URL도 `http://localhost/api/ris/dicom-web`로 변경. curl 테스트 결과 로그인 API 정상 작동 확인 (JWT 토큰 발급 성공).
+### 10. API URL 경로 불일치 (Login 404 Not Found)
+**현상:** 로그인 시도 시 `POST http://localhost:8000/acct/login/` 요청이 404 (Not Found) 반환.
+**원인:** 백엔드 API는 `/api/` 접두사를 사용하지만(`http://localhost:8000/api/acct/login/`), 프론트엔드 환경 변수 `REACT_APP_API_URL`이 `http://localhost:8000`으로 설정되어 있어 `/api`가 누락됨.
+**해결:** `.env` 파일의 `REACT_APP_API_URL`을 `http://localhost:8000/api`로 수정하고 서버를 재시작하여 해결함.
 
-### 10. 빠른 로그인(Quick Login) 작동 실패
-**현상:** 로그인 페이지의 역할별 빠른 로그인 버튼 클릭 시 아무 반응이 없거나 로그인이 실패함.
-**원인:** (분석 결과) 빠른 로그인 핸들러에서 호출하는 `authAPI.login` 함수의 매개변수 전달 방식이나, 하드코딩된 비밀번호가 백엔드 데이터와 불일치할 가능성.
-**해결:** (진행 중) `LoginPage.js`의 `handleQuickLogin` 함수를 분석하고, 백엔드에 설정된 올바른 자격증명으로 수정할 예정.
+### 9. 빠른 로그인(Quick Login) 작동 실패 (해결됨)
+**현상:** 로그인 페이지의 역할별 빠른 로그인 버튼 클릭 시 로그인이 실패하고 에러 메시지가 표시됨.
+**원인:** 백엔드의 테스트 유저 생성 스크립트와 프론트엔드 `LoginPage.js`의 하드코딩된 비밀번호가 서로 달랐으며, 특수문자 처리 문제도 복합적으로 작용함.
+**해결:** 백엔드(`create_test_users.py`)와 프론트엔드(`LoginPage.js`)의 비밀번호를 단순한 형태(`username` + `123`)로 통일하고, Docker 컨테이너에서 사용자 데이터를 재생성하여 해결함.
 
-### 11. React ���� ���ΰ�ħ (Infinite Refresh) ����
-**����:** React �� ���� �� http://localhost ���� ��, �α��� �� ��ú���� �̵��ϸ� ������ �������� ���ΰ�ħ�ǰų� Ư�� ���(/dashboard)���� ���ΰ�ħ(F5) �� 404 ���� �߻�.
-**���� ����:** SPA(Single Page Application)�� ��� ��� ��û�� index.html�� ������ �ϴµ�, Nginx ������ 	ry_files Fallback�� �����Ǿ��ų�, React useEffect ���� devAutoLogin�� ���� ���� ��ū ������ �浹�Ͽ� ���� �����̷�Ʈ �߻�.
-**�ذ�:** (���� ��) Nginx ������ 	ry_files  / /index.html; �߰� �� React Auth ���� ���� ����.
+### 11. Django 포트 접근 불가 (Connection Refused)
+**현상:** React 클라이언트에서 http://localhost:8000/api 호출 시 연결 실패.
+**원인:** Docker 환경에서 Django 컨테이너(8000)는 외부 노출 없이 Nginx(80)만을 통하도록 설정됨.
+**해결:** API 호출 주소를 Nginx 프록시로 http://localhost/api로 변경하여 해결함.
+
+---
+
+## 2026-01-01 긴급 버그 수정
+
+### 12. React 무한 새로고침 (Infinite Refresh) 현상 (치명적)
+**현상:** React 앱 실행 시 페이지가 무한으로 새로고침되어 정상적으로 사용 불가능.
+**원인:** `devAutoLogin.js`의 자동 로그인 로직에서 로그인 성공 후 `window.location.reload()`를 호출하여 페이지를 강제로 리로드함. 리로드 시 `App.js`의 `useEffect`가 다시 실행되고 `devAutoLogin()`이 재호출되어 무한 루프 발생. 22-24번 라인의 토큰 체크로는 비동기 로그인 완료 전에 통과하여 방지 불가.
+**해결:**
+1. `devAutoLogin.js:50-52` - `window.location.reload()` 완전 제거
+2. `App.js:25-65` - localStorage 변경을 100ms 간격으로 감지하여 자동 로그인 완료 시 React 상태를 자동 업데이트하도록 개선 (5초 후 interval 자동 정리)
+**영향:** 개발 자동 로그인 기능이 페이지 리로드 없이 원활하게 작동하며, 무한 새로고침 문제 완전 해결.
+**수정 파일:**
+- `NeuroNova_03_front_end_react/00_test_client/src/utils/devAutoLogin.js`
+- `NeuroNova_03_front_end_react/00_test_client/src/App.js`
+
+### 13. UC02 환자 목록 조회 파라미터 무시 (Limit/Offset)
+**현상:** API 호출 시 `limit=10&offset=0`을 보내도 전체 목록이 반환되거나 기본값 페이니네이션만 적용됨.
+**원인:** `settings.py`의 `DEFAULT_PAGINATION_CLASS`가 `PageNumberPagination`(page 파라미터 사용)으로 설정되어 있었음.
+**해결:** `rest_framework.pagination.LimitOffsetPagination`으로 변경하여 limit/offset 파라미터가 정상 동작하도록 수정함.
+
+### 14. UC02 환자 생성 500 에러 (TransactionManagementError)
+**현상:** 환자 생성 요청 시 서버 내부 오류(500) 발생, 로그에 `TransactionManagementError` 기록.
+**원인:** `create_patient` 서비스 내에서 `atomic` 트랜잭션 블록 안에서 `AuditService.log`를 호출했으나, Audit 저장 중 예외가 발생하면 전체 트랜잭션이 오염(Aborted)됨.
+**해결:** Audit 로깅을 `atomic` 블록 외부로 빼고 `try-except`로 감싸서, 로깅 실패가 본원적인 환자 생성 로직을 실패시키지 않도록 격리함.
+

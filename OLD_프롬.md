@@ -20,17 +20,6 @@
 NeuroNova_03_front_end_react/00_test_client
 
 
-목표 : 
-React 테스트 클라이언트의 오류를 분석·수정하여
-백엔드(Django)와 정상 통신 가능한 상태로 복구
-이후 전문적인 UI 레이아웃(Dashboard 등) 적용 및 기능 고도화
-
-작업 원칙 (Constraints) : 
-토큰 제한으로 세션이 종료될 경우
-→ 사용자가 **「이어서 작업하시오」**라고 입력하면 중단 지점부터 즉시 재개
-한 번에 모든 파일을 수정하지 말고 핵심 파일부터 순차적 진행
-각 단계 종료 시 문서 상태를 반드시 최신으로 유지
-
 필수: LOG_작업이력.md, 작업_계획_요약.md
 필요 시: REF_CLAUDE_ONBOARDING_QUICK.md, OLD_오류정리_antigra_1230.md
 
@@ -60,21 +49,11 @@ UC01 ~ UC09 전체 기능 점검
     "os": "Windows 11 + WSL Ubuntu-22.04 LTS",
     "frontend": "React (Port 3000)",
     "backend": "Django (Port 8000), Nginx (Port 80)",
+    "WSL(Ubuntu-22.04) 환경에서 npm run dev로 React 서버 실행", 
     "command": "npm run dev (Ubuntu-22.04 LTS에서 실행)"
   }
 }
 
-상세 작업 지침
-{
-  "tasks": [
-    "WSL(Ubuntu-22.04) 환경에서 npm run dev로 React 서버 실행",
-    "UC01~UC09 기능 전수 테스트",
-    "4xx/5xx 오류 및 비정상 동작 분석",
-    "오류 원인별 step-by-step 계획 수립 후 수정",
-    "수정 후 재검증",
-    "기능 안정화 이후 UI/UX 고도화"
-  ]
-}
 
 
 
