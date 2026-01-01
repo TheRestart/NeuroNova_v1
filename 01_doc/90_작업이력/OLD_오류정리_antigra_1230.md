@@ -61,3 +61,8 @@
 **í˜„ìƒ:** ë¡œê·¸ì¸ íŽ˜ì´ì§€ì˜ ì—­í• ë³„ ë¹ ë¥¸ ë¡œê·¸ì¸ ë²„íŠ¼ í´ë¦­ ì‹œ ì•„ë¬´ ë°˜ì‘ì´ ì—†ê±°ë‚˜ ë¡œê·¸ì¸ì´ ì‹¤íŒ¨í•¨.
 **ì›ì¸:** (ë¶„ì„ ê²°ê³¼) ë¹ ë¥¸ ë¡œê·¸ì¸ í•¸ë“¤ëŸ¬ì—ì„œ í˜¸ì¶œí•˜ëŠ” `authAPI.login` í•¨ìˆ˜ì˜ ë§¤ê°œë³€ìˆ˜ ì „ë‹¬ ë°©ì‹ì´ë‚˜, í•˜ë“œì½”ë”©ëœ ë¹„ë°€ë²ˆí˜¸ê°€ ë°±ì—”ë“œ ë°ì´í„°ì™€ ë¶ˆì¼ì¹˜í•  ê°€ëŠ¥ì„±.
 **í•´ê²°:** (ì§„í–‰ ì¤‘) `LoginPage.js`ì˜ `handleQuickLogin` í•¨ìˆ˜ë¥¼ ë¶„ì„í•˜ê³ , ë°±ì—”ë“œì— ì„¤ì •ëœ ì˜¬ë°”ë¥¸ ìžê²©ì¦ëª…ìœ¼ë¡œ ìˆ˜ì •í•  ì˜ˆì •.
+
+### 11. React ¹«ÇÑ »õ·Î°íÄ§ (Infinite Refresh) Çö»ó
+**Çö»ó:** React ¾Û ¹èÆ÷ ÈÄ http://localhost Á¢¼Ó ½Ã, ·Î±×ÀÎ ÈÄ ´ë½Ãº¸µå·Î ÀÌµ¿ÇÏ¸é ¹«ÇÑÈ÷ ÆäÀÌÁö°¡ »õ·Î°íÄ§µÇ°Å³ª Æ¯Á¤ °æ·Î(/dashboard)¿¡¼­ »õ·Î°íÄ§(F5) ½Ã 404 ¿¡·¯ ¹ß»ý.
+**ÃßÁ¤ ¿øÀÎ:** SPA(Single Page Application)´Â ¸ðµç °æ·Î ¿äÃ»À» index.html·Î º¸³»¾ß ÇÏ´Âµ¥, Nginx ¼³Á¤¿¡ 	ry_files FallbackÀÌ ´©¶ôµÇ¾ú°Å³ª, React useEffect ³»ÀÇ devAutoLogin°ú ½ÇÁ¦ ÀÎÁõ ÅäÅ« ·ÎÁ÷ÀÌ Ãæµ¹ÇÏ¿© ¹«ÇÑ ¸®´ÙÀÌ·ºÆ® ¹ß»ý.
+**ÇØ°á:** (ÁøÇà Áß) Nginx ¼³Á¤¿¡ 	ry_files  / /index.html; Ãß°¡ ¹× React Auth ·ÎÁ÷ °ËÁõ ¿¹Á¤.

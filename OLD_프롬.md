@@ -15,7 +15,7 @@ npm run dev 를 실행할때는 Ubuntu-22.04 LTS를 사용하시오
 ===
 2026
 
-
+01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 01_doc\LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악후
 
 {
   "task": "React 테스트 클라이언트 기능 확장 및 심층 검증",

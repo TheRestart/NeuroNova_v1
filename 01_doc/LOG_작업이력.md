@@ -1,7 +1,7 @@
 # 작업 이력 (Work Log)
 
 **최종 수정일**: 2025-12-31
-**현재 상태**: React 테스트 클라이언트 통합 완료, 로그인 인증 문제 해결 중
+**현재 상태**: React 앱 Docker(Nginx) 배포 완료, **무한 새로고침(Infinite Refresh) 현상 디버깅 중**
 
 > [!NOTE]
 > 시스템 아키텍처, 사용자 역할(RBAC), 상세 모듈 설계 등 기술 참조 정보는 **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**를 참조하십시오. 이 문서는 일자별 작업 진행 상황과 변경 이력만을 기록합니다.
@@ -24,7 +24,18 @@
 
 ### Week 7 (2025-12-29 ~ 2025-12-31)
 
-- **2025-12-31 Day 13 (React 테스트 클라이언트 오류 수정 및 배포 전 검증)**:
+- **2025-12-31 Day 13 (React 배포 및 무한 새로고침 디버깅)**:
+  - [x] **React 앱 배포 (Docker Nginx)**:
+    - `npm run build` 실행 (WSL)
+    - 빌드 결과물을 `./static/react-main`으로 배포
+    - `neuronova-nginx-dev` 컨테이너 재시작
+    - 결과: `http://localhost` 접속 시 React 앱 로딩 확인 (단, 새로고침 시 404/루프 문제 발생)
+  - [ ] **[버그] React 무한 새로고침 / 404 오류 (조사 중)**:
+    - **현상**: 대시보드 등 서브 페이지에서 새로고침(F5) 시 페이지가 로딩되지 않거나 무한 루프 발생.
+    - **추정 원인**:
+      1. **SPA Routing**: Nginx가 `index.html`로 Fallback 하지 못함 (404).
+      2. **Auth Loop**: `devAutoLogin` 로직과 실제 인증 토큰 간 충돌.
+    - **조치 계획**: Nginx `try_files` 설정 점검 및 React `App.js` 라우팅 로직 분석 예정.
   - [x] **React 테스트 클라이언트 진단 및 수정**:
     - [x] **WSL Ubuntu 환경 확인**:
       - Node.js v20.19.6, npm 10.8.2 정상 설치 확인
