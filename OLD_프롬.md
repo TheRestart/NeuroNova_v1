@@ -66,10 +66,6 @@ UC01 ~ UC09 전체 기능 점검
     "오류 원인별 step-by-step 계획 수립 후 수정",
     "수정 후 재검증",
     "기능 안정화 이후 UI/UX 고도화"
-  ],
-  "constraints": [
-    "세션 종료 시 '이어서 작업하시오' 명령으로 즉시 재개",
-    "단계 종료 시 문서 최신화 필수"
   ]
 }
 
@@ -101,8 +97,7 @@ UC01 ~ UC09 전체 기능 점검
 
 
 
-orthance, ohir 을 중심으로 
-실제 서비스가 어떻게 동작하는지 설명하라
+
 
 
 
@@ -118,9 +113,8 @@ orthance, ohir 을 중심으로
 
 현제 문제를 정리하고 
 4개 문서를 업데이트 하시오 
-01_doc/REF_CLAUDE_ONBOARDING_QUICK.md, LOG_작업이력.md, 
-작업_계획_요약.md, OLD_오류정리_antigra_1230.md
-
+필수: LOG_작업이력.md, 작업_계획_요약.md
+필요 시: REF_CLAUDE_ONBOARDING_QUICK.md, OLD_오류정리_antigra_1230.md
 
 
 

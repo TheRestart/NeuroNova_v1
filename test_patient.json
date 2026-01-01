@@ -1,0 +1,8 @@
+{
+    "family_name": "Test",
+    "given_name": "Patient",
+    "birth_date": "2000-01-01",
+    "gender": "male",
+    "phone": "010-0000-0000",
+    "email": "test@example.com"
+}
