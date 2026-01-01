@@ -1113,6 +1113,36 @@ Git 서브모듈 관리 문서화가 완료되었습니다. 개발자는 이제:
 
 ---
 
+## 2026-01-02 긴급 버그 수정 및 디버깅
+
+### 13. UC02 환자 목록 조회 파라미터 무시 문제 해결
+**현상:** 환자 목록 조회 API (`/api/emr/patients/`) 호출 시 `limit`와 `offset` 파라미터가 적용되지 않고 항상 기본값으로만 반환됨.
+**원인:** Django REST Framework의 `DEFAULT_PAGINATION_CLASS`가 `PageNumberPagination`으로 설정되어 있어, `limit`/`offset` 스타일의 파라미터를 처리하지 못함.
+**해결:** `settings.py`의 `DEFAULT_PAGINATION_CLASS`를 `rest_framework.pagination.LimitOffsetPagination`으로 변경하여 해결함.
+
+### 14. UC02 환자 생성 500 에러 (TransactionManagementError) 해결 및 검증
+**현상:** 환자 생성 시 500 Internal Server Error 발생. 로그 상 `TransactionManagementError` 확인.
+**원인:** `PatientService.create_patient` 메서드 내의 `AuditService.log_action` 호출이 `@transaction.atomic` 블록 내부에서 발생. Audit 로그 저장 중 예외가 발생하면(예: User가 None일 때의 처리 등) atomic 트랜잭션이 오염되어 전체 롤백 및 에러 발생.
+**해결:** 
+1. `AuditService` 호출을 atomic 블록 외부로 이동.
+2. `try-except` 구문으로 감싸서 로깅 실패가 비즈니스 로직(환자 생성)에 영향을 주지 않도록 격리.
+**검증:** 수정 후 `curl` 테스트 결과 201 Created 응답 확인 (성공 - persistence_status 포함).
+
+### 15. UC03 주문 상세 한자 깨짐(Hanja) 이슈 조사
+**현상:** 주문(Order) 상세 화면에서 노트(Notes) 등의 필드에 한자가 포함되거나 깨진 문자가 보인다는 보고.
+**조사:** 
+1. DB 직접 조회(`Order`, `OrderItem`) 결과 레코드가 0건(Empty)임을 확인.
+2. 따라서 실제 DB 데이터 문제가 아니라, 프론트엔드 테스트 코드(`UC03OrderTest.js`)나 Mock API 응답에 하드코딩된 더미 데이터일 가능성이 높음.
+**조치:** 프론트엔드 Mock 데이터 확인 필요.
+
+### 16. UC01 회원가입 네트워크 에러 조사
+**현상:** 회원가입 시도 시 Network Error 발생.
+**조사:** WSL 환경에서 `curl` 테스트 시 Connection Refused 발생. 백엔드 로그에는 관련 에러 없음.
+**가능성:** CORS 설정 또는 Docker 내부망 통신 문제로 추정.
+
+
+---
+
   - [x] **React Client Port Fix** (2025-12-31):
     - [x] **Diagnosis**: React client was trying to connect to Django port 8000, which is not exposed.
     - [x] **Fix**: Updated REACT_APP_API_URL to http://localhost/api (Nginx proxy) in .env.local.

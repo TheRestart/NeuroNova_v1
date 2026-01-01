@@ -82,3 +82,14 @@
 **수정 파일:**
 - `NeuroNova_03_front_end_react/00_test_client/src/utils/devAutoLogin.js`
 - `NeuroNova_03_front_end_react/00_test_client/src/App.js`
+
+### 13. UC02 환자 목록 조회 파라미터 무시 (Limit/Offset)
+**현상:** API 호출 시 `limit=10&offset=0`을 보내도 전체 목록이 반환되거나 기본값 페이니네이션만 적용됨.
+**원인:** `settings.py`의 `DEFAULT_PAGINATION_CLASS`가 `PageNumberPagination`(page 파라미터 사용)으로 설정되어 있었음.
+**해결:** `rest_framework.pagination.LimitOffsetPagination`으로 변경하여 limit/offset 파라미터가 정상 동작하도록 수정함.
+
+### 14. UC02 환자 생성 500 에러 (TransactionManagementError)
+**현상:** 환자 생성 요청 시 서버 내부 오류(500) 발생, 로그에 `TransactionManagementError` 기록.
+**원인:** `create_patient` 서비스 내에서 `atomic` 트랜잭션 블록 안에서 `AuditService.log`를 호출했으나, Audit 저장 중 예외가 발생하면 전체 트랜잭션이 오염(Aborted)됨.
+**해결:** Audit 로깅을 `atomic` 블록 외부로 빼고 `try-except`로 감싸서, 로깅 실패가 본원적인 환자 생성 로직을 실패시키지 않도록 격리함.
+
