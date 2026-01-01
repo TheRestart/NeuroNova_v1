@@ -1,7 +1,7 @@
 # 작업 이력 (Work Log)
 
-**최종 수정일**: 2025-12-31
-**현재 상태**: React 앱 Docker(Nginx) 배포 완료, **무한 새로고침(Infinite Refresh) 현상 디버깅 중**
+**최종 수정일**: 2026-01-01
+**현재 상태**: React 앱 Docker(Nginx) 배포 완료, **무한 새로고침(Infinite Refresh) 현상 해결 완료 ✅**
 
 > [!NOTE]
 > 시스템 아키텍처, 사용자 역할(RBAC), 상세 모듈 설계 등 기술 참조 정보는 **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**를 참조하십시오. 이 문서는 일자별 작업 진행 상황과 변경 이력만을 기록합니다.
@@ -22,7 +22,18 @@
 
 ## 📅 상세 작업 로그
 
-### Week 7 (2025-12-29 ~ 2025-12-31)
+### Week 7 (2025-12-29 ~ 2026-01-01)
+
+- **2026-01-01 Day 14 (긴급 버그 수정 및 문서 통합)**:
+  - [x] **React 무한 새로고침(Infinite Refresh) 현상 최종 해결**:
+    - **원인**: `devAutoLogin.js`에서 로그인 성공 후 강제 리로드(`window.location.reload()`)를 수행하여 `App.js`의 `useEffect`와 무한 루프 발생.
+    - **해결**: `devAutoLogin.js`에서 리로드 로직 제거. `App.js`에서 100ms 간격으로 localStorage 변화를 감지하여 상태를 수동으로 업데이트하는 방식으로 전환 (리로드 없이 즉시 반영).
+    - **결과**: 개발용 자동 로그인 기능이 안정화되었으며, 무한 새로고침 문제 완전 해결.
+  - [x] **주요 기술 문서 통합 및 정합성 검증**:
+    - [x] `REF_CLAUDE_ONBOARDING_QUICK.md`, `LOG_작업이력.md`, `작업_계획_요약.md`, `OLD_오류정리_antigra_1230.md` 4개 문서 통합 업데이트.
+    - [x] 프로젝트 상태(v2.0, Phase 2 완료)를 모든 문서에 동일하게 반영.
+  - [x] **코드 정밀 확인**:
+    - [x] EMR 모델 FK(doctor/ordered_by) 및 N+1 최적화(select_related) 적용 상태 재검증 완료.
 
 - **2025-12-31 Day 13 (React 배포 및 무한 새로고침 디버깅)**:
   - [x] **React 앱 배포 (Docker Nginx)**:
