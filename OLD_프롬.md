@@ -30,6 +30,8 @@ React 테스트 클라이언트의 오류를 분석·수정하여
 필요 시: REF_CLAUDE_ONBOARDING_QUICK.md, OLD_오류정리_antigra_1230.md
 
 단계별 프로세스 : 
+프론트 개발 참고 : 01_doc, 
+01_doc\21_락킹_멱등성_개발_가이드.md
 
 1단계: 진단 (Diagnosis)
 UC01 ~ UC09 전체 기능 점검
