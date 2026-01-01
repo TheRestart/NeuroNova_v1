@@ -78,6 +78,7 @@ services:
       # Hot reload - mount source code
       - ./NeuroNova_02_back_end/02_django_server:/app
       - ./static/django-static:/app/staticfiles
+      - ./sample_dicoms:/sample_dicoms
     environment:
       # Django Core
       - DJANGO_SETTINGS_MODULE=cdss_backend.settings
