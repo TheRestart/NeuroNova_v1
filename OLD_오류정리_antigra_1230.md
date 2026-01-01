@@ -63,7 +63,22 @@
 **원인:** 백엔드의 테스트 유저 생성 스크립트와 프론트엔드 `LoginPage.js`의 하드코딩된 비밀번호가 서로 달랐으며, 특수문자 처리 문제도 복합적으로 작용함.
 **해결:** 백엔드(`create_test_users.py`)와 프론트엔드(`LoginPage.js`)의 비밀번호를 단순한 형태(`username` + `123`)로 통일하고, Docker 컨테이너에서 사용자 데이터를 재생성하여 해결함.
 
-### 11. Django ��Ʈ ���� ���� (Connection Refused)
-**����:** React Ŭ���̾�Ʈ���� http://localhost:8000/api ȣ�� �� ���� ����.
-**����:** Docker ȯ�濡�� Django �����̳�(8000)�� �ܺ� ���� ���� Nginx(80)�͸� ����ϵ��� ������.
-**�ذ�:** API ȣ�� �ּҸ� Nginx ���Ͻ��� http://localhost/api�� �����Ͽ� �ذ���.
+### 11. Django 포트 접근 불가 (Connection Refused)
+**현상:** React 클라이언트에서 http://localhost:8000/api 호출 시 연결 실패.
+**원인:** Docker 환경에서 Django 컨테이너(8000)는 외부 노출 없이 Nginx(80)만을 통하도록 설정됨.
+**해결:** API 호출 주소를 Nginx 프록시로 http://localhost/api로 변경하여 해결함.
+
+---
+
+## 2026-01-01 긴급 버그 수정
+
+### 12. React 무한 새로고침 (Infinite Refresh) 현상 (치명적)
+**현상:** React 앱 실행 시 페이지가 무한으로 새로고침되어 정상적으로 사용 불가능.
+**원인:** `devAutoLogin.js`의 자동 로그인 로직에서 로그인 성공 후 `window.location.reload()`를 호출하여 페이지를 강제로 리로드함. 리로드 시 `App.js`의 `useEffect`가 다시 실행되고 `devAutoLogin()`이 재호출되어 무한 루프 발생. 22-24번 라인의 토큰 체크로는 비동기 로그인 완료 전에 통과하여 방지 불가.
+**해결:**
+1. `devAutoLogin.js:50-52` - `window.location.reload()` 완전 제거
+2. `App.js:25-65` - localStorage 변경을 100ms 간격으로 감지하여 자동 로그인 완료 시 React 상태를 자동 업데이트하도록 개선 (5초 후 interval 자동 정리)
+**영향:** 개발 자동 로그인 기능이 페이지 리로드 없이 원활하게 작동하며, 무한 새로고침 문제 완전 해결.
+**수정 파일:**
+- `NeuroNova_03_front_end_react/00_test_client/src/utils/devAutoLogin.js`
+- `NeuroNova_03_front_end_react/00_test_client/src/App.js`
