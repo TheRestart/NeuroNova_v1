@@ -377,6 +377,12 @@ A: 커스텀 Exception 사용 (`utils/exceptions.py`에서 import)
 ### Q4. OpenEMR 연동이 실패하면?
 A: Docker 컨테이너 상태 확인 (`docker ps`), 로그 확인 (`docker logs`)
 
+**[중요] OpenEMR OAuth2 인증 설정 필요 (2026-01-02 업데이트)**:
+- OpenEMR 7.x는 OAuth2 인증이 필수입니다.
+- 최초 1회 Admin Panel에서 API Client 등록이 필요합니다.
+- 상세 가이드: [50_OpenEMR_OAuth2_설정_가이드.md](50_OpenEMR_OAuth2_설정_가이드.md)
+- 문제 해결: [51_OpenEMR_인증_문제_해결_보고서.md](51_OpenEMR_인증_문제_해결_보고서.md)
+
 ### Q5. 테스트 계정 비밀번호는?
 A:
 - `admin` / `admin123`

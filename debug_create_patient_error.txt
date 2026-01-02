@@ -1,0 +1,17 @@
+DEBUG: Configured Base URL: http://localhost:80/apis/default/fhir
+DEBUG: Configured Client ID: your_client_id
+Client ID: neuronova-cdss-internal
+Base URL: http://openemr:80/apis/default/fhir
+Skipping Token Request. Using Dummy Token: bypass-token
+
+--- Step 2: Creating Patient ---
+Using Patient: P-2026-000001
+DEBUG: Token URL: http://openemr:80/oauth2/default/token
+INFO 2026-01-02 09:06:20,535 Requesting OpenEMR Token from http://openemr:80/oauth2/default/token (Client: neuronova-cdss-internal)
+ERROR 2026-01-02 09:06:20,588 ✗ Failed to retrieve OpenEMR Access Token: 400 Client Error: Bad Request for url: http://openemr:80/oauth2/default/token
+ERROR 2026-01-02 09:06:20,588 Response: {"error":"invalid_request","error_description":"The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed.","hint":"assertion type is not supported","message":"The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed."}
+WARNING 2026-01-02 09:06:20,589 Requesting OpenEMR API without Access Token
+ERROR 2026-01-02 09:06:20,594 OpenEMR API request failed: POST http://openemr:80/apis/default/fhir/Patient - 401 Client Error: Unauthorized for url: http://openemr:80/apis/default/fhir/Patient
+ERROR 2026-01-02 09:06:20,594 Response: {"error":"access_denied","error_description":"The resource owner or authorization server denied the request.","hint":"Missing \"Authorization\" header","message":"The resource owner or authorization server denied the request."}
+ERROR 2026-01-02 09:06:20,595 ✗ Failed to create OpenEMR Patient: 401 Client Error: Unauthorized for url: http://openemr:80/apis/default/fhir/Patient
+FAILURE: Patient creation failed.

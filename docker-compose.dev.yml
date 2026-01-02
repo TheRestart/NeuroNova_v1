@@ -2,6 +2,65 @@
 # NeuroNova CDSS - Development Environment
 # Architecture v2.1 - Secure Proxy & Multi-SPA
 # ============================================
+#
+# 최종 업데이트: 2026-01-02
+# 버전: 2.1
+#
+# 시스템 구성:
+#   - 총 14개 컨테이너 (Production-ready 아키텍처)
+#   - 7개 레이어: Ingress, Application, Async, Data, Integration, Observability, DevTools
+#
+# 컨테이너 목록:
+#   1. nginx (Reverse Proxy & Static Serving)
+#   2. django (REST API Server)
+#   3. celery-worker (비동기 작업 처리 - AI 추론)
+#   4. celery-beat (스케줄러 - FHIR 동기화, 데이터 정리)
+#   5. flower (Celery 모니터링 UI)
+#   6. cdss-mysql (Django 데이터베이스)
+#   7. redis (캐시 & 메시지 브로커)
+#   8. orthanc (DICOM PACS - 의료 영상 저장소)
+#   9. openemr-mysql (OpenEMR 데이터베이스)
+#   10. openemr (EMR 시스템)
+#   11. hapi-fhir (FHIR R4 서버)
+#   12. prometheus (메트릭 수집)
+#   13. grafana (모니터링 대시보드)
+#   14. alertmanager (알림 관리)
+#
+# 빠른 시작:
+#   docker-compose -f docker-compose.dev.yml up -d
+#   또는 start-all-services.bat 실행 (Windows)
+#
+# 서비스 확인:
+#   docker-compose -f docker-compose.dev.yml ps
+#
+# 로그 확인:
+#   docker-compose -f docker-compose.dev.yml logs -f [service-name]
+#
+# 서비스 중지:
+#   docker-compose -f docker-compose.dev.yml down
+#
+# 주요 포트:
+#   - 80: Nginx (React SPA + Django API)
+#   - 3001: React Dev Server (WSL에서 별도 실행)
+#   - 3002: Grafana (모니터링 대시보드)
+#   - 5555: Flower (Celery 모니터링)
+#   - 8042: Orthanc PACS (DICOM)
+#   - 8080: HAPI FHIR (FHIR R4)
+#   - 8081: OpenEMR (EMR 시스템)
+#   - 9090: Prometheus (메트릭)
+#   - 9093: Alertmanager (알림)
+#
+# 보안 참고:
+#   - 프로덕션 환경에서는 외부 포트 노출 최소화 필요
+#   - .env 파일 필수 (Git에 커밋 금지)
+#   - DEBUG=False, ENABLE_SECURITY=True 설정
+#
+# 관련 문서:
+#   - README_자동실행.md: Windows 자동 시작 가이드
+#   - 01_doc/12_GCP_배포_가이드.md: 프로덕션 배포 가이드
+#   - 01_doc/초기_데이터_시딩_가이드.md: 데이터 초기화 가이드
+#
+# ============================================
 
 networks:
   neuronova_network:
@@ -205,6 +264,9 @@ services:
     restart: unless-stopped
 
   flower:
+    # Celery Monitoring UI
+    # 접속: http://localhost:5555
+    # 실시간 작업 상태, Worker 상태, Task 히스토리 확인 가능
     build:
       context: ./NeuroNova_02_back_end/02_django_server
       dockerfile: Dockerfile.celery
@@ -226,6 +288,9 @@ services:
   # 4. Data Layer - Databases
   # ============================================
   cdss-mysql:
+    # Django 메인 데이터베이스
+    # 저장 내용: 환자, 진료 기록, RIS, LIS, AI 분석 결과 등
+    # 접속: mysql -h localhost -P 3306 -u cdss_user -p
     image: mysql:8.0
     container_name: neuronova-cdss-mysql-dev
     environment:
@@ -250,6 +315,9 @@ services:
       start_period: 30s
 
   redis:
+    # 캐시 & 메시지 브로커
+    # 용도: Django 캐시, Celery Queue, 세션 저장소
+    # 접속: redis-cli -h localhost -p 6379
     image: redis:7-alpine
     container_name: neuronova-redis-dev
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
@@ -270,6 +338,11 @@ services:
   # 5. Integration Layer - PACS & Medical Data
   # ============================================
   orthanc:
+    # DICOM PACS 서버
+    # 저장 내용: CT, MRI, X-Ray 등 의료 영상 데이터 (DICOM 포맷)
+    # 접속: http://localhost:8042 (Web UI)
+    # DICOM 송수신: localhost:4242 (DICOM C-STORE)
+    # DICOMweb API: http://localhost:8042/dicom-web
     image: orthancteam/orthanc:latest
     container_name: neuronova-orthanc-dev
     environment:
@@ -277,8 +350,8 @@ services:
       - ORTHANC_NAME=${ORTHANC_NAME:-NeuroNova Orthanc Dev}
       - ORTHANC__HTTP_VERBOSE=${ORTHANC_HTTP_VERBOSE:-true}
       - ORTHANC__HTTP_CORS_ENABLED=${ORTHANC_HTTP_CORS_ENABLED:-true}
-    # Internal only - no external ports in production
-    # For development, expose for direct testing
+    # 개발 환경: 직접 접근 허용
+    # 프로덕션: Django Proxy를 통해서만 접근 (expose로 변경)
     ports:
       - "${ORTHANC_HOST_PORT_HTTP:-8042}:8042"
       - "${ORTHANC_HOST_PORT_DICOM:-4242}:4242"
@@ -321,6 +394,11 @@ services:
       start_period: 60s
 
   openemr:
+    # OpenEMR - 전자의무기록(EMR) 시스템
+    # 접속: http://localhost:8081
+    # 로그인: admin / admin123
+    # FHIR API: http://localhost:8081/apis/default/fhir
+    # 참고: OAuth2 client_credentials 미지원으로 SKIP_OPENEMR_INTEGRATION=True 설정 필요
     image: openemr/openemr:7.0.3
     container_name: neuronova-openemr-dev
     ports:

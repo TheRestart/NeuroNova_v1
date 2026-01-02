@@ -1,9 +1,16 @@
 # NeuroNova CDSS 배포 가이드 (GCP + Docker)
 
 **작성일**: 2025-12-30
-**버전**: 2.1
+**버전**: 2.2
 **최종 수정**: 2026-01-02
 **환경**: GCP VM + Docker + Cloudflare + GitHub
+
+**주요 변경 (v2.2)**:
+- ✅ OpenEMR Skip 모드 설정 추가
+- ✅ .env 파일 전송 체크리스트 추가
+- ✅ 별도 전송 필요 파일 목록 정리
+- ✅ 자동 시작 스크립트 참조 추가
+- ✅ 보안 설정 강화 (비밀번호 정책)
 
 ---
 
@@ -384,7 +391,27 @@ chmod +x ~/apps/NeuroNova_v1/deploy.sh
 
 ## 5. 환경 변수 관리 (.env)
 
-### 5.1 .env 파일 저장 위치 전략
+### 5.1 별도 전송 필요 파일 체크리스트
+
+**⚠️ 중요**: 다음 파일들은 Git에 포함되지 않으며, WinSCP를 통해 별도로 전송해야 합니다.
+
+#### 필수 전송 파일 목록
+
+| 파일 경로 | 설명 | 전송 필요 | 비고 |
+|----------|------|---------|------|
+| `NeuroNova_02_back_end/02_django_server/.env` | Django 환경 변수 | ✅ 필수 | .env.example 복사 후 수정 |
+| `NeuroNova_03_front_end_react/00_test_client/.env.production` | React 프로덕션 환경 변수 | ✅ 필수 | API URL 설정 |
+| `NeuroNova_03_front_end_react/00_test_client/.env.local` | React 개발 환경 변수 | ⚠️ 개발 전용 | 프로덕션에서는 불필요 |
+
+#### 선택적 전송 파일
+
+| 파일 경로 | 설명 | 전송 필요 | 비고 |
+|----------|------|---------|------|
+| `scripts/Register-OpenEMRClient.ps1` | OpenEMR OAuth2 자동 등록 | 🔧 개발 도구 | Windows 전용, 필요 시 |
+| `start-all-services.bat` | 전체 서비스 자동 시작 | 🔧 개발 도구 | Windows 전용, 필요 시 |
+| `README_자동실행.md` | 자동 실행 가이드 | 📖 참고 | 문서, 필요 시 |
+
+### 5.2 .env 파일 저장 위치 전략
 
 **.env 파일은 Git에 포함하지 않고, VM에서 직접 관리합니다.**
 
@@ -397,69 +424,218 @@ NeuroNova_v1/
 │       ├── .env                  ← VM에서만 존재 (Git 무시)
 │       ├── .env.example          ← Git에 포함 (템플릿)
 │       └── docker-compose.yml
+├── NeuroNova_03_front_end_react/
+│   └── 00_test_client/
+│       ├── .env.production       ← VM에서만 존재 (Git 무시)
+│       ├── .env.local            ← 개발 전용 (Git 무시)
+│       └── package.json
 ```
 
-### 5.2 .env.example 파일 작성
+### 5.3 Django .env 파일 상세 설정
 
-**NeuroNova_02_back_end/02_django_server/.env.example**
+**NeuroNova_02_back_end/02_django_server/.env 템플릿 (프로덕션용)**
 
 ```bash
+# ============================================
 # Django Core Settings
-DJANGO_SECRET_KEY=your-secret-key-change-this-in-production
+# ============================================
+DJANGO_SECRET_KEY=your-secret-key-change-this-in-production-min-50-chars
 DEBUG=False
-ALLOWED_HOSTS=your-domain.com,www.your-domain.com
-CORS_ALLOWED_ORIGINS=https://your-domain.com
+ALLOWED_HOSTS=your-domain.com,www.your-domain.com,34.71.151.117
+CORS_ALLOWED_ORIGINS=https://your-domain.com,https://www.your-domain.com
 
-# Database
+# ============================================
+# Database (MySQL)
+# ============================================
 DB_ENGINE=django.db.backends.mysql
 DB_HOST=mysql
 DB_PORT=3306
 DB_NAME=cdss_db
 DB_USER=cdss_user
-DB_PASSWORD=your-db-password-change-this
-DB_ROOT_PASSWORD=your-root-password-change-this
+DB_PASSWORD=your-strong-db-password-change-this
+DB_ROOT_PASSWORD=your-strong-root-password-change-this
 
-# Redis
+# ============================================
+# Redis Cache & Message Broker
+# ============================================
 REDIS_URL=redis://redis:6379/0
 
+# ============================================
 # Celery
+# ============================================
 CELERY_BROKER_URL=redis://redis:6379/1
 CELERY_RESULT_BACKEND=redis://redis:6379/2
 
-# OpenEMR
+# ============================================
+# OpenEMR FHIR API (OAuth2)
+# ============================================
+# 개발 환경 (Docker 네트워크 내부)
 OPENEMR_BASE_URL=http://openemr:80
-OPENEMR_API_URL=http://openemr:80/apis/default
+OPENEMR_FHIR_URL=http://openemr:80/apis/default/fhir
+OPENEMR_CLIENT_ID=neuronova-cdss-internal
+OPENEMR_CLIENT_SECRET=your-client-secret-from-registration
 
-# Orthanc PACS
+# OpenEMR Skip 모드 (개발 전용, 프로덕션에서는 False)
+# OpenEMR 7.x Docker의 OAuth2 client_credentials 미지원 이슈로 인한 임시 우회
+SKIP_OPENEMR_INTEGRATION=True
+
+# ============================================
+# Orthanc PACS (DICOM)
+# ============================================
 ORTHANC_API_URL=http://orthanc:8042
 ORTHANC_USERNAME=orthanc
-ORTHANC_PASSWORD=orthanc
+ORTHANC_PASSWORD=orthanc-strong-password-change-this
 
-# HAPI FHIR
+# ============================================
+# HAPI FHIR Server
+# ============================================
 HAPI_FHIR_URL=http://hapi-fhir:8080/fhir
 
-# Security
+# ============================================
+# Security & Authentication
+# ============================================
 ENABLE_SECURITY=True
 JWT_ACCESS_TOKEN_LIFETIME_MINUTES=60
 JWT_REFRESH_TOKEN_LIFETIME_DAYS=7
+
+# ============================================
+# Grafana & Monitoring
+# ============================================
+GRAFANA_ADMIN_PASSWORD=admin123
+
+# ============================================
+# Logging
+# ============================================
+LOG_LEVEL=INFO
 ```
 
-### 5.3 실제 .env 파일 생성
+**환경 변수 설정 가이드**:
+
+| 변수명 | 필수 | 기본값 | 설명 | 프로덕션 권장값 |
+|--------|------|--------|------|----------------|
+| `DJANGO_SECRET_KEY` | ✅ | - | Django SECRET_KEY (50자 이상) | 랜덤 생성 (아래 참조) |
+| `DEBUG` | ✅ | `False` | 디버그 모드 | `False` |
+| `ALLOWED_HOSTS` | ✅ | - | 허용 호스트 (쉼표 구분) | `your-domain.com,www.your-domain.com` |
+| `CORS_ALLOWED_ORIGINS` | ✅ | - | CORS 허용 오리진 | `https://your-domain.com` |
+| `DB_PASSWORD` | ✅ | - | MySQL 비밀번호 (8자 이상) | 강력한 비밀번호 |
+| `DB_ROOT_PASSWORD` | ✅ | - | MySQL root 비밀번호 (8자 이상) | 강력한 비밀번호 |
+| `OPENEMR_CLIENT_ID` | ⚠️ | - | OpenEMR OAuth2 클라이언트 ID | `neuronova-cdss-internal` |
+| `OPENEMR_CLIENT_SECRET` | ⚠️ | - | OpenEMR OAuth2 시크릿 | 등록 시 발급된 값 |
+| `SKIP_OPENEMR_INTEGRATION` | ⚠️ | `False` | OpenEMR 연동 Skip | `True` (개발), `False` (운영) |
+| `ORTHANC_PASSWORD` | ✅ | `orthanc` | Orthanc 비밀번호 | 강력한 비밀번호 |
+| `ENABLE_SECURITY` | ✅ | `True` | JWT 인증 활성화 | `True` |
+
+**⚠️ 보안 경고**:
+- `DEBUG=True`는 절대 프로덕션에서 사용 금지
+- 모든 비밀번호는 8자 이상, 영문/숫자/특수문자 조합
+- `DJANGO_SECRET_KEY`는 최소 50자 이상
+- `.env` 파일은 절대 Git에 커밋하지 말 것
+
+### 5.4 React .env 파일 설정
+
+**NeuroNova_03_front_end_react/00_test_client/.env.production (프로덕션용)**
+
+```bash
+# ============================================
+# Production Environment (GCP VM)
+# ============================================
+# API Base URL (Nginx를 통한 접근)
+REACT_APP_API_URL=https://your-domain.com/api
+
+# DICOMweb Root (Django Proxy 경유)
+REACT_APP_DICOM_WEB_ROOT=https://your-domain.com/api/ris/dicom-web
+
+# 자동 로그인 비활성화 (프로덕션)
+REACT_APP_DEV_AUTO_LOGIN=false
+
+# 브라우저 자동 실행 비활성화
+BROWSER=none
+```
+
+**NeuroNova_03_front_end_react/00_test_client/.env.local (개발 전용)**
+
+```bash
+# ============================================
+# Development Environment (로컬)
+# ============================================
+# 자동 로그인 활성화 (개발 편의)
+REACT_APP_DEV_AUTO_LOGIN=true
+REACT_APP_DEV_MOCK_USER=doctor
+
+# API Base URL (로컬 Django)
+REACT_APP_API_URL=http://localhost/api
+
+# DICOMweb Root
+REACT_APP_DICOM_WEB_ROOT=http://localhost/api/ris/dicom-web
+
+# 브라우저 자동 실행 비활성화
+BROWSER=none
+```
+
+**⚠️ 주의사항**:
+- `.env.local`은 개발 전용, 프로덕션 VM에 전송 불필요
+- `.env.production`만 GCP VM에 전송
+- 프로덕션에서는 `REACT_APP_DEV_AUTO_LOGIN=false` 필수
+
+### 5.5 실제 .env 파일 생성 및 전송
+
+**Windows 로컬에서 작업**:
+
+```bash
+cd d:\1222\NeuroNova_v1\NeuroNova_02_back_end\02_django_server
+
+# Django SECRET_KEY 생성 (PowerShell)
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+# .env 파일 수정 (메모장 또는 VSCode)
+# - DJANGO_SECRET_KEY: 위에서 생성한 값
+# - DB_PASSWORD: 강력한 비밀번호 (예: MySecureDB2026!)
+# - DB_ROOT_PASSWORD: 강력한 root 비밀번호
+# - ALLOWED_HOSTS: your-domain.com,www.your-domain.com
+# - CORS_ALLOWED_ORIGINS: https://your-domain.com
+```
+
+**WinSCP를 통한 .env 파일 전송**:
+
+```
+1. WinSCP 접속 (GCP VM)
+
+2. 로컬 → 원격 전송:
+   로컬: d:\1222\NeuroNova_v1\NeuroNova_02_back_end\02_django_server\.env
+   원격: ~/apps/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/.env
+
+3. React 환경 변수 전송:
+   로컬: d:\1222\NeuroNova_v1\NeuroNova_03_front_end_react\00_test_client\.env.production
+   원격: ~/apps/NeuroNova_v1/NeuroNova_03_front_end_react/00_test_client/.env.production
+
+4. 권한 확인 (PuTTY SSH):
+   cd ~/apps/NeuroNova_v1/NeuroNova_02_back_end/02_django_server
+   chmod 600 .env
+   ls -la .env
+   # 출력: -rw------- 1 your-user your-user ... .env
+```
+
+**VM에서 환경 변수 검증**:
 
 ```bash
 cd ~/apps/NeuroNova_v1/NeuroNova_02_back_end/02_django_server
 
-# .env.example을 복사하여 .env 생성
-cp .env.example .env
+# .env 파일 존재 확인
+ls -la .env
 
-# Django SECRET_KEY 생성
-docker run --rm python:3.11-slim python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+# 필수 변수 확인
+grep "DJANGO_SECRET_KEY" .env
+grep "DB_PASSWORD" .env
+grep "ALLOWED_HOSTS" .env
 
-# 실제 값으로 수정
-vi .env
+# Django 설정 검증
+docker compose run --rm django python manage.py check
+
+# 예상 출력:
+# System check identified no issues (0 silenced).
 ```
 
-### 5.4 .env 파일 백업 전략
+### 5.6 .env 파일 백업 전략
 
 ```bash
 # .env 파일을 암호화하여 GCP Cloud Storage에 백업
@@ -1355,11 +1531,21 @@ Internet → Cloudflare → GCP VM → Nginx
 
 ---
 
-**문서 버전**: 2.1
-**최종 업데이트**: 2025-12-30
+**문서 버전**: 2.2
+**최종 업데이트**: 2026-01-02
 **작성자**: Claude AI & NeuroNova Team
 
 **변경 이력**:
+- v2.2 (2026-01-02): .env 파일 관리 강화 및 OpenEMR Skip 모드 추가
+  - ✅ 별도 전송 필요 파일 체크리스트 추가 (Django .env, React .env.production)
+  - ✅ Django .env 상세 설정 가이드 (환경 변수 설명 테이블)
+  - ✅ React .env.production vs .env.local 구분
+  - ✅ OpenEMR Skip 모드 설정 (`SKIP_OPENEMR_INTEGRATION=True`)
+  - ✅ WinSCP 파일 전송 가이드 추가
+  - ✅ .env 파일 검증 스크립트 추가
+  - ✅ 보안 경고 강화 (비밀번호 정책, DEBUG=False)
+  - 📖 참고: 로컬 개발 환경 자동 시작 - [README_자동실행.md](../README_자동실행.md)
+
 - v2.1 (2025-12-30): 보안 강화 아키텍처 적용
   - Nginx 구조 명확화 (React SPA + Django API만 외부 노출)
   - Orthanc, HAPI FHIR 직접 노출 제거 (Django Proxy 경유)
@@ -1376,3 +1562,14 @@ Internet → Cloudflare → GCP VM → Nginx
   - Cloudflare 무료 HTTPS
   - Celery 비동기 처리 (AI, FHIR)
   - 시스템 다이어그램 3단계 비교
+
+---
+
+## 관련 문서
+
+- **로컬 개발 환경**: [README_자동실행.md](../README_자동실행.md) - Windows 개발 환경 자동 시작 가이드
+- **빠른 온보딩**: [REF_CLAUDE_ONBOARDING_QUICK.md](REF_CLAUDE_ONBOARDING_QUICK.md)
+- **초기 데이터 시딩**: [초기_데이터_시딩_가이드.md](초기_데이터_시딩_가이드.md)
+- **OpenEMR 인증 설정**: [50_OpenEMR_OAuth2_설정_가이드.md](50_OpenEMR_OAuth2_설정_가이드.md)
+- **OpenEMR 문제 해결**: [51_OpenEMR_인증_문제_해결_보고서.md](51_OpenEMR_인증_문제_해결_보고서.md)
+- **Docker 개발 가이드**: [40_Docker_개발_가이드.md](40_Docker_개발_가이드.md)
