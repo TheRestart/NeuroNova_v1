@@ -1,8 +1,8 @@
 # NeuroNova CDSS 배포 가이드 (GCP + Docker)
 
 **작성일**: 2025-12-30
-**버전**: 2.0
-**최종 수정**: 2025-12-30
+**버전**: 2.1
+**최종 수정**: 2026-01-02
 **환경**: GCP VM + Docker + Cloudflare + GitHub
 
 ---
@@ -558,51 +558,21 @@ docker compose exec django python manage.py create_test_users
 # ...
 ```
 
-**Master 데이터 로드**
+**Master & Test Data 통합 시딩 (v3.0)**
+
+기존의 파편화된 시딩 명령 대신, 정합성이 검증된 v3.0 스크립트 사용을 권장합니다.
 
 ```bash
-# OCS - 약물/진단 마스터
-docker compose exec django python manage.py shell << 'EOF'
-from ocs.models import MedicationMaster, DiagnosisMaster
-
-medications = [
-    {'drug_code': 'MED001', 'drug_name': 'Aspirin 100mg', 'generic_name': 'Aspirin', 'unit': 'tablet', 'is_active': True},
-    {'drug_code': 'MED002', 'drug_name': 'Metformin 500mg', 'generic_name': 'Metformin', 'unit': 'tablet', 'is_active': True},
-]
-
-for med in medications:
-    MedicationMaster.objects.get_or_create(drug_code=med['drug_code'], defaults=med)
-
-print(f"Created {MedicationMaster.objects.count()} medications")
-
-diagnoses = [
-    {'diag_code': 'I10', 'name_ko': '본태성(원발성) 고혈압', 'name_en': 'Essential hypertension', 'category': 'I00-I99', 'is_active': True},
-    {'diag_code': 'E11', 'name_ko': '제2형 당뇨병', 'name_en': 'Type 2 diabetes', 'category': 'E00-E90', 'is_active': True},
-]
-
-for diag in diagnoses:
-    DiagnosisMaster.objects.get_or_create(diag_code=diag['diag_code'], defaults=diag)
-
-print(f"Created {DiagnosisMaster.objects.count()} diagnoses")
-EOF
+# Django 컨테이너 내부에서 실행
+docker compose exec django python seed_minimal.py
+# 또는
+docker compose exec django python seed_full_system_test_data.py
 ```
 
-```bash
-# LIS - 검사 항목 마스터
-docker compose exec django python manage.py shell << 'EOF'
-from lis.models import LabTestMaster
-
-lab_tests = [
-    {'test_code': 'CBC', 'test_name': 'Complete Blood Count', 'sample_type': 'Blood', 'unit': 'cells/uL', 'ref_range_min': 4000.0, 'ref_range_max': 11000.0, 'is_active': True},
-    {'test_code': 'GLU', 'test_name': 'Glucose', 'sample_type': 'Blood', 'unit': 'mg/dL', 'ref_range_min': 70.0, 'ref_range_max': 100.0, 'is_active': True},
-]
-
-for test in lab_tests:
-    LabTestMaster.objects.get_or_create(test_code=test['test_code'], defaults=test)
-
-print(f"Created {LabTestMaster.objects.count()} lab tests")
-EOF
-```
+**v3.0 시딩으로 보장되는 사항**:
+- RIS `patient_id` 및 Order `ordered_by` 등 실제 DB 컬럼 매핑 완벽 반영
+- LIS 유전체 데이터(BRCA1) 예제 포함
+- Orthanc 영상 자동 동기화 트리거
 
 ---
 
