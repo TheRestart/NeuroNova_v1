@@ -18,15 +18,29 @@ MSA 설계 원칙에 어긋나는 의존성 유무 확인. 4. 출력 형식:
 시각화: 흐름을 명확히 하기 위해 Mermaid graph TD 코드를 포함해줘. 5. 제약 사항: 전문 용어는 유지하되, 전체적인 구조는 비전공자도 이해할 수 있도록 명확한 화살표와 레이블을 사용할 것.
 
 ===
+NeuroNova_03_front_end_react\00_test_client
+기능에 에러가 있다. 
+
+장고에서 환자와 orthance 다이콤 데이터의 메핑 기능이 있어야 
+장고에서 orthance 호출도 되고 FHIR 데이터 매핑연동이 될텐데 
+맵핑 기능을 구현하라 
+
+그외 에러사항을 찾고 보고하라 
+===
 
 @01_doc/REF_CLAUDE_ONBOARDING_QUICK.md 
 @01_doc/REF_프롬프트_프론트엔드_인수인계.md
 @작업_계획_요약.md
 
-위 3개 문서를 읽고 맥락을 완벽히 이해후 프론트엔드 고도화 작업을 즉시 시작
+위 3개 문서를 읽고 맥락을 이해후 프론트엔드 고도화 작업을 즉시 시작
 
 
-
+===
+임시 배포전 정검 문서 : 
+01_doc\초기_데이터_시딩_가이드.md
+01_doc\12_GCP_배포_가이드.md (.env 같이 따로 옮겨야하는 파일 정리 필요)
+NeuroNova_03_front_end_react\00_test_client\사용방법_설명문서.md
+docker-compose.dev.yml
 ---
 
 ## 🚀 1. 빠른 온보딩 (Quick Start)

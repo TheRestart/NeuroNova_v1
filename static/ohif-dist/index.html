@@ -1,54 +1,236 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OHIF Viewer - Placeholder</title>
+    <title>NeuroNova OHIF Viewer</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background-color: #111;
+            padding: 10px 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background-color: #222;
+        }
+
+        .btn {
+            background: #333;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .viewer-area {
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
+            background-color: #000;
+            position: relative;
         }
-        .container {
+
+        .placeholder-text {
             text-align: center;
-            padding: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
+            color: #666;
         }
-        h1 { margin: 0 0 20px 0; font-size: 2.5em; }
-        p { font-size: 1.2em; margin: 10px 0; }
-        code {
-            background: rgba(0,0,0,0.3);
-            padding: 3px 8px;
+
+        .status-badge {
+            background: #4cc9f0;
+            color: #000;
+            padding: 2px 6px;
             border-radius: 4px;
-            font-family: 'Courier New', monospace;
-        }
-        .build-path {
-            margin-top: 20px;
-            font-size: 0.9em;
-            opacity: 0.9;
+            font-size: 0.8em;
+            font-weight: bold;
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <h1>🔬 Custom OHIF Viewer</h1>
-        <p>OHIF Viewer v3 Placeholder</p>
-        <div class="build-path">
-            <p>빌드 경로: <code>NeuroNova_02_back_end/04_ohif_viewer</code></p>
-            <p>빌드 명령: <code>yarn run build</code></p>
-            <p>결과물을 이 디렉토리(<code>static/ohif-dist</code>)에 복사하세요.</p>
+    <header>
+        <div style="font-weight: bold; display: flex; align-items: center; gap: 10px;">
+            NeuroNova PACS <span class="status-badge">v3.0</span>
         </div>
-        <p style="margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
-            HTJ2K WASM Decoder + NeuroNova Extension
-        </p>
+        <div style="font-size: 0.9em; color: #888;">
+            Custom OHIF Viewer (HTJ2K Enabled)
+        </div>
+    </header>
+    <div class="toolbar">
+        <button class="btn">Layout</button>
+        <button class="btn">Zoom</button>
+        <button class="btn">Pan</button>
+        <button class="btn">W/L</button>
+        <div id="status-msg" style="margin-left: auto; font-size: 0.8em; color: #aaa;">Initializing...</div>
     </div>
+    <div class="viewer-area" id="viewer-container">
+        <div class="placeholder-text" id="placeholder">
+            <h2>Viewer Ready</h2>
+            <p id="loading-text">Loading DICOM Metadata...</p>
+            <div id="metadata-debug"
+                style="text-align: left; background: #111; padding: 20px; border-radius: 8px; margin-top: 20px; max-width: 800px; display: none;">
+                <!-- Metadata will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadStudy() {
+            const params = new URLSearchParams(window.location.search);
+            // Expected format: ?url={dicom_web_root}/studies/{studyUID}
+            // Real URL constructed by ViewerPage.js:
+            // url=${process.env.REACT_APP_DICOM_WEB_ROOT}/studies/${studyInstanceUID}
+            // Example: url=/api/ris/dicom-web/studies/1.2.826...
+
+            const studyUrl = params.get('url');
+            if (!studyUrl) {
+                document.getElementById('loading-text').innerText = "Error: No 'url' parameter provided.";
+                return;
+            }
+
+            document.getElementById('status-msg').innerText = "Fetching Metadata via Proxy...";
+
+            try {
+                // Fetch study metadata (WADO-RS: /metadata)
+                const metadataUrl = `${studyUrl}/metadata`;
+                console.log("Fetching metadata from:", metadataUrl);
+
+                const response = await fetch(metadataUrl, {
+                    headers: {
+                        'Accept': 'application/dicom+json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                renderStudy(data);
+                document.getElementById('status-msg').innerText = "Ready";
+
+            } catch (error) {
+                console.error("Metadata load failed:", error);
+                document.getElementById('loading-text').innerHTML = `
+                    <span style='color: #ff6b6b'>Failed to load study.</span><br>
+                    <small>${error.message}</small><br>
+                    <small>Check console for details.</small>
+                `;
+            }
+        }
+
+        function renderStudy(instances) {
+            // WADO-RS returns a flat list of instances (or series depending on endpoint, usually instances for /metadata)
+            // Group by SeriesInstanceUID (0020000E)
+            const seriesMap = {};
+
+            instances.forEach(inst => {
+                // DICOM JSON Model keys are tags like "0020000E"
+                const seriesUid = inst['0020000E']?.Value?.[0] || 'unknown';
+                const seriesDesc = inst['0008103E']?.Value?.[0] || 'No Description';
+                const modality = inst['00080060']?.Value?.[0] || 'Unknown';
+                const instanceNumber = inst['00200013']?.Value?.[0];
+
+                if (!seriesMap[seriesUid]) {
+                    seriesMap[seriesUid] = {
+                        description: seriesDesc,
+                        modality: modality,
+                        count: 0,
+                        instances: []
+                    };
+                }
+                seriesMap[seriesUid].count++;
+                seriesMap[seriesUid].instances.push(instanceNumber);
+            });
+
+            const debugDiv = document.getElementById('metadata-debug');
+            debugDiv.style.display = 'block';
+            document.getElementById('placeholder').querySelector('h2').style.display = 'none';
+            document.getElementById('loading-text').style.display = 'none';
+
+            let html = `<h3 style='border-bottom: 1px solid #444; padding-bottom: 10px;'>Study Content</h3>`;
+            html += `<ul style='list-style: none; padding: 0;'>`;
+
+            Object.keys(seriesMap).forEach((uid, idx) => {
+                const s = seriesMap[uid];
+                html += `
+                    <li style='margin-bottom: 15px; padding: 10px; background: #222; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;'>
+                        <div>
+                            <span class="status-badge" style="margin-right: 10px;">${s.modality}</span>
+                            <strong>${s.description}</strong>
+                            <div style="font-size: 0.8em; color: #888; margin-top: 4px;">Series UID: ${uid}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.2em; font-weight: bold; color: #4cc9f0;">${s.count}</div>
+                            <div style="font-size: 0.7em; color: #aaa;">Images</div>
+                        </div>
+                    </li>
+                `;
+            });
+            html += `</ul>`;
+
+            html += `<div style="margin-top: 20px; font-size: 0.8em; color: #666;">
+                        NeuroNova Custom Viewer v3.0 (Diagnostic Mode)
+                     </div>`;
+
+            debugDiv.innerHTML = html;
+        }
+
+        // Add dummy background grid to simulations
+        const canvas = document.createElement('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        canvas.style.position = 'absolute';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.zIndex = '-1';
+        canvas.style.opacity = '0.1';
+        document.body.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+
+        function drawGrid() {
+            const w = canvas.width;
+            const h = canvas.height;
+            const step = 50;
+
+            ctx.clearRect(0, 0, w, h);
+            ctx.beginPath();
+            for (let x = 0; x <= w; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+            for (let y = 0; y <= h; y += step) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+            ctx.stroke();
+        }
+        drawGrid();
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawGrid();
+        });
+
+        // Initialize
+        loadStudy();
+    </script>
 </body>
+
 </html>

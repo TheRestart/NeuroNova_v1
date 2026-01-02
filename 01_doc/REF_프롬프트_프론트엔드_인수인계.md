@@ -12,7 +12,7 @@
 > 현재 백엔드(Django)와 의료 기기(Orthanc, OpenEMR) 간의 통합 및 안정화 작업이 완료되었습니다.
 >
 > **[현재 시스템 상태]**
-> 1. **백엔드(Stable)**: UC01~UC05(EMR, OCS, LIS, RIS) API가 정상 작동하며, DB 스키마 매핑(ordered_by 등) 이슈가 해결되었습니다. **(중요: OpenEMR 인증은 백엔드 패치로 우회 처리됨)**
+> 1. **백엔드(Stable)**: UC01~UC05(EMR, OCS, LIS, RIS) API가 정상 작동하며, DB 스키마 매핑(ordered_by 등) 이슈가 해결되었습니다. **(중요: OpenEMR은 개발 환경에서 SKIP_OPENEMR_INTEGRATION=True로 인증 우회 중, 프로덕션에서는 OAuth2 필수)**
 > 2. **데이터 시딩(v3.0)**: `seed_minimal.py`가 완성되어 환자(박민수 등)와 BRCA1 유전체 데이터가 즉시 생성됩니다.
 > 3. **의사 워크스테이션(Built)**: `00_test_client`에 **프리미엄 글래스모피즘 UI 기반의 진료 대기 명단**이 이미 구현되어 있습니다 (`/doctor-workstation`).
 > 4. **버그 픽스**: `ResponseTable.js`의 Hook 위반 에러와 파비콘 500 에러를 해결하여 깨끗한 런타임을 보장합니다.

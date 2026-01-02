@@ -434,6 +434,11 @@ services:
       start_period: 180s
 
   hapi-fhir:
+    # HAPI FHIR Server - FHIR R4 표준 준수 헬스케어 데이터 서버
+    # 접속: http://localhost:8080
+    # FHIR API: http://localhost:8080/fhir
+    # 메타데이터: http://localhost:8080/fhir/metadata
+    # 용도: 표준화된 의료 데이터 교환, FHIR 리소스 저장소
     image: hapiproject/hapi:latest
     container_name: neuronova-hapi-fhir-dev
     environment:
@@ -484,6 +489,10 @@ services:
       start_period: 10s
 
   grafana:
+    # Grafana - 시스템 모니터링 대시보드
+    # 접속: http://localhost:3002
+    # 로그인: admin / admin123
+    # 기능: 컨테이너 상태, API 응답 시간, 에러율, Redis 사용률 등 모니터링
     image: grafana/grafana:latest
     container_name: neuronova-grafana-dev
     environment:

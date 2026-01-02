@@ -2,7 +2,7 @@
 
 **최종 수정일**: 2026-01-02
 **목적**: 최소 토큰으로 프로젝트 핵심만 빠르게 파악
-**최신 변경**: v3.0 아키텍처 개선 완료 (2026-01-02)
+**최신 변경**: 배포 전 문서 정비 및 자동화 완료 (2026-01-02 Day 16)
 
 > **원칙**: 이 문서만 읽으면 즉시 작업 가능. 상세 내용은 필요 시 참조 문서 확인.
 
@@ -212,7 +212,30 @@ Internet -> Cloudflare -> Nginx -> Django (Auth) -> Proxied Services (Orthanc/OH
 
 ## 🚀 8. 빠른 시작 (서버 실행)
 
-### 8.1 통합 Docker 환경 (권장) ⭐
+### 8.1 🚀 자동 시작 스크립트 (권장) ⭐ NEW
+
+**원클릭 전체 서비스 시작**:
+
+```powershell
+# 프로젝트 루트에서 자동 시작 스크립트 실행
+d:\1222\NeuroNova_v1\start-all-services.bat
+```
+
+**자동 실행 내용**:
+1. ✅ Docker Desktop 상태 확인 및 자동 시작
+2. ✅ Docker Compose 전체 스택 시작 (14개 컨테이너)
+3. ✅ 서비스 초기화 대기 (30초)
+4. ✅ React 클라이언트 시작 선택 (Y/N)
+5. ✅ 접속 URL 및 로그 명령어 안내
+
+**시작 프로그램 등록** (Windows 부팅 시 자동 실행):
+- `Win + R` → `shell:startup` → `start-all-services.bat` 바로가기 생성
+
+> 상세: [README_자동실행.md](../README_자동실행.md)
+
+---
+
+### 8.2 통합 Docker 환경 (수동)
 
 **전체 스택을 하나의 명령어로 실행**:
 
@@ -265,13 +288,13 @@ docker-compose -f docker-compose.dev.yml exec django python manage.py upload_sam
 
 ---
 
-### 8.2 레거시 방식 (Deprecated)
+### 8.3 레거시 방식 (Deprecated)
 
 > 더 이상 권장하지 않습니다. 개별 컨테이너 실행 방식은 [LOG_작업이력.md](LOG_작업이력.md)의 과거 기록이나 [REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)를 참조하십시오.
 
 ---
 
-### 8.3 React 테스트 클라이언트 (WSL 필수)
+### 8.4 React 테스트 클라이언트 (WSL 필수)
 
 **CRITICAL**: React는 반드시 **WSL Ubuntu-22.04 LTS** 환경에서 실행해야 합니다.
 
@@ -377,11 +400,13 @@ A: 커스텀 Exception 사용 (`utils/exceptions.py`에서 import)
 ### Q4. OpenEMR 연동이 실패하면?
 A: Docker 컨테이너 상태 확인 (`docker ps`), 로그 확인 (`docker logs`)
 
-**[중요] OpenEMR OAuth2 인증 설정 필요 (2026-01-02 업데이트)**:
-- OpenEMR 7.x는 OAuth2 인증이 필수입니다.
-- 최초 1회 Admin Panel에서 API Client 등록이 필요합니다.
-- 상세 가이드: [50_OpenEMR_OAuth2_설정_가이드.md](50_OpenEMR_OAuth2_설정_가이드.md)
-- 문제 해결: [51_OpenEMR_인증_문제_해결_보고서.md](51_OpenEMR_인증_문제_해결_보고서.md)
+**[중요] OpenEMR Skip 모드 정책 (2026-01-02 업데이트)**:
+- **개발 환경**: `SKIP_OPENEMR_INTEGRATION=True` (.env 파일) - 인증 완전 우회
+- **프로덕션**: `SKIP_OPENEMR_INTEGRATION=False` - OAuth2 인증 필수
+  - 최초 1회 Admin Panel에서 API Client 등록 필요
+  - 상세 가이드: [50_OpenEMR_OAuth2_설정_가이드.md](50_OpenEMR_OAuth2_설정_가이드.md)
+- **문제 해결**: [51_OpenEMR_인증_문제_해결_보고서.md](51_OpenEMR_인증_문제_해결_보고서.md)
+- **배경**: OpenEMR 7.x Docker는 client_credentials grant type을 완전히 지원하지 않아 개발 시 Skip 모드 사용
 
 ### Q5. 테스트 계정 비밀번호는?
 A:
@@ -399,17 +424,11 @@ A:
 - 변경 이유: Python escape sequence 문제 및 로그인 인증 실패 해결
 - 상세: PASSWORD_CHANGE_PLAN.md 참조
 
-### 8.6 로그인 테스트 (계정 정보)
-
-**테스트 계정 목록** (상세: [32_권한_정의_요약.md](32_권한_정의_요약.md#8-테스팅용-임시-계정-test-accounts))
-
-- **Admin**: `admin` / `admin123`
-- **Doctor**: `doctor` / `doctor123`
-- **Patient**: `patient` / `patient123`
-
-1. http://localhost:3000 접속 (React App)
+**로그인 테스트 방법**:
+1. http://localhost:3001 접속 (React App, WSL 환경)
 2. 위 계정으로 로그인 시도
 3. 역할별 대시보드 접근 확인
+4. 상세: [32_권한_정의_요약.md](32_권한_정의_요약.md#8-테스팅용-임시-계정-test-accounts)
 
 ### Q6. React 테스트 클라이언트 사용법?
 A:
@@ -528,8 +547,8 @@ npm start
 
 ---
 
-**문서 버전**: 1.7
+**문서 버전**: 1.8
 **작성일**: 2026-01-02
-**최신 업데이트**: v3.0 아키텍처 개선 완료 반영
+**최신 업데이트**: 배포 전 문서 정비 및 자동화 완료 반영 (Day 16)
 **토큰 절약**: 이 문서는 REF_CLAUDE_CONTEXT.md (1000줄)의 핵심만 추출 (약 80% 토큰 절약)
 **대상 독자**: Claude AI 온보딩용

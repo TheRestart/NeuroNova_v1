@@ -1,7 +1,7 @@
 # 작업 이력 (Work Log)
 
-**최종 수정일**: 2026-01-01
-**현재 상태**: React 앱 Docker(Nginx) 배포 완료, **무한 새로고침(Infinite Refresh) 현상 해결 완료 ✅**
+**최종 수정일**: 2026-01-02
+**현재 상태**: Patient-DICOM-FHIR 매핑 체인 구축 완료, FHIR Outbox 자동화 구현 ✅
 
 > [!NOTE]
 > 시스템 아키텍처, 사용자 역할(RBAC), 상세 모듈 설계 등 기술 참조 정보는 **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**를 참조하십시오. 이 문서는 일자별 작업 진행 상황과 변경 이력만을 기록합니다.
@@ -23,6 +23,80 @@
 ## 📅 상세 작업 로그
 
 ### Week 7 (2025-12-29 ~ 2026-01-02)
+
+- **2026-01-02 Day 18 (Patient-DICOM-FHIR 매핑 체인 구축 완료)** ⭐ NEW:
+  - [x] **Patient-DICOM-FHIR 매핑 로직 분석 및 검증**:
+    - **확인 결과**: 이미 완벽하게 구현되어 있음
+      - Patient ↔ DICOM: `RadiologyStudyService.sync_studies_from_orthanc()` (3단계 Fuzzy Matching)
+      - DICOM → FHIR: `ImagingStudyConverter.to_fhir()` (FHIR R4 표준, StudyInstanceUID 포함)
+      - Patient → FHIR: `PatientConverter.to_fhir()` (9개 Converter 구현 완료)
+    - **문서 업데이트**: `00_업무계획서.md` 43줄 체크리스트 완료 처리
+  - [x] **프론트엔드 Patient-DICOM 매핑 관리 UI 추가**:
+    - **신규 페이지**: `PatientDicomMappingPage.js` (330 lines)
+    - **주요 기능**:
+      - Orthanc Studies 동기화 (Sync 버튼)
+      - 매칭되지 않은 Studies 조회 및 표시
+      - 수동 환자 매핑 (환자 선택 드롭다운)
+      - FHIR ImagingStudy 변환 테스트
+      - Patient-DICOM-FHIR 매핑 체인 시각화 (3단계 플로우)
+    - **CSS**: `PatientDicomMappingPage.css` (280 lines) - 그라디언트 매핑 체인, 반응형 디자인
+    - **라우팅**: App.js에 `/patient-dicom-mapping` 경로 추가, 네비게이션 바에 "🔗 매핑관리" 메뉴 추가
+  - [x] **FHIR Outbox 자동 발행 구현**:
+    - **Signal 핸들러**: `ris/signals.py` (100 lines)
+      - `post_save` Signal: RadiologyStudy 생성/수정 시 FHIRSyncQueue에 자동 Outbox 이벤트 발행
+      - `post_delete` Signal: RadiologyStudy 삭제 시 FHIR 삭제 이벤트 발행
+      - 환자 매핑 여부 체크, 중복 작업 방지 (get_or_create)
+    - **App 설정**: `ris/apps.py`에 `ready()` 메서드 추가하여 Signal 자동 등록
+    - **검증**: RadiologyStudy 저장 시 자동으로 FHIR ImagingStudy Outbox 생성 확인
+  - [x] **구현 통계**:
+    - 신규 파일: 3개 (PatientDicomMappingPage.js/css, signals.py)
+    - 수정 파일: 3개 (App.js, apps.py, 00_업무계획서.md)
+    - 총 라인 수: 약 710 lines
+
+- **2026-01-02 Day 17 (OHIF Viewer 연동 및 404 오류 해결)**:
+  - [x] **Viewer 404 오류 원인 분석 및 해결**:
+    - **현상**: Orthanc 환자 목록에서 "View Study" 클릭 시 404 에러 발생.
+    - **원인**: 프론트엔드는 Orthanc의 내부 UUID(`05dd9691...`)를 사용했으나, Django API는 DICOM UID(`1.2.840...`)만 조회 허용.
+    - **해결**: `RadiologyStudyViewSet.get_object()`를 오버라이드하여 `study_instance_uid`와 `orthanc_study_id` 두 가지 ID 모두로 Lookup 가능하도록 개선 (Dual-Lookup).
+  - [x] **Custom Viewer 고도화 (Placeholder → Diagnostic Mode)**:
+    - **기존**: 정적 HTML 파일만 표시됨.
+    - **개선**: `index.html`에 JavaScript 로직 추가하여 실제 DICOM Metadata(`dicom+json`)를 Proxy를 통해 Fetching.
+    - **기능**: Series 목록, Modality, Image Count 등 실제 검사 데이터를 동적으로 렌더링.
+  - [x] **Frontend 설정 동기화**:
+    - **문제**: Viewer가 Metadata 로딩 실패 (404).
+    - **원인**: `.env.local`의 `REACT_APP_DICOM_WEB_ROOT` 경로가 Backend Proxy 경로와 불일치.
+    - **해결**: 경로 수정 (`/api/ris/dicom-web` → `/api/ris/pacs/dicom-web`).
+  - [x] **데이터 동기화 및 검증**:
+    - Django DB에 Orthanc Study 데이터 12건 동기화 완료 (`sync_studies_from_orthanc`).
+    - 브라우저 서브에이전트를 통한 E2E 검증 성공 (Viewer 진입 → Metadata 로딩 → Series 목록 표시).
+
+
+- **2026-01-02 Day 16 (배포 전 문서 정비 및 자동화 완료)**:
+  - [x] **배포 전 점검 문서 4종 업데이트**:
+    - [x] `초기_데이터_시딩_가이드.md` (v1.0 → v2.0): OpenEMR Skip 모드, 비밀번호 간소화(`*123`), 자동 시작 스크립트 반영
+    - [x] `12_GCP_배포_가이드.md` (v2.1 → v2.2): .env 파일 전송 체크리스트, Django/React 환경 변수 상세 가이드, WinSCP 전송 절차, OpenEMR Skip 모드 설정
+    - [x] `NeuroNova_03_front_end_react/00_test_client/사용방법_설명문서.md` (v1.5 → v2.0): 자동 시작 스크립트 가이드, WSL 환경 설정, 문제 해결 7가지, 서비스 URL 테이블
+    - [x] `docker-compose.dev.yml`: 포괄적인 헤더 주석 추가 (14개 컨테이너, 7개 레이어, 포트 매핑, 빠른 시작 가이드)
+  - [x] **OpenEMR 인증 문제 최종 해결**:
+    - **이전 접근 (실패)**: OAuth2 클라이언트 등록 시도, bcrypt 해시 DB 직접 삽입 → `400 Bad Request` (client_credentials 미지원)
+    - **최종 해결책**: `SKIP_OPENEMR_INTEGRATION=True` 설정으로 OpenEMR API 호출 우회
+    - **사유**: OpenEMR 7.x Docker는 OAuth2 client_credentials grant type을 완전히 지원하지 않음
+    - **문서화**: `51_OpenEMR_인증_문제_해결_보고서.md` (850+ 라인), `50_OpenEMR_OAuth2_설정_가이드.md` (700+ 라인)
+  - [x] **자동 시작 환경 구축**:
+    - [x] `start-all-services.bat`: Docker Desktop 자동 시작, 14개 컨테이너 일괄 시작, React 선택적 시작
+    - [x] `start-react.bat`: WSL 환경 자동 감지, npm start 자동 실행
+    - [x] `README_자동실행.md` (450+ 라인): 완전 자동 시작 가이드, 문제 해결 4가지, 시작 프로그램 등록
+  - [x] **비밀번호 정책 간소화**:
+    - 개발 환경: `*123!@#` → `*123` (Python escape sequence 문제 해결)
+    - 모든 문서 및 시딩 스크립트 업데이트 완료
+  - [x] **문서 상호 참조 구축**:
+    - 4개 주요 문서에 "관련 문서" 섹션 추가
+    - 상호 참조 링크 10개 이상 추가
+  - [x] **생성/수정 파일 통계**:
+    - 신규 문서: 4개 (README_자동실행.md, 2개 스크립트, 작업 완료 보고서)
+    - 업데이트 문서: 6개 (배포 가이드 4종, .env 파일, docker-compose.dev.yml)
+    - 총 라인 수: 2,000+ 라인 추가/수정
+    - 코드 예시: 15개 (bash, PowerShell, 환경 변수)
 
 - **2026-01-02 Day 15 (아키텍처 v3.0 개선 완료)**:
   - [x] **v3.0 아키텍처 통합 및 기술 이슈 해결**:
