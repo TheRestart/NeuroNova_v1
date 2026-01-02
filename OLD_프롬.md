@@ -1,129 +1,100 @@
-지금부터 능동적으로 문제를 해결하라.
+# Claude AI 작업 프롬프트 (v2.0)
+
+> **목적**: 이 문서는 Claude AI에게 작업을 지시할 때 사용하는 **최적화된 프롬프트 템플릿** 모음입니다.
+> **최신화**: 2026-01-02 (문서 경량화 및 React 통합 반영)
 
 
-아래 4개 문서를 단일 프로젝트 기준으로 통합 분석하고,
-현재 상태에 맞게 모든 문서를 업데이트하라.
+프롬프트 제목: [NeuroNova 아키텍처 문서 정밀 점검 및 시각화]
+
+1. 역할: 너는 숙련된 소프트웨어 아키텍트이자 기술 문서 작성 전문가야. 
+2. 작업 목표: 제공된 문서의 기술적 오류를 점검하고, 전체 서비스 구조를 한눈에 파악할 수 있도록 재정리해줘. 
+3. 정검 대상 : doc의 문서 전부 
+4. 점검 항목:
+서비스 간(Django, FastAPI, Celery, Orthanc) 데이터 흐름의 모순 확인.
+HTJ2K 변환 및 WASM 디코딩 과정의 기술적 누락 점검.
+MSA 설계 원칙에 어긋나는 의존성 유무 확인. 4. 출력 형식:
+오류 리스트: 발견된 오류나 개선 제안을 번호 순으로 한 줄씩 정리.
+구조 요약: 'A -> B (내용) -> C' 형태의 텍스트 흐름도 사용.
+시각화: 흐름을 명확히 하기 위해 Mermaid graph TD 코드를 포함해줘. 5. 제약 사항: 전문 용어는 유지하되, 전체적인 구조는 비전공자도 이해할 수 있도록 명확한 화살표와 레이블을 사용할 것.
 
 
-아래문서는 클로드 시작시 온보딩하는 문서이다. 
-하지만 최근 토큰 사용량이 많아서 간소화 하고 싶다. 
-대상 문서:
-- 01_doc/REF_CLAUDE_ONBOARDING_QUICK.md
-- LOG_작업이력.md
-- 작업_계획_요약.md
-- OLD_오류정리_antigra_1230.md
-
-===
-[작업 지시서] NeuroNova React 클라이언트 정상화 및 고도화
-
-대상 디렉토리 : 
-NeuroNova_03_front_end_react/00_test_client
-
-
-필수: LOG_작업이력.md, 작업_계획_요약.md
-필요 시: REF_CLAUDE_ONBOARDING_QUICK.md, OLD_오류정리_antigra_1230.md
-
-단계별 프로세스 : 
-프론트 개발 참고 : 01_doc, 
-01_doc\21_락킹_멱등성_개발_가이드.md
-
-+react질드파일을 nginx에 올린게 아니라서 react를 run 해야한다. 
-
-1단계: 진단 (Diagnosis)
-UC01 ~ UC09 전체 기능 점검
-브라우저 Console / Network 탭 분석
-이 단계에서는 코드 수정 금지
-해결을 위한 step-by-step 계획만 먼저 출력
-
-2단계: 실행 (Execution)
-승인된 계획에 따라 코드 수정
-핵심 오류 해결 → 기능 정상화
-이후 UI/UX 고도화 (Dashboard Layout 등)
-
-3단계: 기록 (Documentation)
-각 단계 종료 시 작업 내용을 문서화
-변경 사항을 문서에 반영하고 전체 내용을 출력
-실행 환경 (2026 기준)
-{
-  "environment": {
-    "os": "Windows 11 + WSL Ubuntu-22.04 LTS",
-    "frontend": "React (Port 3000)",
-    "backend": "Django (Port 8000), Nginx (Port 80)",
-    "WSL(Ubuntu-22.04) 환경에서 npm run dev로 React 서버 실행", 
-    "command": "npm run dev (Ubuntu-22.04 LTS에서 실행)"
-  }
-}
-
-
-
-
-===
-
-
-=== Claude AI 온보딩 방법 
-
-🎯 **빠른 온보딩** (권장 - 토큰 80% 절약):
-1. **REF_CLAUDE_ONBOARDING_QUICK.md** 읽기 (5분) ← 핵심만 요약
-2. **LOG_작업이력.md** 읽기 (현재 진행 상황)
-3. 필요 시 개별 문서 참조
-
-📚 **상세 온보딩** (필요 시):
-1. **REF_CLAUDE_CONTEXT.md** 전체 읽기 (1000줄+) ← 모든 상세 내용
-2. **LOG_작업이력.md** 읽기
-3. 개별 UC 분석 (필요 시)
 
 ---
 
-=== Claude에게 작업 시작 요청 시 프롬프트 예시:
+## 🚀 1. 빠른 온보딩 (Quick Start)
 
-**빠른 온보딩**:
-"01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 01_doc\LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악해줘"
+토큰 절약을 위해 가장 핵심적인 문서만 읽고 즉시 작업을 시작할 때 사용합니다.
 
-01_doc/REF_CLAUDE_ONBOARDING_QUICK.md와 01_doc\LOG_작업이력.md를 읽고 현재 프로젝트 상황을 파악후
+**[프롬프트]:**
+```text
+@01_doc/REF_CLAUDE_ONBOARDING_QUICK.md @01_doc/LOG_작업이력.md @작업_계획_요약.md
 
+위 3개 파일을 읽고 현재 프로젝트 상태(Phase 2 완료, React 통합)를 파악한 뒤,
+[작업_계획_요약.md]의 '다음 단계'에 있는 [작업명]을 수행하기 위한 계획을 수립해줘.
+```
 
+---
 
+## 🛠️ 2. 상세 문제 해결 (Deep Dive)
 
+복잡한 문제나 아키텍처 이해가 필요할 때 사용합니다.
 
+**[프롬프트]:**
+```text
+@01_doc/REF_CLAUDE_CONTEXT.md @01_doc/LOG_작업이력.md @01_doc/OLD_오류정리_antigra_1230.md
 
+위 문서들을 참조하여 현재 발생한 [오류 내용]에 대한 원인을 분석하고,
+기존 아키텍처 규칙(Layered Architecture)을 준수하며 해결 방안을 제시해줘.
+```
 
+---
 
-**상세 온보딩**:
-            "01_doc/REF_CLAUDE_CONTEXT.md와 LOG_작업이력.md를 읽고 전체 시스템을 이해해줘"
+## 💻 3. 실행 환경 정보 (Context)
 
-**문서 업데이트 요청**:
-(빠르게)
-핵심 2개 문서를 업데이트 하시오 
-01_doc/REF_CLAUDE_ONBOARDING_QUICK.md, LOG_작업이력.md
+Claude가 실행 명령어를 제안할 때 참조해야 할 환경 설정입니다.
 
+```json
+{
+  "environment": {
+    "os": "Windows 11 + WSL Ubuntu-22.04 LTS",
+    "frontend": {
+      "stack": "React 18 + OHIF Viewer v3",
+      "path": "NeuroNova_03_front_end_react/00_test_client",
+      "command": "PORT=3001 npm start",
+      "url": "http://localhost:3001"
+    },
+    "backend": {
+      "stack": "Django 4.2 + DRF",
+      "path": "NeuroNova_02_back_end/02_django_server",
+      "command": "python manage.py runserver",
+      "url": "http://localhost:8000/api (Direct) or http://localhost/api (Nginx)"
+    }
+  }
+}
+```
 
-현제 문제를 정리하고 
-4개 문서를 업데이트 하시오 
-필수: LOG_작업이력.md, 작업_계획_요약.md
-필요 시: REF_CLAUDE_ONBOARDING_QUICK.md, OLD_오류정리_antigra_1230.md
+---
 
+## 📝 4. 문서 업데이트 요청
 
+작업 완료 후 문서를 현행화할 때 사용합니다.
 
+**[프롬프트]:**
+```text
+작업이 완료되었으니 문서를 업데이트해줘.
 
+1. [LOG_작업이력.md]: 오늘 날짜로 작업 내용(해결된 버그, 구현 기능) 추가
+2. [작업_계획_요약.md]: 완료된 항목 체크([x]) 및 다음 할 일 갱신
+3. (필요 시) [01_doc/REF_CLAUDE_ONBOARDING_QUICK.md]: 변경된 아키텍처나 주요 정책 반영
+```
 
-(정밀)
-핵심 3개 문서를 업데이트 하시오 
-01_doc/REF_CLAUDE_CONTEXT.md, 01_doc/REF_CLAUDE_ONBOARDING_QUICK.md, LOG_작업이력.md
+---
 
+## ⚡ 5. 작업 원칙 (System Prompts)
 
+Claude가 코드를 작성할 때 항상 준수해야 할 규칙입니다.
 
-+ 모듈 설치시 requirement.txt 업데이트 필요
-+ npm run dev 를 실행할때는 Ubuntu-22.04 LTS를 사용하시오
-
-==프롬 새로 작성 
-코드 작성시 가장 고려해야하는 것은 코드의 '가독성'과 '재사용성'이다. 
-
-
-
-==
-'오류정리_antigra_1230.md'를 생성하고 
-
-지금부터 
-오류가 발생할때마다. 
-발생한 오류들을 300자 내외로 정리해서 
-업데이트하시오 
+1. **가독성 & 재사용성**: "코드는 한 번 작성되지만 수백 번 읽힌다."
+2. **이모지 금지**: 코드 파일(.py, .js) 내부에는 절대 이모지를 사용하지 않는다. (인코딩 오류 방지)
+3. **절대 경로 사용**: 파일 경로를 언급할 때는 항상 프로젝트 루트 기준 상대 경로 또는 절대 경로를 사용한다.
+4. **적극적 질문**: 모호한 요구사항은 가정하지 말고 반드시 먼저 질문한다.

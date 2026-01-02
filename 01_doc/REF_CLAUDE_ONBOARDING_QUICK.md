@@ -1,8 +1,8 @@
 # Claude AI 빠른 온보딩 가이드 (Quick Onboarding)
 
-**최종 수정일**: 2026-01-01
+**최종 수정일**: 2026-01-02
 **목적**: 최소 토큰으로 프로젝트 핵심만 빠르게 파악
-**최신 변경**: UC02(환자 목록/생성) 버그 수정 완료, React 무한 새로고침 해결 (2026-01-02)
+**최신 변경**: v3.0 아키텍처 개선 완료 (2026-01-02)
 
 > **원칙**: 이 문서만 읽으면 즉시 작업 가능. 상세 내용은 필요 시 참조 문서 확인.
 
@@ -102,19 +102,26 @@ NeuroNova_v1/
 
 ---
 
-## 🏗️ 4. 핵심 아키텍처 (요약)
+## 🏗️ 4. 핵심 아키텍처 (v3.0)
 
-> **상세 아키텍처 및 다이어그램은 [REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)를 참조하십시오.**
+> **상세 아키텍처는 [06_시스템_아키텍처_v3.md](06_시스템_아키텍처_v3.md)를 참조하십시오.**
 
-**핵심 요약**:
+**핵심 요약 (v3.0 확정)**:
 - **Gateway**: Nginx (Reverse Proxy with **X-Accel-Redirect**)
 - **Backend**: Django REST Framework (Secure Proxy & Auth Delegate)
-- **Frontend**: Single-SPA (Unified React App with OHIF Viewer)
-- **DICOM**: Orthanc (Internal) + HTJ2K Conversion (Celery)
-- **AI**: FastAPI (Inference) + Celery (Async Processing)
+- **Frontend**: **Unified React SPA** (단일 빌드, OHIF npm 패키지 통합)
+- **DICOM**: Orthanc (Internal) + **HTJ2K 자동 변환 (Orthanc Plugin)**
+- **AI**: FastAPI (HTTP REST API) + Celery (Async Processing)
+- **FHIR**: **Outbox 패턴** (트랜잭션 일관성 보장)
 
 **데이터 흐름**:
 Internet -> Cloudflare -> Nginx -> Django (Auth) -> Proxied Services (Orthanc/OHIF)
+
+**v3.0 주요 변경**:
+- Multi-SPA 폐기 → 단일 React 빌드
+- HTJ2K Celery 수동 변환 → Orthanc Plugin 자동 변환
+- FHIR Write-Through → Outbox 패턴 (비동기 동기화)
+- FastAPI 통신 명세 확정 (HTTP REST API + OpenAPI 3.0)
 
 
 ## 🔑 5. 핵심 정책 (즉시 적용)
@@ -343,6 +350,13 @@ PORT=3001 npm start
 ### 배포 가이드 (GCP)
 → **[12_GCP_배포_가이드.md](12_GCP_배포_가이드.md)** (GCP VM + Docker + Cloudflare)
 
+### v3.0 아키텍처 문서 (신규)
+→ **[06_시스템_아키텍처_v3.md](06_시스템_아키텍처_v3.md)** - v3.0 확정 아키텍처
+→ **[45_DICOM_뷰잉_시퀀스_다이어그램.md](45_DICOM_뷰잉_시퀀스_다이어그램.md)** - Secure Proxy 패턴
+→ **[46_FastAPI_AI_서버_명세서.md](46_FastAPI_AI_서버_명세서.md)** - OpenAPI 3.0 완전 스펙
+→ **[47_FHIR_동기화_Outbox_패턴_명세서.md](47_FHIR_동기화_Outbox_패턴_명세서.md)** - Outbox 패턴
+→ **[90_작업이력/아키텍처_개선_완료_보고서_20260102.md](90_작업이력/아키텍처_개선_완료_보고서_20260102.md)** - 개선 성과 요약
+
 ---
 
 ## ⚡ 11. 자주 묻는 질문 (FAQ)
@@ -443,6 +457,14 @@ print("[INFO] Processing...")
 
 ## 🎯 13. 완료된 Phase (요약)
 
+**Phase 2.5 완료 (2026-01-02)** ⭐ NEW:
+- ✅ **v3.0 아키텍처 확정**: Multi-SPA → Unified React SPA
+- ✅ **Critical/High 이슈 해결**: 9개 이슈 100% 해결
+- ✅ **문서화 고도화**: 4,650+ 라인, 5개 신규 문서 작성
+- ✅ **Secure Proxy 패턴**: X-Accel-Redirect 완전 명세화
+- ✅ **FastAPI 명세**: OpenAPI 3.0 완전 스펙 작성
+- ✅ **FHIR Outbox 패턴**: 트랜잭션 일관성 보장 메커니즘
+
 **Phase 1 & 2 완료 (2025-12-31)**:
 - ✅ **API 표준화**: 에러 핸들링, Swagger, 데이터 검증 완료
 - ✅ **아키텍처**: Redis-only 마이그레이션, Secure Proxy 적용, OHIF v3.0 통합
@@ -492,7 +514,8 @@ npm start
 
 ---
 
-**문서 버전**: 1.6
-**작성일**: 2026-01-01
+**문서 버전**: 1.7
+**작성일**: 2026-01-02
+**최신 업데이트**: v3.0 아키텍처 개선 완료 반영
 **토큰 절약**: 이 문서는 REF_CLAUDE_CONTEXT.md (1000줄)의 핵심만 추출 (약 80% 토큰 절약)
 **대상 독자**: Claude AI 온보딩용
