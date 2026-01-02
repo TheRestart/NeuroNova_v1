@@ -35,12 +35,29 @@ NeuroNova_03_front_end_react\00_test_client
 위 3개 문서를 읽고 맥락을 이해후 프론트엔드 고도화 작업을 즉시 시작
 
 
+
+
+
+
+
+
 ===
 임시 배포전 정검 문서 : 
 01_doc\초기_데이터_시딩_가이드.md
 01_doc\12_GCP_배포_가이드.md (.env 같이 따로 옮겨야하는 파일 정리 필요)
 NeuroNova_03_front_end_react\00_test_client\사용방법_설명문서.md
 docker-compose.dev.yml
+===
+배포전에 깔끔하게 불필요한 파일을 정리하라
+
+
+
+NeuroNova_03_front_end_react\00_test_client\FRONTEND_WORK_LOG.md
+NeuroNova_03_front_end_react\00_test_client\LOG_테스트클라이언트_정밀점검_20260102.md
+
+위 2개 문서를 보니 아직 개선해야하는 문제가 많아보인다. 
+특히 'http://localhost:3001/monitoring' 은 심각하다
+
 ---
 
 ## 🚀 1. 빠른 온보딩 (Quick Start)

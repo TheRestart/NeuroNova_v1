@@ -1,7 +1,7 @@
 # 작업 이력 (Work Log)
 
-**최종 수정일**: 2026-01-02
-**현재 상태**: Patient-DICOM-FHIR 매핑 체인 구축 완료, FHIR Outbox 자동화 구현 ✅
+**최종 수정일**: 2026-01-03
+**현재 상태**: FHIR Outbox Celery Worker 구현 완료, 프론트엔드 API 오류 수정 완료 ✅
 
 > [!NOTE]
 > 시스템 아키텍처, 사용자 역할(RBAC), 상세 모듈 설계 등 기술 참조 정보는 **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**를 참조하십시오. 이 문서는 일자별 작업 진행 상황과 변경 이력만을 기록합니다.
@@ -22,9 +22,38 @@
 
 ## 📅 상세 작업 로그
 
-### Week 7 (2025-12-29 ~ 2026-01-02)
+### Week 7 (2025-12-29 ~ 2026-01-03)
 
-- **2026-01-02 Day 18 (Patient-DICOM-FHIR 매핑 체인 구축 완료)** ⭐ NEW:
+- **2026-01-03 Day 19 (FHIR Outbox Celery Worker 구현 및 프론트엔드 오류 수정 완료)** ⭐ NEW:
+  - [x] **FHIR Outbox 처리 Celery Worker 구현**:
+    - **FHIRSyncQueue 스키마 정합성 수정**:
+      - **문제 발견**: `ris/signals.py`가 존재하지 않는 필드(`resource_type`, `resource_id`) 사용 시도
+      - **해결**: `FHIRResourceMap` FK 기반 스키마로 수정, `payload` 필드명 통일
+      - **수정 파일**: `ris/signals.py` (post_save/post_delete 핸들러 모두 수정)
+    - **tasks.py FHIR 동기화 로직 개선**:
+      - **sync_fhir_resource()**: `resource_map` FK 기반으로 전면 개선, `mark_as_processing()/mark_as_completed()` 모델 메서드 활용
+      - **convert_cdss_to_fhir()**: CDSS 리소스 → FHIR 변환 함수 추가 (ImagingStudy, Patient, Observation 지원)
+      - **process_fhir_sync_queue()**: 우선순위 정렬 수정 (priority: 1=highest), `queue_id` 필드 사용
+      - **OAuth 토큰 관리**: Redis 캐싱 기반 토큰 관리 (90% 만료 시간 안전 마진)
+    - **검증**: Celery Worker가 FHIRSyncQueue에서 작업을 가져와 FHIR 서버로 전송하는 전체 플로우 구현 완료
+  - [x] **프론트엔드 전체 기능 점검 및 오류 수정**:
+    - **Explore Agent 활용**: 00_test_client 전체 파일 검사 (UC01~UC09, apiClient.js, ViewerPage.js 등)
+    - **발견된 치명적 오류 2건**:
+      - **UC07AlertTest.js**: `alertAPI.getAlert()`, `updateAlert()`, `sendBroadcast()`, `createChannel()` 미정의 (4개 함수)
+      - **UC09AuditTest.js**: `auditAPI.getLogs()`, `createLog()`, `getIntegrityLogs()`, `verifyIntegrity()` 미정의 (4개 함수)
+    - **즉시 수정**: `apiClient.js`에 8개 누락 함수 모두 추가
+      - alertAPI: `getAlert()`, `updateAlert()`, `sendBroadcast()`, `createChannel()`, `getChannels()` 추가
+      - auditAPI: `getLogs()` (backward compatibility), `createLog()`, `getIntegrityLogs()`, `verifyIntegrity()` 추가
+    - **기타 발견 사항**:
+      - ViewerPage.js, MonitoringPage.js의 localhost 폴백값 (프로덕션 환경변수 필수)
+      - console.log 과다 사용 (30개, 프로덕션 빌드 시 제거 필요)
+      - 전반적인 API 구조는 양호 (에러 처리, OAuth 토큰 갱신 로직 구현됨)
+  - [x] **구현 통계**:
+    - 수정 파일: 3개 (`ris/signals.py`, `fhir/tasks.py`, `apiClient.js`)
+    - 추가 함수: 9개 (convert_cdss_to_fhir + API 8개)
+    - 수정 라인 수: 약 200 lines
+
+- **2026-01-02 Day 18 (Patient-DICOM-FHIR 매핑 체인 구축 완료)**:
   - [x] **Patient-DICOM-FHIR 매핑 로직 분석 및 검증**:
     - **확인 결과**: 이미 완벽하게 구현되어 있음
       - Patient ↔ DICOM: `RadiologyStudyService.sync_studies_from_orthanc()` (3단계 Fuzzy Matching)

@@ -1,11 +1,16 @@
 # NeuroNova CDSS 배포 가이드 (GCP + Docker)
 
 **작성일**: 2025-12-30
-**버전**: 2.2
-**최종 수정**: 2026-01-02
+**버전**: 2.3
+**최종 수정**: 2026-01-03
 **환경**: GCP VM + Docker + Cloudflare + GitHub
 
-**주요 변경 (v2.2)**:
+**주요 변경 (v2.3)**:
+- ✅ FHIR OAuth2 환경 변수 추가 (Celery Worker FHIR Outbox)
+- ✅ FHIR_SERVER_URL, FHIR_OAUTH_TOKEN_URL, FHIR_OAUTH_CLIENT_ID/SECRET 추가
+- ✅ Day 19 (2026-01-03) Celery Worker 개선 사항 반영
+
+**이전 변경 (v2.2, 2026-01-02)**:
 - ✅ OpenEMR Skip 모드 설정 추가
 - ✅ .env 파일 전송 체크리스트 추가
 - ✅ 별도 전송 필요 파일 목록 정리
@@ -489,7 +494,13 @@ ORTHANC_PASSWORD=orthanc-strong-password-change-this
 # ============================================
 # HAPI FHIR Server
 # ============================================
-HAPI_FHIR_URL=http://hapi-fhir:8080/fhir
+FHIR_SERVER_URL=http://hapi-fhir:8080/fhir
+
+# FHIR OAuth2 (Celery Worker FHIR Outbox 사용)
+# 프로덕션에서는 실제 OAuth2 서버 설정 필요
+FHIR_OAUTH_TOKEN_URL=http://hapi-fhir:8080/oauth/token
+FHIR_OAUTH_CLIENT_ID=neuronova-fhir-client
+FHIR_OAUTH_CLIENT_SECRET=your-fhir-client-secret-change-this
 
 # ============================================
 # Security & Authentication
