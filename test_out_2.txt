@@ -1,0 +1,8 @@
+Attempting to create patient...
+INFO 2026-01-02 06:55:26,628 Creating patient in Django DB: P-2026-000001 - Patient
+INFO 2026-01-02 06:55:26,714 ✓ FHIR Patient updated: P-2026-000001 → 1005
+INFO 2026-01-02 06:55:26,715 ✓ FHIR Patient created: P-2026-000001 → 1005
+INFO 2026-01-02 06:55:26,715 Successfully created patient P-2026-000001
+INFO 2026-01-02 06:55:26,721 ✓ Patient P-2026-000001 created with outbox 679d7c37-1fba-40d0-a23c-e70735a07dc3
+Patient created: P-2026-000001
+Status: {'django_emr_patient_cache': '성공', 'openemr_sync_outbox': '대기중 (679d7c37-1fba-40d0-a23c-e70735a07dc3)'}

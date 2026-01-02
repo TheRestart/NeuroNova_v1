@@ -1,0 +1,18 @@
+--- Patients ---
+ID: sub-0005, FHIR: None, OpenEMR: None
+ID: P-2026-000004, FHIR: 1008, OpenEMR: None
+ID: P-2026-000003, FHIR: 1007, OpenEMR: None
+ID: P-2026-000002, FHIR: 1006, OpenEMR: None
+ID: P-2026-000001, FHIR: 1005, OpenEMR: None
+ID: P-2025-005, FHIR: 1004, OpenEMR: OPENEMR_P-2025-005
+ID: P-2025-004, FHIR: 1003, OpenEMR: OPENEMR_P-2025-004
+ID: P-2025-003, FHIR: 1002, OpenEMR: OPENEMR_P-2025-003
+ID: P-2025-002, FHIR: 1001, OpenEMR: OPENEMR_P-2025-002
+ID: P-2025-001, FHIR: 1000, OpenEMR: OPENEMR_P-2025-001
+
+--- Outbox ---
+Entity: P-2025-000001, Status: failed, Target: openemr, Error: Patient P-2025-000001 not found
+Entity: P-2026-000001, Status: failed, Target: openemr, Error: No patient ID returned from OpenEMR
+Entity: P-2026-000002, Status: failed, Target: openemr, Error: No patient ID returned from OpenEMR
+Entity: P-2026-000003, Status: failed, Target: openemr, Error: No patient ID returned from OpenEMR
+Entity: P-2026-000004, Status: failed, Target: openemr, Error: No patient ID returned from OpenEMR

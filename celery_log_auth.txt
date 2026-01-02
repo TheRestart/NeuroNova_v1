@@ -1,0 +1,28 @@
+ 
+ -------------- celery@cf918c9860de v5.3.4 (emerald-rush)
+--- ***** ----- 
+-- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41 2026-01-02 07:46:11
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         cdss_backend:0x7b88459addf0
+- ** ---------- .> transport:   redis://redis:6379/0
+- ** ---------- .> results:     redis://redis:6379/0
+- *** --- * --- .> concurrency: 4 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . ai.tasks.cleanup_old_ai_jobs
+  . ai.tasks.process_ai_job
+  . ai.tasks.process_pending_ai_jobs
+  . cdss_backend.celery.debug_task
+  . emr.tasks.cleanup_old_outbox
+  . emr.tasks.process_sync_outbox
+  . emr.tasks.retry_failed_outbox
+  . fhir.tasks.cleanup_old_sync_queue
+  . fhir.tasks.process_fhir_sync_queue
+  . fhir.tasks.sync_fhir_resource
+

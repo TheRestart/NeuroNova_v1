@@ -1,0 +1,31 @@
+--- Users ---
+Admin: (1, 'admin')
+
+--- OAuth Clients ---
+
+--- OAuth Clients Schema ---
+Col: ('client_id', 'varchar(80)', 'NO', 'PRI', None, '')
+Col: ('client_role', 'varchar(20)', 'YES', '', None, '')
+Col: ('client_name', 'varchar(80)', 'NO', '', None, '')
+Col: ('client_secret', 'text', 'YES', '', None, '')
+Col: ('registration_token', 'varchar(80)', 'YES', '', None, '')
+Col: ('registration_uri_path', 'varchar(40)', 'YES', '', None, '')
+Col: ('register_date', 'datetime', 'YES', '', None, '')
+Col: ('revoke_date', 'datetime', 'YES', '', None, '')
+Col: ('contacts', 'text', 'YES', '', None, '')
+Col: ('redirect_uri', 'text', 'YES', '', None, '')
+Col: ('grant_types', 'varchar(80)', 'YES', '', None, '')
+Col: ('scope', 'text', 'YES', '', None, '')
+Col: ('user_id', 'varchar(40)', 'YES', '', None, '')
+Col: ('site_id', 'varchar(64)', 'YES', '', None, '')
+Col: ('is_confidential', 'tinyint(1)', 'NO', '', '1', '')
+Col: ('logout_redirect_uris', 'text', 'YES', '', None, '')
+Col: ('jwks_uri', 'text', 'YES', '', None, '')
+Col: ('jwks', 'text', 'YES', '', None, '')
+Col: ('initiate_login_uri', 'text', 'YES', '', None, '')
+Col: ('endorsements', 'text', 'YES', '', None, '')
+Col: ('policy_uri', 'text', 'YES', '', None, '')
+Col: ('tos_uri', 'text', 'YES', '', None, '')
+Col: ('is_enabled', 'tinyint(1)', 'NO', '', '0', '')
+Col: ('skip_ehr_launch_authorization_flow', 'tinyint(1)', 'NO', '', '0', '')
+Col: ('dsi_type', 'tinyint(3) unsigned', 'NO', '', '1', '')
