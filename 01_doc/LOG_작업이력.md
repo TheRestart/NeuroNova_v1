@@ -784,7 +784,24 @@
     - `requirements.txt` 업데이트 (drf-spectacular 포함)
 
 
-##  과거 작업 이력 (Archive)
+- **2026-01-02 Day 8**:
+  - [x] **백엔드 안정화 및 DB 스키마 정합성 확보**:
+    - [x] **DB 컬럼명 매핑 수정**: `ocs_orders` 및 `ris_radiologystudy` 테이블의 실제 컬럼명(`ordered_by`, `patient_id` 등)과 Django 모델 간의 불일치를 `db_column` 설정을 통해 해결.
+    - [x] **RIS/Viewer 연동 오류 해결**: `RadiologyStudyViewSet`의 `lookup_field`를 `study_instance_uid`로 변경하여 상세 조회 시 404 에러 원천 차단.
+    - [x] **트랜잭션 안정성 강화**: Patient/Order 생성 시 Celery 동기화 작업을 `transaction.on_commit`으로 감싸 데이터 정합성 보장.
+  - [x] **데이터 시딩 v3.0 (통합 테스트 준비)**:
+    - [x] **v3.0 시딩 스크립트 구현**: `seed_minimal.py` 및 `seed_full_system_test_data.py` 제작.
+    - [x] **유전체 변이 데이터 시나리오**: `sub-0005` 환자에 대해 **BRCA1 변이 정보**(`LR-GENE-001`)를 자동으로 생성하여 UC04 즉시 검증 가능하게 조치.
+    - [x] **RIS 메타데이터 동기화**: Orthanc로부터 최신 연구 목록을 가져와 시딩된 환자와 자동 매칭하는 로직 완성.
+  - [x] **React 테스트 클라이언트(00_test_client) 품질 개선**:
+    - [x] **Hook 위반 에러 수정**: `ResponseTable.js`에서 발생하던 `useMemo` 호출 순서 위반(Conditional Hook) 문제를 컴포넌트 분리(`ArrayTable`)를 통해 해결.
+    - [x] **정적 파일 에러 해결**: 브라우저 콘솔의 `favicon.ico 500` 에러 해결을 위해 `public/favicon.ico` 생성.
+    - [x] **예제 데이터 최신화**: 시딩된 환자 ID(`P-2025-001`, `sub-0005`)를 각 UC 페이지의 예시 입력 버튼에 반영.
+  - [x] **문서 고도화**:
+    - [x] `초기_데이터_시딩_가이드.md` (v1.1) 업데이트: 신규 시딩 스크립트 및 DB 아키텍처 정보 반영.
+    - [x] `FRONTEND_WORK_LOG.md` 생성: 프론트엔드 전용 작업 이력 및 직면한 기술 이슈 기록. (관리 효율 증대)
+
+## 과거 작업 이력 (Archive)
 
 > [!NOTE]
 > Week 1 ~ Week 6 (2025년 12월 28일 이전) 작업 이력은 아래 보관소로 이동되었습니다.
