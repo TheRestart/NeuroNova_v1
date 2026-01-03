@@ -1,14 +1,21 @@
 # NeuroNova CDSS 배포 가이드 (GCP + Docker)
 
 **작성일**: 2025-12-30
-**버전**: 2.3
+**버전**: 2.4
 **최종 수정**: 2026-01-03
-**환경**: GCP VM + Docker + Cloudflare + GitHub
+**환경**: GCP VM + Docker + Cloudflare + GitHub + Native Nginx
 
-**주요 변경 (v2.3)**:
+**주요 변경 (v2.4, 2026-01-03)**:
+- ✅ 아키텍처 명확화: **Nginx는 VM 네이티브 설치 (Docker 컨테이너 아님!)**
+- ✅ RAM 요구 사양 업데이트: 최소 8GB, 권장 16GB (실측 메모리 사용량 반영)
+- ✅ .env 파일 구조 정리: `.env.docker` → `.env`로 사용 명확화
+- ✅ 프로젝트 파일 구조 상세화 (전송할 파일 vs 제외 파일)
+- ✅ docker-compose.dev.yml (개발) vs docker-compose.yml (배포) 구분 명확화
+
+**이전 변경 (v2.3, 2026-01-03)**:
 - ✅ FHIR OAuth2 환경 변수 추가 (Celery Worker FHIR Outbox)
 - ✅ FHIR_SERVER_URL, FHIR_OAUTH_TOKEN_URL, FHIR_OAUTH_CLIENT_ID/SECRET 추가
-- ✅ Day 19 (2026-01-03) Celery Worker 개선 사항 반영
+- ✅ Day 19 Celery Worker 개선 사항 반영
 
 **이전 변경 (v2.2, 2026-01-02)**:
 - ✅ OpenEMR Skip 모드 설정 추가
@@ -20,6 +27,8 @@
 ---
 
 ## 목차
+
+**🚀 [빠른 시작 (Quick Start)](#빠른-시작-quick-start)** ← 처음 배포하시는 분은 여기부터!
 
 1. [배포 환경 개요](#1-배포-환경-개요)
 2. [GCP VM 초기 설정](#2-gcp-vm-초기-설정)
@@ -37,9 +46,595 @@
 
 ---
 
+## 빠른 시작 (Quick Start)
+
+**🚀 처음 배포하시는 분을 위한 실전 가이드**
+
+이 섹션은 실제 배포 과정에서 사용한 명령어 순서대로 작성되었습니다.
+GCP 웹 콘솔 SSH를 사용하여 작업합니다.
+
+### 전제 조건
+- ✅ GCP VM 생성 완료 (Ubuntu 22.04 LTS, RAM 8GB 이상)
+- ✅ VM External IP 확보 (예: `34.46.109.203`)
+- ✅ GitHub Private 저장소 접근 권한 (Personal Access Token)
+
+### Step 1: 시스템 초기 설정 (5분)
+
+GCP Console > Compute Engine > VM instances > SSH 버튼 클릭하여 웹 터미널 접속
+
+```bash
+# 1. 시스템 업데이트
+sudo apt update && sudo apt upgrade -y
+
+# 2. 타임존 설정 (한국 표준시)
+sudo timedatectl set-timezone Asia/Seoul
+date  # 확인: KST 시간대 출력
+
+# 3. Swap 파일 생성 (8GB 권장, RAM 8GB VM 기준)
+sudo fallocate -l 8G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+# 4. Swap 영구 설정
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+# 5. Swap 확인
+free -h
+# 예상 출력:
+#               total        used        free      shared  buff/cache   available
+# Mem:          7.8Gi       1.2Gi       5.1Gi        10Mi       1.5Gi       6.3Gi
+# Swap:         8.0Gi          0B       8.0Gi
+```
+
+**💡 Swap 크기 가이드**:
+- RAM 8GB → Swap 8GB (최소 4GB)
+- RAM 16GB → Swap 4GB (선택)
+- Swap은 메모리 부족 시 디스크를 임시 메모리로 사용 (성능은 RAM보다 느림)
+
+### Step 2: Docker 설치 (5분)
+
+```bash
+# 1. 이전 Docker 버전 제거 (있을 경우)
+sudo apt-get remove -y docker docker-engine docker.io containerd runc
+
+# 2. Docker 공식 GPG 키 추가
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+# 3. Docker Repository 추가
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# 4. Docker 설치
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# 5. Docker 권한 설정
+sudo usermod -aG docker $USER
+newgrp docker
+
+# 6. 설치 확인
+docker --version
+# 예상 출력: Docker version 24.0.x, build xxx
+docker compose version
+# 예상 출력: Docker Compose version v2.x.x
+```
+
+### Step 3: GitHub 코드 다운로드 (3분)
+
+**Personal Access Token 사용 (Private 저장소)**
+
+```bash
+# 1. 작업 디렉토리 생성
+mkdir -p ~/apps
+cd ~/apps
+
+# 2. GitHub Clone (Token 인증)
+# 형식: https://TOKEN@github.com/USERNAME/REPO.git
+git clone https://ghp_YOUR_TOKEN_HERE@github.com/rlagksquf1208/NeuroNova_v1.git
+
+# 예시:
+# git clone https://ghp_xxxxxxxxxxxxxxxxxxxx@github.com/rlagksquf1208/NeuroNova_v1.git
+
+# 3. 프로젝트 구조 확인
+cd NeuroNova_v1
+ls -l
+# 예상 출력:
+# drwxr-xr-x 3 user user 4096 Jan  3 10:00 01_doc
+# drwxr-xr-x 5 user user 4096 Jan  3 10:00 NeuroNova_02_back_end
+# drwxr-xr-x 3 user user 4096 Jan  3 10:00 NeuroNova_03_front_end_react
+# -rw-r--r-- 1 user user 1234 Jan  3 10:00 docker-compose.yml
+```
+
+**💡 Token 발급 방법** (이미 발급받은 경우 Skip):
+1. GitHub > Settings > Developer settings > Personal access tokens > Tokens (classic)
+2. Generate new token (classic)
+3. Scopes: `repo` (전체 저장소 접근) 체크
+4. Generate token → 토큰 복사 (한 번만 표시됨!)
+
+### Step 4: 환경 변수 파일 생성 (.env) (10분)
+
+**⚠️ 중요**: `.env` 파일은 Git에 포함되지 않으므로 수동으로 생성해야 합니다.
+
+#### 4.1 Django SECRET_KEY 생성
+
+```bash
+# Python 3로 랜덤 SECRET_KEY 생성
+python3 -c 'import secrets; print(secrets.token_urlsafe(50))'
+
+# 예상 출력 (예시):
+# xK2_vN9pQm7RtL4sW8yH3jFgD6aZ1cE5bV0uYiO9-MnXwTqPkS7rLzG
+
+# 출력된 값을 복사해두세요! (Django .env에서 사용)
+```
+
+#### 4.2 루트 .env 파일 생성 (Docker Compose 전역)
+
+```bash
+cd ~/apps/NeuroNova_v1
+
+# nano 에디터로 .env 파일 생성
+nano .env
+```
+
+**`.env` 파일 내용** (Ctrl+O 저장, Ctrl+X 종료):
+```bash
+# Docker Compose 전역 설정
+COMPOSE_PROJECT_NAME=neuronova-cdss
+COMPOSE_FILE=docker-compose.yml
+
+# 컨테이너 네트워크
+NETWORK_NAME=cdss-network
+
+# MySQL 설정 (Docker Compose 전역)
+MYSQL_ROOT_PASSWORD=YourStrongRootPassword123!
+MYSQL_DATABASE=cdss_db
+MYSQL_USER=cdss_user
+MYSQL_PASSWORD=YourStrongDBPassword123!
+
+# Timezone
+TZ=Asia/Seoul
+```
+
+**💡 비밀번호 생성 팁**:
+- 최소 8자 이상
+- 영문 대소문자 + 숫자 + 특수문자 조합
+- 예시: `MySecure2026!`, `P@ssw0rd_2026`
+
+#### 4.3 Django .env 파일 생성
+
+```bash
+cd ~/apps/NeuroNova_v1/NeuroNova_02_back_end/02_django_server
+
+# nano 에디터로 .env 파일 생성
+nano .env
+```
+
+**Django `.env` 파일 내용** (Ctrl+O 저장, Ctrl+X 종료):
+```bash
+# ============================================
+# Django Core Settings
+# ============================================
+DJANGO_SECRET_KEY=여기에_Step4.1에서_생성한_SECRET_KEY_붙여넣기
+DEBUG=False
+ALLOWED_HOSTS=34.46.109.203,localhost,127.0.0.1
+CORS_ALLOWED_ORIGINS=http://34.46.109.203,http://localhost
+
+# ============================================
+# Database (MySQL) - Docker 컨테이너명 사용
+# ============================================
+DB_ENGINE=django.db.backends.mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_NAME=cdss_db
+DB_USER=cdss_user
+DB_PASSWORD=YourStrongDBPassword123!
+DB_ROOT_PASSWORD=YourStrongRootPassword123!
+
+# ============================================
+# Redis Cache & Message Broker
+# ============================================
+REDIS_URL=redis://redis:6379/0
+
+# ============================================
+# Celery
+# ============================================
+CELERY_BROKER_URL=redis://redis:6379/1
+CELERY_RESULT_BACKEND=redis://redis:6379/2
+
+# ============================================
+# OpenEMR FHIR API (Skip 모드)
+# ============================================
+SKIP_OPENEMR_INTEGRATION=True
+
+# ============================================
+# Orthanc PACS (DICOM)
+# ============================================
+ORTHANC_API_URL=http://orthanc:8042
+ORTHANC_USERNAME=orthanc
+ORTHANC_PASSWORD=orthanc-strong-password
+
+# ============================================
+# HAPI FHIR Server
+# ============================================
+FHIR_SERVER_URL=http://hapi-fhir:8080/fhir
+FHIR_OAUTH_TOKEN_URL=http://hapi-fhir:8080/oauth/token
+FHIR_OAUTH_CLIENT_ID=neuronova-fhir-client
+FHIR_OAUTH_CLIENT_SECRET=your-fhir-client-secret
+
+# ============================================
+# Security & Authentication
+# ============================================
+ENABLE_SECURITY=True
+JWT_ACCESS_TOKEN_LIFETIME_MINUTES=60
+JWT_REFRESH_TOKEN_LIFETIME_DAYS=7
+
+# ============================================
+# Logging
+# ============================================
+LOG_LEVEL=INFO
+```
+
+**⚠️ 주의사항**:
+- `DJANGO_SECRET_KEY`: Step 4.1에서 생성한 값 사용
+- `ALLOWED_HOSTS`: VM의 External IP 주소 입력 (예: `34.46.109.203`)
+- `DB_PASSWORD`, `DB_ROOT_PASSWORD`: 루트 `.env`와 동일하게 설정
+- `DEBUG=False`: 프로덕션 환경에서는 반드시 False!
+
+#### 4.4 .env 파일 권한 설정 (보안)
+
+```bash
+# Django .env 권한 설정 (소유자만 읽기/쓰기)
+chmod 600 ~/apps/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/.env
+
+# 루트 .env 권한 설정
+chmod 600 ~/apps/NeuroNova_v1/.env
+
+# 확인
+ls -la ~/apps/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/.env
+# 예상 출력: -rw------- 1 user user 1234 Jan  3 10:30 .env
+```
+
+### Step 5: Docker 컨테이너 시작 (5분)
+
+```bash
+cd ~/apps/NeuroNova_v1/NeuroNova_02_back_end/02_django_server
+
+# 1. Docker 이미지 빌드 및 컨테이너 시작
+docker compose up -d --build
+
+# 예상 출력:
+# [+] Building 45.2s (15/15) FINISHED
+# [+] Running 8/8
+#  ✔ Network cdss-network          Created
+#  ✔ Volume "mysql-data"            Created
+#  ✔ Volume "redis-data"            Created
+#  ✔ Container cdss-mysql           Started
+#  ✔ Container cdss-redis           Started
+#  ✔ Container cdss-django          Started
+#  ✔ Container cdss-celery-worker   Started
+#  ✔ Container cdss-celery-beat     Started
+
+# 2. 컨테이너 상태 확인
+docker compose ps
+
+# 예상 출력:
+# NAME                 IMAGE                        STATUS         PORTS
+# cdss-django          neuronova-cdss-django        Up 2 minutes   0.0.0.0:8000->8000/tcp
+# cdss-mysql           mysql:8.0                    Up 2 minutes   127.0.0.1:3306->3306/tcp
+# cdss-redis           redis:7-alpine               Up 2 minutes   127.0.0.1:6379->6379/tcp
+# cdss-celery-worker   neuronova-cdss-django        Up 2 minutes
+# cdss-celery-beat     neuronova-cdss-django        Up 2 minutes
+
+# 3. Django 로그 확인 (마이그레이션 자동 실행 확인)
+docker compose logs django
+
+# "Applied XX migrations" 메시지 확인
+```
+
+**💡 컨테이너 시작 순서**:
+1. MySQL, Redis 먼저 시작 (healthcheck 대기)
+2. Django 시작 → 자동으로 `migrate` 및 `collectstatic` 실행
+3. Celery Worker, Celery Beat 시작
+
+**문제 발생 시**:
+```bash
+# 모든 컨테이너 중지
+docker compose down
+
+# 특정 서비스 로그 확인
+docker compose logs mysql
+docker compose logs django
+
+# 재시작
+docker compose up -d
+```
+
+### Step 6: React 프론트엔드 빌드 (15분)
+
+#### 6.1 Node.js 설치
+
+```bash
+# Node.js 20.x LTS 설치
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 설치 확인
+node --version
+# 예상 출력: v20.x.x
+npm --version
+# 예상 출력: 10.x.x
+```
+
+#### 6.2 React .env.production 생성
+
+```bash
+cd ~/apps/NeuroNova_v1/NeuroNova_03_front_end_react/00_test_client
+
+# .env.production 파일 생성
+nano .env.production
+```
+
+**`.env.production` 내용** (VM IP 주소로 변경):
+```bash
+# API Base URL (VM External IP 사용)
+REACT_APP_API_URL=http://34.46.109.203/api
+
+# DICOMweb Root
+REACT_APP_DICOM_WEB_ROOT=http://34.46.109.203/api/ris/dicom-web
+
+# OHIF Viewer Root
+REACT_APP_OHIF_VIEWER_ROOT=http://34.46.109.203:8042
+
+# 자동 로그인 비활성화 (프로덕션)
+REACT_APP_DEV_AUTO_LOGIN=false
+
+# 브라우저 자동 실행 비활성화
+BROWSER=none
+```
+
+#### 6.3 React 빌드
+
+```bash
+# npm 의존성 설치 (최초 1회, 약 5분 소요)
+npm install
+
+# 프로덕션 빌드
+npm run build
+
+# 빌드 결과 확인
+ls -lh build/
+# 예상 출력:
+# total 2.3M
+# -rw-r--r-- 1 user user 1.2K Jan  3 11:00 index.html
+# drwxr-xr-x 2 user user 4.0K Jan  3 11:00 static
+```
+
+**💡 빌드 시간**: 약 3-5분 소요 (프로젝트 크기에 따라 다름)
+
+### Step 7: Nginx 설치 및 배포 (10분)
+
+#### 7.1 Nginx 설치
+
+```bash
+# Nginx 설치
+sudo apt-get install -y nginx
+
+# Nginx 시작 및 자동 시작 설정
+sudo systemctl start nginx
+sudo systemctl enable nginx
+
+# 상태 확인
+sudo systemctl status nginx
+# 예상 출력: active (running)
+```
+
+#### 7.2 Nginx 설정 파일 작성
+
+```bash
+# Nginx 설정 파일 생성
+sudo nano /etc/nginx/sites-available/neuronova-cdss
+```
+
+**`/etc/nginx/sites-available/neuronova-cdss` 내용**:
+```nginx
+upstream django_backend {
+    server localhost:8000;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name _;  # 모든 호스트명 허용 (개발/테스트용)
+
+    access_log /var/log/nginx/neuronova-access.log;
+    error_log /var/log/nginx/neuronova-error.log warn;
+
+    client_max_body_size 100M;
+
+    # React 정적 파일
+    location / {
+        root /var/www/neuronova-cdss;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Django API 프록시
+    location /api/ {
+        proxy_pass http://django_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_connect_timeout 120s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 120s;
+    }
+
+    # Swagger/ReDoc
+    location ~ ^/(swagger|redoc|api/schema)/ {
+        proxy_pass http://django_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+#### 7.3 React 빌드 파일 배포
+
+```bash
+# 웹 루트 디렉토리 생성
+sudo mkdir -p /var/www/neuronova-cdss
+
+# React 빌드 파일 복사
+sudo cp -r ~/apps/NeuroNova_v1/NeuroNova_03_front_end_react/00_test_client/build/* /var/www/neuronova-cdss/
+
+# 권한 설정
+sudo chown -R www-data:www-data /var/www/neuronova-cdss
+sudo chmod -R 755 /var/www/neuronova-cdss
+
+# 파일 확인
+ls -lh /var/www/neuronova-cdss/
+```
+
+#### 7.4 Nginx 설정 활성화
+
+```bash
+# Symbolic link 생성
+sudo ln -s /etc/nginx/sites-available/neuronova-cdss /etc/nginx/sites-enabled/
+
+# 기본 설정 제거
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# 설정 문법 검사
+sudo nginx -t
+# 예상 출력:
+# nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+# nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+# Nginx 재시작
+sudo systemctl reload nginx
+```
+
+### Step 8: 배포 완료 및 접속 테스트 (2분)
+
+```bash
+# 1. 모든 서비스 상태 확인
+docker compose ps
+sudo systemctl status nginx
+
+# 2. Django API 테스트 (VM 내부)
+curl http://localhost:8000/api/acct/health/
+# 예상 출력: {"status":"ok","timestamp":"2026-01-03T..."}
+
+# 3. Nginx 테스트 (VM 내부)
+curl http://localhost/api/acct/health/
+# 예상 출력: {"status":"ok","timestamp":"2026-01-03T..."}
+```
+
+**외부 접속 테스트** (Windows 브라우저):
+1. React 메인 페이지: `http://34.46.109.203/`
+2. Django Swagger API 문서: `http://34.46.109.203/api/docs/`
+3. Django ReDoc API 문서: `http://34.46.109.203/redoc/`
+
+**✅ 성공 확인**:
+- React 페이지 로드됨
+- Swagger API 문서 접속 가능
+- 로그인 페이지 정상 표시
+
+### Step 9: 초기 데이터 생성 (선택, 5분)
+
+```bash
+cd ~/apps/NeuroNova_v1/NeuroNova_02_back_end/02_django_server
+
+# 1. 관리자 계정 생성
+docker compose exec django python manage.py createsuperuser
+# Username: admin
+# Email: admin@hospital.com
+# Password: (강력한 비밀번호 입력)
+
+# 2. 테스트 사용자 생성
+docker compose exec django python manage.py create_test_users
+
+# 3. 테스트 데이터 시딩 (선택)
+docker compose exec django python seed_minimal.py
+```
+
+---
+
+## 빠른 문제 해결 (Troubleshooting)
+
+### 문제 1: Docker 빌드 실패
+```bash
+# 이전 이미지/컨테이너 정리
+docker compose down
+docker system prune -af
+
+# 재시도
+docker compose up -d --build
+```
+
+### 문제 2: Nginx 502 Bad Gateway
+```bash
+# Django 컨테이너 상태 확인
+docker compose ps django
+
+# Django 재시작
+docker compose restart django
+
+# Nginx 로그 확인
+sudo tail -f /var/log/nginx/neuronova-error.log
+```
+
+### 문제 3: React 페이지 빈 화면
+```bash
+# React 빌드 파일 확인
+ls -lh /var/www/neuronova-cdss/
+
+# 권한 재설정
+sudo chown -R www-data:www-data /var/www/neuronova-cdss
+sudo chmod -R 755 /var/www/neuronova-cdss
+
+# Nginx 재시작
+sudo systemctl reload nginx
+```
+
+### 문제 4: API 연결 안 됨 (CORS 오류)
+```bash
+# Django .env 파일 확인
+nano ~/apps/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/.env
+
+# ALLOWED_HOSTS와 CORS_ALLOWED_ORIGINS에 VM IP 추가 확인
+# ALLOWED_HOSTS=34.46.109.203,localhost,127.0.0.1
+# CORS_ALLOWED_ORIGINS=http://34.46.109.203,http://localhost
+
+# Django 재시작
+docker compose restart django
+```
+
+---
+
+## 다음 단계
+
+배포가 완료되었으면 다음을 진행하세요:
+
+1. **Cloudflare HTTPS 설정** → [9. Cloudflare HTTPS 설정](#9-cloudflare-https-설정)
+2. **도메인 연결** (선택) → DNS A 레코드를 VM IP로 설정
+3. **모니터링 설정** → Prometheus + Grafana (선택)
+4. **백업 설정** → .env 파일 및 DB 백업 전략
+
+---
+
 ## 1. 배포 환경 개요
 
 ### 1.1 전체 아키텍처
+
+**⚠️ 중요: Nginx는 VM에 네이티브 설치 (Docker 컨테이너 아님!)**
 
 ```
                     Internet
@@ -56,49 +651,84 @@
          └─────────────────────────┘
                        ↓
          ┌─────────────────────────┐
-         │    Nginx (Port 80)      │ ← React Build (Static)
+         │   Nginx (VM 네이티브)    │ ← apt install nginx
+         │   Port 80               │ ← React Build (Static)
          │  - Reverse Proxy        │
          │  - SSL Termination      │
          └─────────────────────────┘
                        ↓
-    ┌──────────────┬──────────────┬──────────────┐
-    │              │              │              │
-┌───────┐    ┌─────────┐   ┌──────────┐   ┌──────────┐
-│Django │    │Orthanc  │   │  Redis   │   │  MySQL   │
-│ :8000 │    │ :8042   │   │  :6379   │   │  :3306   │
-└───────┘    └─────────┘   └──────────┘   └──────────┘
-    │              │              │              │
-    └──────────────┴──────────────┴──────────────┘
-                       ↓
-         ┌─────────────────────────┐
-         │   Docker Network        │
-         │  (cdss-network)         │
-         └─────────────────────────┘
-                       ↓
-         ┌─────────────────────────┐
-         │   Celery Workers        │ ← AI 추론, FHIR 동기화
-         │   - AI Task Worker      │
-         │   - FHIR Sync Worker    │
-         │   - Beat Scheduler      │
-         └─────────────────────────┘
+    ┌──────────────────────────────────────┐
+    │       Docker Compose Services        │
+    │                                      │
+    │  ┌────────┬────────┬────────────┐   │
+    │  │Django  │MySQL   │ Redis      │   │
+    │  │:8000   │:3306   │ :6379      │   │
+    │  └────────┴────────┴────────────┘   │
+    │                                      │
+    │  ┌────────┬─────────┬──────────┐    │
+    │  │Orthanc │HAPI FHIR│ OpenEMR  │    │
+    │  │:8042   │:8080    │ :80      │    │
+    │  └────────┴─────────┴──────────┘    │
+    │                                      │
+    │  ┌────────┬─────────────────────┐   │
+    │  │Celery  │ Celery Beat         │   │
+    │  │Worker  │ (스케줄러)           │   │
+    │  └────────┴─────────────────────┘   │
+    │                                      │
+    │  Docker Network (cdss-network)      │
+    └──────────────────────────────────────┘
+
+배포 환경 특징:
+- **Nginx**: VM 네이티브 설치 (apt install nginx)
+- **Docker Services**: 8개 (MySQL, Redis, Django, Celery Worker, Celery Beat, Orthanc, OpenEMR, HAPI FHIR)
+- **총 메모리 사용량**: 약 3.5GB (Docker 컨테이너 전체)
+- **포트 노출**: Django만 8000 포트 노출 (나머지는 Docker 내부 네트워크)
 ```
 
 ### 1.2 GCP VM 요구 사양
 
+**실측 메모리 사용량 (2026-01-03 기준)**:
+```
+Docker 컨테이너 전체: 약 3.5GB
+├─ HAPI FHIR:        1.47GB (가장 큼, Java 기반)
+├─ MySQL (CDSS):     412MB
+├─ Celery Worker:    304MB
+├─ Django:           235MB
+├─ MySQL (OpenEMR):  160MB
+├─ Flower:           121MB
+├─ Celery Beat:      101MB
+├─ Grafana:          97MB
+└─ 기타 (Nginx, Redis, Orthanc 등): 340MB
+```
+
 **최소 사양 (개발/테스트)**
-- **Machine Type**: e2-standard-4 (4 vCPU, 16GB RAM)
+- **Machine Type**: e2-medium (2 vCPU, 4GB RAM) ← 불가
+- **Machine Type**: e2-standard-2 (2 vCPU, 8GB RAM) ← **최소 가능** ✅
 - **Boot Disk**: 100GB SSD Persistent Disk
 - **OS**: Ubuntu 22.04 LTS
 - **Region**: asia-northeast3 (서울)
 - **방화벽**: HTTP(80), HTTPS(443), SSH(22) 허용
 - **External IP**: 34.71.151.117 (고정 IP 할당됨)
+- **비용**: 약 $40-50/월 (서울 리전)
 
-**권장 사양 (운영)**
-- **Machine Type**: n2-standard-8 (8 vCPU, 32GB RAM)
+**권장 사양 (운영/안정적 운영)**
+- **Machine Type**: e2-standard-4 (4 vCPU, 16GB RAM) ← **권장** ⭐
 - **Boot Disk**: 200GB SSD Persistent Disk
-- **Additional Disk**: 500GB Standard Persistent Disk (DICOM 저장용)
-- **GPU**: NVIDIA T4 (AI 추론용, 선택사항)
+- **Additional Disk**: 500GB Standard Persistent Disk (DICOM 저장용, 선택사항)
 - **External IP**: 34.71.151.117 (고정 IP - 이미 예약됨)
+- **비용**: 약 $80-100/월 (서울 리전)
+
+**고성능 사양 (대규모 운영)**
+- **Machine Type**: n2-standard-8 (8 vCPU, 32GB RAM)
+- **GPU**: NVIDIA T4 (AI 추론용, 선택사항)
+- **Boot Disk**: 500GB SSD Persistent Disk
+- **비용**: 약 $200-300/월 (GPU 제외)
+
+**💡 RAM 선택 가이드**:
+- **4GB**: 불가능 (OOM 오류 발생)
+- **8GB**: 최소 가능 (여유 약 4.5GB, 부하 시 스왑 발생 가능)
+- **16GB**: 권장 (여유 약 12GB, 안정적 운영)
+- **32GB**: 대규모 트래픽, 고성능 필요 시
 
 ### 1.3 접속 도구
 
@@ -271,61 +901,111 @@ cleanup-for-deployment.bat
 
 #### 2.3.3 전송할 파일 및 디렉토리
 
-**필수 전송 파일**:
+**⚠️ 중요: .env 파일 구조 이해**
+
+프로젝트에는 개발용과 배포용 .env 파일이 분리되어 있습니다:
+
+| 파일 | 용도 | 배포 시 처리 |
+|------|------|-------------|
+| `.env` (루트) | Docker Compose 전역 설정 | ✅ 그대로 전송 |
+| `NeuroNova_02_back_end/02_django_server/.env` | Django 로컬 개발용 | ❌ 전송 안 함 |
+| `NeuroNova_02_back_end/02_django_server/.env.docker` | Django Docker 환경용 | ✅ `.env`로 이름 바꿔 전송 |
+| `NeuroNova_03_front_end_react/00_test_client/.env.production` | React 프로덕션 빌드용 | ✅ VM에서 직접 생성 권장 |
+
+**필수 전송 파일 구조**:
 
 ```plaintext
 NeuroNova_v1/
-├── NeuroNova_02_back_end/          # 백엔드 전체 (venv 제외)
-│   ├── 01_ai_core/                 # AI 모델 및 서비스
+├── .env                            # ✅ 전송 (Docker Compose 전역 설정)
+├── .env.example                    # ✅ 전송 (템플릿 참고용)
+│
+├── NeuroNova_02_back_end/          # 백엔드 전체
+│   ├── 01_ai_core/                 # ✅ AI 모델 및 서비스
+│   │
 │   ├── 02_django_server/           # Django 프로젝트
-│   │   ├── cdss_backend/           # Django 설정
-│   │   ├── acct/                   # 인증/권한 앱
-│   │   ├── emr/                    # EMR 앱
-│   │   ├── ocs/                    # OCS 앱
-│   │   ├── lis/                    # LIS 앱
-│   │   ├── ris/                    # RIS 앱
-│   │   ├── ai/                     # AI 앱
-│   │   ├── fhir/                   # FHIR 앱
-│   │   ├── audit/                  # 감사 로그 앱
-│   │   ├── alert/                  # 알림 앱
-│   │   ├── manage.py               # Django 관리 명령
-│   │   ├── requirements.txt        # Python 의존성 ✅
-│   │   └── .env                    # 환경변수 (수동 작성) ⚠️
-│   ├── 05_orthanc_pacs/            # Orthanc PACS 설정
-│   ├── 06_hapi_fhir/               # HAPI FHIR 설정
-│   └── 07_redis/                   # Redis 설정
+│   │   ├── cdss_backend/           # ✅ Django 설정
+│   │   ├── acct/                   # ✅ 인증/권한 앱
+│   │   ├── emr/                    # ✅ EMR 앱
+│   │   ├── ocs/                    # ✅ OCS 앱
+│   │   ├── lis/                    # ✅ LIS 앱
+│   │   ├── ris/                    # ✅ RIS 앱
+│   │   ├── ai/                     # ✅ AI 앱
+│   │   ├── fhir/                   # ✅ FHIR 앱
+│   │   ├── audit/                  # ✅ 감사 로그 앱
+│   │   ├── utils/                  # ✅ 유틸리티
+│   │   ├── manage.py               # ✅ Django 관리 명령
+│   │   ├── requirements.txt        # ✅ Python 의존성
+│   │   ├── Dockerfile              # ✅ Docker 이미지 빌드
+│   │   ├── docker-compose.yml      # ✅ 배포용 (7.1절 참조)
+│   │   ├── .env                    # ❌ 로컬 개발용 (전송 안 함!)
+│   │   ├── .env.docker             # ⚠️ .env로 이름 바꿔 전송
+│   │   └── .env.example            # ✅ 템플릿 (참고용)
+│   │
+│   ├── 05_orthanc_pacs/            # ✅ Orthanc 설정 (orthanc.json 등)
+│   ├── 06_hapi_fhir/               # ✅ HAPI FHIR 설정
+│   └── 07_redis/                   # ✅ Redis 설정
 │
 ├── NeuroNova_03_front_end_react/   # 프론트엔드
 │   └── 00_test_client/
-│       ├── public/                 # 정적 파일
-│       ├── src/                    # React 소스코드
-│       ├── package.json            # npm 의존성 ✅
-│       ├── package-lock.json       # npm 잠금 파일
-│       └── .env                    # 환경변수 (수동 작성) ⚠️
+│       ├── public/                 # ✅ 정적 파일
+│       ├── src/                    # ✅ React 소스코드
+│       ├── package.json            # ✅ npm 의존성
+│       ├── package-lock.json       # ✅ npm 잠금 파일
+│       ├── .env                    # ❌ 로컬 개발용 (전송 안 함!)
+│       ├── .env.production         # ⚠️ VM에서 직접 생성 권장
+│       └── .env.example            # ✅ 템플릿 (참고용)
 │
-├── docker-compose.dev.yml          # Docker Compose 설정 ✅
-├── nginx/                          # Nginx 설정
-│   └── nginx.conf
-├── prometheus/                     # 모니터링 설정
-│   ├── prometheus.yml
-│   └── alert.rules.yml
+├── docker-compose.dev.yml          # ❌ 개발용 (Nginx 컨테이너 포함, 전송 안 함)
+├── nginx/                          # ⚠️ 참고용 (VM은 별도 설정)
+│   ├── nginx.dev.conf              # ✅ 개발 환경 참고
+│   └── conf.d/neuronova.conf       # ✅ 프로덕션 Nginx 설정 참고
+│
+├── monitoring/                     # ⚠️ 선택 (모니터링 사용 시)
+│   ├── prometheus/
+│   │   └── prometheus.yml
+│   └── grafana/
+│
 └── 01_doc/                         # 필수 문서
+    ├── 12_GCP_배포_가이드.md       # ✅ 이 문서
     ├── 초기_데이터_시딩_가이드.md
-    ├── 12_GCP_배포_가이드.md
+    ├── env설명.md                   # ✅ .env 파일 구조 설명
     └── README_자동실행.md
 ```
 
-**⚠️ 별도 전송 필요 파일** (보안상 Git 미포함):
+**⚠️ .env 파일 전송 방법 (3가지 옵션)**
 
-1. **`.env` 파일** (Django):
-   - 경로: `NeuroNova_02_back_end/02_django_server/.env`
-   - **수동 작성 필요** (GCP VM에서 직접 생성)
-   - 내용: [4. 환경 변수 설정](#4-환경-변수-설정) 참조
+**옵션 1: SCP로 직접 전송 (Windows PowerShell)**
+```powershell
+# 세션 변수 설정
+$VM_IP = "34.46.109.203"
+$VM_USER = "rlagksquf1208"
 
-2. **`.env` 파일** (React):
-   - 경로: `NeuroNova_03_front_end_react/00_test_client/.env`
-   - **수동 작성 필요** (GCP VM에서 직접 생성)
-   - 프로덕션용 API URL 설정 필요
+# 루트 .env 전송
+scp d:\1222\NeuroNova_v1\.env ${VM_USER}@${VM_IP}:~/apps/NeuroNova_v1/
+
+# Django .env.docker를 .env로 이름 바꿔 전송
+scp d:\1222\NeuroNova_v1\NeuroNova_02_back_end\02_django_server\.env.docker ${VM_USER}@${VM_IP}:~/apps/NeuroNova_v1/NeuroNova_02_back_end/02_django_server/.env
+```
+
+**옵션 2: GitHub에 커밋 (비추천, 보안 위험)**
+```bash
+# .gitignore에서 일시적으로 제외 후 커밋 (위험!)
+# 권장하지 않음
+```
+
+**옵션 3: VM에서 직접 생성 (SSH 키 등록 필요 없음)**
+```bash
+# GCP 웹 SSH 또는 SSH 접속 후
+cd ~/apps/NeuroNova_v1
+
+# 1. 루트 .env 생성
+nano .env
+# (로컬 .env 내용 복사 붙여넣기)
+
+# 2. Django .env 생성
+nano NeuroNova_02_back_end/02_django_server/.env
+# (로컬 .env.docker 내용 복사 붙여넣기)
+```
 
 **전송하지 말아야 할 파일**:
 - ❌ `venv/` (Python 가상환경)
@@ -1700,11 +2380,22 @@ Internet → Cloudflare → GCP VM → Nginx
 
 ---
 
-**문서 버전**: 2.2
-**최종 업데이트**: 2026-01-02
+**문서 버전**: 2.4
+**최종 업데이트**: 2026-01-03
 **작성자**: Claude AI & NeuroNova Team
 
 **변경 이력**:
+- v2.4 (2026-01-03): 아키텍처 및 파일 구조 명확화
+  - ✅ Nginx VM 네이티브 설치 명확화 (Docker 컨테이너 아님!)
+  - ✅ RAM 요구 사양 실측 데이터 반영 (3.5GB 사용, 최소 8GB 필요)
+  - ✅ .env 파일 구조 상세 설명 (.env.docker → .env 변환)
+  - ✅ 프로젝트 파일 구조 트리 업데이트 (전송/제외 파일 명확화)
+  - ✅ docker-compose.dev.yml (개발) vs docker-compose.yml (배포) 구분
+  - ✅ SCP 전송 명령어 세션 변수 사용 (VM IP 변경 대응)
+
+- v2.3 (2026-01-03): FHIR OAuth2 설정 추가
+  - ✅ FHIR OAuth2 환경 변수 추가 (Celery Worker FHIR Outbox)
+
 - v2.2 (2026-01-02): .env 파일 관리 강화 및 OpenEMR Skip 모드 추가
   - ✅ 별도 전송 필요 파일 체크리스트 추가 (Django .env, React .env.production)
   - ✅ Django .env 상세 설정 가이드 (환경 변수 설명 테이블)
