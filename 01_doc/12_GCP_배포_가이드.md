@@ -212,6 +212,8 @@ Session > Save
 
 ### 2.3 WinSCP 파일 전송 설정
 
+#### 2.3.1 WinSCP 연결 설정
+
 ```
 파일 프로토콜: SFTP
 호스트 이름: EXTERNAL_IP
@@ -223,6 +225,144 @@ Session > Save
 
 저장 > 로그인
 ```
+
+#### 2.3.2 배포 전 파일 정리 (필수)
+
+**⚠️ 중요**: GCP VM에 업로드하기 전에 불필요한 파일을 반드시 정리해야 합니다.
+
+**Windows에서 자동 정리 실행**:
+```cmd
+cd d:\1222\NeuroNova_v1
+cleanup-for-deployment.bat
+```
+
+**정리 대상 파일** (cleanup-for-deployment.bat가 자동 삭제):
+
+1. **Python 캐시 및 임시 파일** (필수 삭제):
+   - `__pycache__/` 디렉토리 (모든 위치)
+   - `*.pyc` 파일 (Python 바이트코드)
+   - `.coverage` (테스트 커버리지 캐시)
+
+2. **로그 파일** (필수 삭제):
+   - `logs/*.log` (모든 로그 파일)
+   - `NeuroNova_02_back_end/02_django_server/logs/*.log`
+
+3. **개발 환경 파일** (필수 삭제 - 보안 위험):
+   - `NeuroNova_03_front_end_react/00_test_client/.env.local`
+   - `.DS_Store` (macOS 시스템 파일)
+
+4. **Python 가상환경** (필수 삭제 - 183MB):
+   - `venv/` 디렉토리 전체
+   - **이유**: GCP VM에서 requirements.txt로 재설치
+
+5. **Node.js 의존성** (선택 삭제 - 1.2GB):
+   - `NeuroNova_03_front_end_react/00_test_client/node_modules/`
+   - **이유**: GCP VM에서 package.json으로 재설치
+   - **권장**: 로컬에서 `npm run build` 후 `build/` 디렉토리만 전송
+
+6. **구버전 문서** (선택 삭제):
+   - `OLD_프롬.md`
+   - `OLD_작업이력.md`
+   - `OLD_업무계획서.md`
+   - `OLD_README.md`
+   - `90_작업이력/docker-compose.OLD*.yml`
+
+**예상 절약 용량**: ~1.5GB (venv 183MB + node_modules 1.2GB + 기타)
+
+#### 2.3.3 전송할 파일 및 디렉토리
+
+**필수 전송 파일**:
+
+```plaintext
+NeuroNova_v1/
+├── NeuroNova_02_back_end/          # 백엔드 전체 (venv 제외)
+│   ├── 01_ai_core/                 # AI 모델 및 서비스
+│   ├── 02_django_server/           # Django 프로젝트
+│   │   ├── cdss_backend/           # Django 설정
+│   │   ├── acct/                   # 인증/권한 앱
+│   │   ├── emr/                    # EMR 앱
+│   │   ├── ocs/                    # OCS 앱
+│   │   ├── lis/                    # LIS 앱
+│   │   ├── ris/                    # RIS 앱
+│   │   ├── ai/                     # AI 앱
+│   │   ├── fhir/                   # FHIR 앱
+│   │   ├── audit/                  # 감사 로그 앱
+│   │   ├── alert/                  # 알림 앱
+│   │   ├── manage.py               # Django 관리 명령
+│   │   ├── requirements.txt        # Python 의존성 ✅
+│   │   └── .env                    # 환경변수 (수동 작성) ⚠️
+│   ├── 05_orthanc_pacs/            # Orthanc PACS 설정
+│   ├── 06_hapi_fhir/               # HAPI FHIR 설정
+│   └── 07_redis/                   # Redis 설정
+│
+├── NeuroNova_03_front_end_react/   # 프론트엔드
+│   └── 00_test_client/
+│       ├── public/                 # 정적 파일
+│       ├── src/                    # React 소스코드
+│       ├── package.json            # npm 의존성 ✅
+│       ├── package-lock.json       # npm 잠금 파일
+│       └── .env                    # 환경변수 (수동 작성) ⚠️
+│
+├── docker-compose.dev.yml          # Docker Compose 설정 ✅
+├── nginx/                          # Nginx 설정
+│   └── nginx.conf
+├── prometheus/                     # 모니터링 설정
+│   ├── prometheus.yml
+│   └── alert.rules.yml
+└── 01_doc/                         # 필수 문서
+    ├── 초기_데이터_시딩_가이드.md
+    ├── 12_GCP_배포_가이드.md
+    └── README_자동실행.md
+```
+
+**⚠️ 별도 전송 필요 파일** (보안상 Git 미포함):
+
+1. **`.env` 파일** (Django):
+   - 경로: `NeuroNova_02_back_end/02_django_server/.env`
+   - **수동 작성 필요** (GCP VM에서 직접 생성)
+   - 내용: [4. 환경 변수 설정](#4-환경-변수-설정) 참조
+
+2. **`.env` 파일** (React):
+   - 경로: `NeuroNova_03_front_end_react/00_test_client/.env`
+   - **수동 작성 필요** (GCP VM에서 직접 생성)
+   - 프로덕션용 API URL 설정 필요
+
+**전송하지 말아야 할 파일**:
+- ❌ `venv/` (Python 가상환경)
+- ❌ `node_modules/` (npm 패키지)
+- ❌ `__pycache__/`, `*.pyc` (Python 캐시)
+- ❌ `.env.local` (개발 환경변수)
+- ❌ `logs/*.log` (로그 파일)
+- ❌ `.coverage` (테스트 커버리지)
+- ❌ `.DS_Store` (macOS 시스템 파일)
+- ❌ `OLD_*.md` (구버전 문서)
+
+#### 2.3.4 WinSCP 전송 절차
+
+1. **로컬에서 정리 스크립트 실행**:
+   ```cmd
+   cleanup-for-deployment.bat
+   ```
+
+2. **WinSCP로 프로젝트 루트 전송**:
+   - 왼쪽(로컬): `d:\1222\NeuroNova_v1`
+   - 오른쪽(GCP): `/home/your-username/NeuroNova_v1`
+   - 전송 방법: 드래그 앤 드롭
+
+3. **전송 완료 후 VM에서 확인**:
+   ```bash
+   cd ~/NeuroNova_v1
+   ls -lh
+   du -sh *  # 디렉토리 크기 확인
+   ```
+
+4. **VM에서 의존성 재설치** ([4.3 Python 가상환경](#43-python-가상환경) 참조):
+   ```bash
+   cd NeuroNova_02_back_end/02_django_server
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
 ### 2.4 시스템 업데이트 및 기본 패키지 설치
 
@@ -530,9 +670,9 @@ LOG_LEVEL=INFO
 | `CORS_ALLOWED_ORIGINS` | ✅ | - | CORS 허용 오리진 | `https://your-domain.com` |
 | `DB_PASSWORD` | ✅ | - | MySQL 비밀번호 (8자 이상) | 강력한 비밀번호 |
 | `DB_ROOT_PASSWORD` | ✅ | - | MySQL root 비밀번호 (8자 이상) | 강력한 비밀번호 |
-| `OPENEMR_CLIENT_ID` | ⚠️ | - | OpenEMR OAuth2 클라이언트 ID | `neuronova-cdss-internal` |
-| `OPENEMR_CLIENT_SECRET` | ⚠️ | - | OpenEMR OAuth2 시크릿 | 등록 시 발급된 값 |
-| `SKIP_OPENEMR_INTEGRATION` | ⚠️ | `False` | OpenEMR 연동 Skip | `True` (개발), `False` (운영) |
+| `OPENEMR_CLIENT_ID` | ⚠️ | - | OpenEMR OAuth2 클라이언트 ID | `neuronova-cdss-internal` (선택) |
+| `OPENEMR_CLIENT_SECRET` | ⚠️ | - | OpenEMR OAuth2 시크릿 | 등록 시 발급된 값 (선택) |
+| `SKIP_OPENEMR_INTEGRATION` | ✅ | `True` | OpenEMR 연동 Skip 모드 | `True` (개발/테스트), `False` (운영 시 OAuth2 필요) |
 | `ORTHANC_PASSWORD` | ✅ | `orthanc` | Orthanc 비밀번호 | 강력한 비밀번호 |
 | `ENABLE_SECURITY` | ✅ | `True` | JWT 인증 활성화 | `True` |
 
@@ -541,6 +681,13 @@ LOG_LEVEL=INFO
 - 모든 비밀번호는 8자 이상, 영문/숫자/특수문자 조합
 - `DJANGO_SECRET_KEY`는 최소 50자 이상
 - `.env` 파일은 절대 Git에 커밋하지 말 것
+
+**💡 OpenEMR 연동 관련 설명**:
+- `SKIP_OPENEMR_INTEGRATION=True`: OpenEMR API 호출을 Mock으로 대체 (개발/테스트 권장)
+- `SKIP_OPENEMR_INTEGRATION=False`: 실제 OpenEMR API 호출 (프로덕션 환경, OAuth2 설정 필수)
+- ⚠️ 표시된 `OPENEMR_CLIENT_ID`, `OPENEMR_CLIENT_SECRET`는 `SKIP_OPENEMR_INTEGRATION=False`일 때만 필수
+- **테스트 배포 시**: `SKIP_OPENEMR_INTEGRATION=True` 사용 권장 (OAuth2 설정 불필요)
+- **프로덕션 배포 시**: OpenEMR 연동이 필요하면 `50_OpenEMR_OAuth2_설정_가이드.md` 참조하여 OAuth2 클라이언트 등록 후 사용
 
 ### 5.4 React .env 파일 설정
 
@@ -553,10 +700,19 @@ LOG_LEVEL=INFO
 # API Base URL (Nginx를 통한 접근)
 REACT_APP_API_URL=https://your-domain.com/api
 
+# OHIF Viewer Root (Orthanc Explorer 2)
+# 프로덕션에서는 도메인 또는 내부 IP 사용
+REACT_APP_OHIF_VIEWER_ROOT=https://your-domain.com:8042
+# 또는 내부 네트워크: http://10.x.x.x:8042
+
 # DICOMweb Root (Django Proxy 경유)
 REACT_APP_DICOM_WEB_ROOT=https://your-domain.com/api/ris/dicom-web
 
-# 자동 로그인 비활성화 (프로덕션)
+# Monitoring Dashboards
+REACT_APP_GRAFANA_URL=https://your-domain.com:3002
+REACT_APP_PROMETHEUS_URL=https://your-domain.com:9090
+
+# 자동 로그인 비활성화 (프로덕션 - 보안 필수)
 REACT_APP_DEV_AUTO_LOGIN=false
 
 # 브라우저 자동 실행 비활성화
@@ -584,9 +740,11 @@ BROWSER=none
 ```
 
 **⚠️ 주의사항**:
-- `.env.local`은 개발 전용, 프로덕션 VM에 전송 불필요
-- `.env.production`만 GCP VM에 전송
-- 프로덕션에서는 `REACT_APP_DEV_AUTO_LOGIN=false` 필수
+- `.env.local`은 개발 전용, 프로덕션 VM에 **전송 금지** (cleanup-for-deployment.bat가 자동 삭제)
+- `.env.production`만 GCP VM에 전송 (또는 VM에서 직접 `.env` 파일 생성)
+- 프로덕션에서는 `REACT_APP_DEV_AUTO_LOGIN=false` 필수 (보안)
+- `REACT_APP_OHIF_VIEWER_ROOT`를 Orthanc Explorer 2 경로로 설정 (`http://localhost:8042`)
+- `REACT_APP_GRAFANA_URL`은 포트 3002 사용 (docker-compose에서 3000→3002로 매핑)
 
 ### 5.5 실제 .env 파일 생성 및 전송
 

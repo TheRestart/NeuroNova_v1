@@ -6,39 +6,14 @@
 
 프롬프트 제목: [NeuroNova 아키텍처 문서 정밀 점검 및 시각화]
 
-1. 역할: 너는 숙련된 소프트웨어 아키텍트이자 기술 문서 작성 전문가야. 
-2. 작업 목표: 제공된 문서의 기술적 오류를 점검하고, 전체 서비스 구조를 한눈에 파악할 수 있도록 재정리해줘. 
-3. 정검 대상 : doc의 문서 전부 
-4. 점검 항목:
-서비스 간(Django, FastAPI, Celery, Orthanc) 데이터 흐름의 모순 확인.
-HTJ2K 변환 및 WASM 디코딩 과정의 기술적 누락 점검.
-MSA 설계 원칙에 어긋나는 의존성 유무 확인. 4. 출력 형식:
-오류 리스트: 발견된 오류나 개선 제안을 번호 순으로 한 줄씩 정리.
-구조 요약: 'A -> B (내용) -> C' 형태의 텍스트 흐름도 사용.
-시각화: 흐름을 명확히 하기 위해 Mermaid graph TD 코드를 포함해줘. 5. 제약 사항: 전문 용어는 유지하되, 전체적인 구조는 비전공자도 이해할 수 있도록 명확한 화살표와 레이블을 사용할 것.
-
-===
-NeuroNova_03_front_end_react\00_test_client
-기능에 에러가 있다. 
-
-장고에서 환자와 orthance 다이콤 데이터의 메핑 기능이 있어야 
-장고에서 orthance 호출도 되고 FHIR 데이터 매핑연동이 될텐데 
-맵핑 기능을 구현하라 
-
-그외 에러사항을 찾고 보고하라 
 ===
 
 @01_doc/REF_CLAUDE_ONBOARDING_QUICK.md 
 @01_doc/REF_프롬프트_프론트엔드_인수인계.md
+@NeuroNova_03_front_end_react\00_test_client\0103_문제.md
 @작업_계획_요약.md
 
-위 3개 문서를 읽고 맥락을 이해후 프론트엔드 고도화 작업을 즉시 시작
-
-
-
-
-
-
+위 4개 문서를 읽고 맥락을 이해후 프론트엔드 고도화 작업을 즉시 시작
 
 
 ===
@@ -59,6 +34,39 @@ NeuroNova_03_front_end_react\00_test_client\LOG_테스트클라이언트_정밀�
 특히 'http://localhost:3001/monitoring' 은 심각하다
 
 ---
+
+
+
+
+
+
+'00_test_client'를 동작하다보면 동작하지 않는 기능이 많다. 
+특히 f12 개발자 모드로 보면 500번대 에러가 끊임 없이 발생한다. 
+
+
+'작업_계획_요약.md'의 '### 📊 최종 작업 통계 (Week 7-4 포함)'을 수행하시오 
+
+#### 3차: 기능 검증
+- [ ] Django 서버 기동 및 환경 변수 검증 확인
+- [ ] React 테스트 클라이언트 실행 (Port 3000)
+- [ ] **Orthanc 환자 목록 조회** (`/uc05`)
+- [ ] **"View Study" 버튼으로 DICOM Viewer 이동**
+- [ ] **Study 메타데이터 표시 확인**
+- [ ] JWT 토큰 자동 갱신 동작 확인
+- [ ] N+1 쿼리 런타임 분석 (Django Debug Toolbar)
+- [ ] Foreign Key 마이그레이션 (선택적)
+
+
+
+NeuroNova_03_front_end_react\00_test_client\0103_문제.md
+
+
+
+
+
+
+
+
 
 ## 🚀 1. 빠른 온보딩 (Quick Start)
 
@@ -111,7 +119,8 @@ Claude가 실행 명령어를 제안할 때 참조해야 할 환경 설정입니
   }
 }
 ```
-
+asdagr@DESKTOP-FL5CDM6:/mnt/d/1222/NeuroNova_v1$ cd NeuroNova_03_front_end_react/00_test_client
+PORT=3001 npm start
 ---
 
 ## 📝 4. 문서 업데이트 요청

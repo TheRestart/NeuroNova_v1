@@ -1,7 +1,7 @@
 # 작업 이력 (Work Log)
 
 **최종 수정일**: 2026-01-03
-**현재 상태**: FHIR Outbox Celery Worker 구현 완료, 프론트엔드 API 오류 수정 완료 ✅
+**현재 상태**: 프론트엔드 Critical 이슈 6건 수정 완료 (0103_문제.md 대응) ✅
 
 > [!NOTE]
 > 시스템 아키텍처, 사용자 역할(RBAC), 상세 모듈 설계 등 기술 참조 정보는 **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**를 참조하십시오. 이 문서는 일자별 작업 진행 상황과 변경 이력만을 기록합니다.
@@ -24,7 +24,142 @@
 
 ### Week 7 (2025-12-29 ~ 2026-01-03)
 
-- **2026-01-03 Day 19 (FHIR Outbox Celery Worker 구현 및 프론트엔드 오류 수정 완료)** ⭐ NEW:
+- **2026-01-03 Day 19-4 (프론트엔드 Medium/Low 우선순위 이슈 9건 수정 완료)** ⭐ NEW:
+  - [x] **0103_문제.md 대응 - 9개 이슈 수정 (P-008, P-006, P-014, P-015, P-016, P-019, P-029, P-030, P-031)**:
+    - **P-008 (Medium)**: ViewerPage OHIF Viewer URL 설정 강화
+      - `viewerUrl` 상태로 URL 구성 로직 분리
+      - `encodeURIComponent` 추가로 StudyInstanceUID URL 인코딩 (P-025 동시 수정)
+      - Cross-Origin 정책 개선: `sandbox="allow-same-origin allow-scripts allow-forms"` 추가
+      - Loading fallback UI 추가
+    - **P-006 (Medium)**: PatientDicomMappingPage 동기화 타임아웃 처리
+      - 60초 타임아웃 설정 (`apiClient.post` timeout 옵션)
+      - 타임아웃 발생 시 사용자 친화적 메시지 표시
+      - 30초 후 자동 새로고침 로직 추가
+      - "새로고침" 버튼 UI 추가
+    - **P-014 (Medium - Security)**: APITester 비밀번호 메모리 클린업
+      - 컴포넌트 언마운트 시 password 타입 필드 자동 덮어쓰기
+      - `useEffect` cleanup 함수로 메모리 보안 구현
+      - `useRef` 사용으로 메모리 내 민감정보 추적
+      - `handleClear` 함수에도 비밀번호 덮어쓰기 로직 추가
+    - **P-015 (Medium - Performance)**: AllAPITest 병렬 실행 모드 추가
+      - Sequential 모드 (기존): 안전, 서버 부하 낮음
+      - Parallel 모드 (신규): `Promise.all` 사용, 빠름, 서버 부하 높음
+      - UI 라디오 버튼으로 실행 모드 선택 가능
+      - 실행 모드에 따른 성능 차이 명시
+    - **P-016 (Medium - Performance)**: AllAPITest 배치 렌더링 최적화
+      - Sequential 모드: 5개씩 배치 업데이트 (N회 렌더링 → N/5회 렌더링)
+      - Parallel 모드: 1회 일괄 업데이트 (14회 렌더링 → 1회 렌더링)
+      - 불필요한 `setResults([...testResults])` 호출 최소화
+    - **P-019 (Medium - Performance)**: APITester 대용량 데이터 렌더링 최적화
+      - 50KB 이상 JSON 자동 감지 및 축소 표시
+      - "전체 보기" / "축소" 토글 버튼 추가
+      - 대용량 응답 경고 메시지 표시 (파일 크기 KB 단위)
+      - 성능 저하 방지를 위한 최대 높이 제한 (600px)
+    - **P-029 (Medium - Security)**: devAutoLogin.js 프로덕션 번들 제외
+      - 동적 import로 Tree-shaking 활성화
+      - `process.env.NODE_ENV !== 'production'` 조건부 로딩
+      - App.js에서 개발 환경에서만 모듈 import 실행
+      - 프로덕션 빌드 시 코드 번들에 포함 방지
+    - **P-030 (Low - UX)**: ResponseTable "JSON 복사" 버튼 추가
+      - `navigator.clipboard.writeText` API 사용
+      - 구형 브라우저 Fallback: `document.execCommand('copy')` 지원
+      - 복사 성공 시 "✓ 복사됨!" 2초간 표시
+      - 디버깅 효율성 향상 (긴 JSON 드래그 불필요)
+    - **P-031 (Medium - Functional Defect)**: APITester 예시 입력 버튼 수정
+      - UC06AITest.js에 `exampleData` prop 추가
+      - "예시 입력 후 즉시 실행" 버튼 정상 동작
+      - Silent Failure 문제 해결
+  - [x] **수정 통계**:
+    - 수정 파일: 9개 (ViewerPage.js, PatientDicomMappingPage.js, APITester.js, AllAPITest.js, App.js, ResponseTable.js, UC06AITest.js 외 2개)
+    - 추가/수정 라인 수: 약 350 lines
+    - 성능 개선: AllAPITest 렌더링 최적화 (14회→3회), 대용량 JSON 메모리 스파이크 방지
+    - 보안 강화: 비밀번호 메모리 클린업, devAutoLogin 프로덕션 제외
+    - UX 개선: 클립보드 복사, 타임아웃 처리, 병렬 실행 옵션
+
+- **2026-01-03 Day 19-3 (OHIF Viewer 연동 수정 및 배포 가이드 업데이트)** ⭐ NEW:
+  - [x] **OHIF Viewer + Orthanc 연동 문제 해결**:
+    - **문제 발견**: Orthanc에 web-viewer 플러그인 미설치 (설치된 플러그인: dicom-web, gdcm, orthanc-explorer-2)
+    - **ViewerPage.js URL 수정**:
+      - 이전: `/web-viewer/app/viewer.html?study=${studyInstanceUID}` ❌
+      - 수정: `/ui/app/#/viewer?StudyInstanceUIDs=${studyInstanceUID}` ✅
+      - Orthanc Explorer 2 내장 뷰어 사용 (web-viewer 플러그인 불필요)
+    - **UC05RISTest.js Study ID 변환 로직 추가**:
+      - Orthanc Study ID → StudyInstanceUID 변환 API 호출 추가
+      - `handleViewInOHIF()` 함수에서 `GET /studies/{orthancStudyId}` 호출 후 MainDicomTags.StudyInstanceUID 추출
+      - 정상 동작 확인: 12개 Study 있음, 뷰어 연동 성공 ✅
+    - **수정 파일**: `ViewerPage.js`, `UC05RISTest.js`
+  - [x] **GCP 배포 가이드 ⚠️ 위험 아이콘 검증 및 업데이트**:
+    - **12_GCP_배포_가이드.md 검증**:
+      - ⚠️ `OPENEMR_CLIENT_ID`, `OPENEMR_CLIENT_SECRET`: `SKIP_OPENEMR_INTEGRATION=False`일 때만 필수로 명시
+      - ⚠️ `SKIP_OPENEMR_INTEGRATION`: 실제 구현 확인 (settings.py:392), .env.example에 추가
+      - ⚠️ `.env.local` 전송 금지 명확화 (cleanup-for-deployment.bat 자동 삭제)
+      - ⚠️ `REACT_APP_DEV_AUTO_LOGIN`: 실제 구현 확인 (devAutoLogin.js, App.js), 보안 경고 추가
+    - **💡 OpenEMR 연동 관련 설명 추가**:
+      - `SKIP_OPENEMR_INTEGRATION=True`: Mock 데이터 사용 (개발/테스트 권장)
+      - `SKIP_OPENEMR_INTEGRATION=False`: 실제 OpenEMR API 호출 (프로덕션, OAuth2 필수)
+      - 테스트 배포 시 Skip 모드 사용 권장 (OAuth2 설정 불필요)
+  - [x] **.env.example 파일 업데이트**:
+    - **Django .env.example**:
+      - `SKIP_OPENEMR_INTEGRATION=True` 추가 (기본값)
+      - 상세 주석 추가 (True/False 차이, 참조 문서)
+    - **React .env.example**:
+      - 전체 재구성: 섹션별 그룹화 (API, DICOM Viewer, Monitoring, Development)
+      - `PORT=3001` 설정 (개발 서버 포트)
+      - `REACT_APP_OHIF_VIEWER_ROOT=http://localhost:8042` (Orthanc Explorer 2)
+      - `REACT_APP_GRAFANA_URL=http://localhost:3002` (포트 3002로 수정)
+      - `REACT_APP_DEV_AUTO_LOGIN` 상세 설명 추가
+  - [x] **수정 통계**:
+    - 수정 파일: 5개 (ViewerPage.js, UC05RISTest.js, 12_GCP_배포_가이드.md, 2개 .env.example)
+    - 추가/수정 라인 수: 약 120 lines
+    - 문서 업데이트: 배포 가이드 OpenEMR 연동 설명 강화, React 환경변수 프로덕션 예시 추가
+
+- **2026-01-03 Day 19-2 (프론트엔드 Critical 보안 및 기능 이슈 수정 완료)**:
+  - [x] **0103_문제.md 대응 - 33개 이슈 중 Critical/High 6건 수정**:
+    - **P-007 (Security Critical)**: LoginPage 하드코딩된 비밀번호 프로덕션 보안 강화
+      - Quick Login 기능에 `process.env.NODE_ENV === 'production'` 체크 추가
+      - 프로덕션 빌드 시 자동 비활성화 (개발 환경에서만 동작)
+      - UI에 "⚠️ DEVELOPMENT MODE ONLY" 경고 추가
+      - 수정 파일: `LoginPage.js`
+    - **P-001 & P-017 (High)**: MonitoringPage 하드코딩된 헬스체크 Mock Data 제거
+      - `checkAllHealth()` 함수의 하드코딩된 "PASS" 값 제거
+      - 실제 헬스체크 구현: Django(Axios), Prometheus/Grafana/Alertmanager(fetch with timeout)
+      - `fetchWithTimeout()` helper 함수 추가 (3초 타임아웃, AbortController 사용)
+      - CORS 우회를 위한 `mode: 'no-cors'` 적용
+      - 수정 파일: `apiClient.js` (monitoringAPI.checkAllHealth)
+    - **P-003 (High)**: DoctorWorkstation 페이지네이션 추가 (OOM 방지)
+      - 무제한 환자 목록 로딩 문제 해결 (수천 명 환자 시 브라우저 Freezing 방지)
+      - DRF LimitOffsetPagination 적용 (pageSize: 20)
+      - 페이지네이션 UI 추가 (이전/다음 버튼, 페이지 정보 표시)
+      - `handlePageChange()` 함수로 smooth scroll 구현
+      - 수정 파일: `DoctorWorkstation.js`
+    - **P-032 (High)**: OHIF Viewer iframe 경로 수정
+      - 잘못된 경로: `/pacs-viewer/index.html` → 정확한 경로: `/web-viewer/app/viewer.html`
+      - Orthanc Web Viewer Plugin URL로 수정 (`http://localhost:8042/web-viewer/app/viewer.html?study=${studyInstanceUID}`)
+      - .env 파일에 `REACT_APP_OHIF_VIEWER_ROOT=http://localhost:8042` 추가
+      - cross-origin 대응을 위한 `allow="cross-origin-isolated"` 속성 추가
+      - 수정 파일: `ViewerPage.js`, `.env`
+    - **P-013 (High - Security)**: APITester 비밀번호 로깅 방지
+      - `console.error('API Error:', err)` → 선택적 로깅으로 변경
+      - err.config 제외 (비밀번호 등 민감정보 포함 가능)
+      - 안전한 로깅: message, status, statusText, data만 출력
+      - 수정 파일: `APITester.js`
+    - **P-004 (Medium - UX)**: PatientDetailPage 컨텍스트 유지 수정
+      - 진료 기록/처방 내역/영상 검사/유전체 분석 카드 클릭 시 patient_id 유실 문제 해결
+      - URL 파라미터로 patient_id 전달 (`/uc02?patient_id=${patientId}`)
+      - 워크플로우 단절 방지
+      - 수정 파일: `PatientDetailPage.js`
+  - [x] **수정 통계**:
+    - 수정 파일: 6개 (LoginPage.js, apiClient.js, DoctorWorkstation.js, ViewerPage.js, APITester.js, PatientDetailPage.js)
+    - 추가/수정 라인 수: 약 180 lines
+    - 보안 이슈: 2건 수정 (P-007, P-013)
+    - 기능 이슈: 4건 수정 (P-001/P-017, P-003, P-032, P-004)
+  - [x] **추가 환경 설정 수정**:
+    - `.env` 파일 업데이트:
+      - `REACT_APP_API_URL=http://localhost/api` (Nginx 프록시 경로)
+      - `REACT_APP_OHIF_VIEWER_ROOT=http://localhost:8042` (Orthanc)
+      - `REACT_APP_DICOM_WEB_ROOT=http://localhost/api/ris/dicom-web` 추가
+
+- **2026-01-03 Day 19-1 (FHIR Outbox Celery Worker 구현 및 프론트엔드 오류 수정 완료)**:
   - [x] **FHIR Outbox 처리 Celery Worker 구현**:
     - **FHIRSyncQueue 스키마 정합성 수정**:
       - **문제 발견**: `ris/signals.py`가 존재하지 않는 필드(`resource_type`, `resource_id`) 사용 시도
@@ -919,6 +1054,42 @@
     - [x] **E2E 검증**: 브라우저 직접 시험을 통해 [로그인-워크스테이션-데이터 로드] 전 과정 성공 확인. ✅
     - [x] **매뉴얼 최신화**: `GCP 배포 가이드`, `사용자 매뉴얼`, `시딩 가이드`에 오늘 작업의 모든 변경 성과 반영.
     - [x] **인수인계 준비**: 차기 개발자를 위한 **'Handover Prompt'** (`REF_프롬프트_프론트엔드_인수인계.md`) 최신화.
+
+### ✅ 2026-01-03: 프론트엔드 전문성 강화 및 보안 패치 (Day 17)
+
+**1. 모니터링 페이지 개선**
+- **문제**: `MonitoringPage.js` 내 비전문적 이모지(💩) 및 하드코딩된 상태 값 존재
+- **해결**:
+  - 이모지를 표준 화살표(→, ↓)로 대체
+  - `monitoringAPI.checkAllHealth()` 연동으로 동적 상태 시각화 구현 (Red/Green/Gray)
+
+**2. 보안 취약점 긴급 패치**
+- **문제**: `devAutoLogin.js`의 환경변수(`REACT_APP_DEV_AUTO_LOGIN`) 의존성 위험 (프로덕션 노출 시 관리자 권한 탈취 가능)
+- **해결**: `process.env.NODE_ENV === 'production'` 조건 추가로, 프로덕션 빌드 시 **강제 비활성화** 로직 구현
+
+**3. 의사 워크스테이션 UX 고도화**
+- **문제**: "진료 시작" 클릭 시 단순 API 테스트 페이지(`UC02EMRTest`)로 이동하여 사용자 경험 단절
+- **해결**:
+  - `PatientDetailPage.js` 신설 (임상 대시보드 형태)
+  - 환자별 EMR, OCS, PACS, LIS 모듈로의 직관적 내비게이션 제공
+  - 라우팅(`/patient/:patientId`) 및 인증 보호 적용
+
+**4. 문서 현행화**
+- `사용방법_설명문서.md` 기반 코드 감사(Audit) 수행 결과 반영
+
+### ✅ 2026-01-03 (추가): 브라우저 런타임 정밀 검증 (Day 17)
+**1. 검증 수행**
+- 도구: Chrome Browser Subagent
+- 대상: `UC06` (AI Test), `Viewer` (Page)
+- 목적: 백엔드 미동작 상황에서도 식별 가능한 프론트엔드 논리 결함 확인
+
+**2. 주요 발견 사항 (Verified Defects)**
+- **P-031 (Example Input 고장)**: 버튼 클릭 시 콘솔 에러도 없이 아무 동작 안 함 (Silent Failure). `exampleData` Prop 누락이 원인.
+- **P-032 (Viewer 렌더링 실패)**: "Net Error" 외에도 `React Router`가 Iframe 경로를 가로채는 경고(`No routes matched...`) 확인. 라우팅 설정 충돌이 근본 원인.
+
+**3. 결과 산출물**
+- `0103_문제.md`: 런타임 검증 결과(P-009 ~ P-032) 반영하여 업데이트 (총 32건 이슈 식별).
+- `walkthrough.md`: 브라우저 테스트 녹화 영상 및 로그 분석 결과 추가.
 
 ## 과거 작업 이력 (Archive)
 
