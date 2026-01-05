@@ -1,7 +1,7 @@
 # 작업 이력 (Work Log)
 
-**최종 수정일**: 2026-01-03
-**현재 상태**: 프론트엔드 Critical 이슈 6건 수정 완료 (0103_문제.md 대응) ✅
+**최종 수정일**: 2026-01-05
+**현재 상태**: brain_tumor_dev 코드 통합 완료 (RBAC + Menus 앱) ✅
 
 > [!NOTE]
 > 시스템 아키텍처, 사용자 역할(RBAC), 상세 모듈 설계 등 기술 참조 정보는 **[REF_CLAUDE_CONTEXT.md](REF_CLAUDE_CONTEXT.md)**를 참조하십시오. 이 문서는 일자별 작업 진행 상황과 변경 이력만을 기록합니다.
@@ -21,6 +21,42 @@
 ---
 
 ## 📅 상세 작업 로그
+
+### Week 8 (2026-01-05 ~ )
+
+- **2026-01-05 Day 20-1 (brain_tumor_dev 코드 통합 - RBAC + Menus)** ⭐ NEW:
+  - [x] **brain_tumor_dev React + Django 코드 NeuroNova_v1 통합**:
+    - **RBAC 앱 생성 및 통합**:
+      - `accounts` → `rbac` 앱 이름 변경 (네임스페이스 충돌 방지)
+      - `User` 모델 → `UserProfile` 모델로 변경 (acct.User OneToOne 확장)
+      - AUTH_USER_MODEL 충돌 해결 (기존 acct.User 유지)
+      - Role, Permission, UserRole, RolePermission 모델 생성
+      - Permission 변경 시 WebSocket 실시간 알림 (Channels)
+      - API: `/api/rbac/permissions/me/`, `/api/rbac/permissions/user/<id>/`
+    - **Menus 앱 생성 및 통합**:
+      - Menu, MenuLabel, MenuPermission 모델 생성
+      - 역할별 메뉴 라벨 다국어 지원 (DOCTOR, NURSE, DEFAULT)
+      - 권한 기반 메뉴 접근 제어 (Permission → Menu 매핑)
+      - 부모-자식 계층 구조 지원 (parent FK)
+      - 메뉴 트리 자동 생성 유틸리티 (`build_menu_tree`)
+      - API: `/api/menus/my/` (사용자별 접근 가능 메뉴 트리 반환)
+    - **WebSocket 설정**:
+      - rbac.routing 추가 (`ws/permissions/` 엔드포인트)
+      - api/routing.py에 rbac WebSocket 패턴 통합
+      - UserPermissionConsumer 구현 (권한 변경 실시간 푸시)
+    - **Django 설정 업데이트**:
+      - INSTALLED_APPS: `rbac`, `menus` 추가
+      - URL 패턴: `/api/rbac/`, `/api/menus/` 추가
+      - 마이그레이션 생성 완료 (`rbac/0001_initial.py`, `menus/0001_initial.py`)
+  - [x] **기존 Audit 앱 보존**:
+    - brain_tumor_dev audit 앱 내용이 NeuroNova 기존 audit 앱과 충돌
+    - 기존 AuditService 유지 (ai/services.py 의존성 보존)
+    - 신규 RBAC/Menus 앱과 독립적으로 운영
+  - [x] **다음 단계 준비**:
+    - [ ] React 코드 통합 (권한 기반 라우팅, 메뉴 렌더링)
+    - [ ] 마이그레이션 실행 테스트
+    - [ ] 실제 데이터로 Permission/Role 시딩
+    - [ ] Frontend-Backend 통합 테스트
 
 ### Week 7 (2025-12-29 ~ 2026-01-03)
 
