@@ -1,0 +1,6 @@
+importlib_resources==6.5.2
+nibabel==5.3.3
+numpy==2.2.6
+packaging==25.0
+pydicom==3.0.1
+typing_extensions==4.15.0
