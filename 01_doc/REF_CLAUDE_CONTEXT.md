@@ -3,12 +3,19 @@
 > **목적**: 이 문서는 Claude AI가 프로젝트를 빠르게 이해하고 작업을 이어서 수행할 수 있도록 작성되었습니다.
 
 **문서 작성일**: 2025-12-16
-**최종 업데이트**: 2025-12-30 (Phase 2 완료, GCP 배포 준비 완료)
+**최종 업데이트**: 2026-01-05 (brain_tumor_dev RBAC 통합 완료)
 **프로젝트 위치**:
 - **원본 PC**: `d:\1222\NeuroNova_v1` (기본)
 - **임시 PC**: `c:\Users\gksqu\Downloads\git_hub\NeuroNova_v1` (현재, 데이터 일부 누락)
 **프로젝트 타입**: 임상 의사결정 지원 시스템(CDSS) - HTJ2K 기반 고성능 의료 영상 아키텍처 v2.1
-**최신 변경**:
+**최신 변경 (2026-01-05)**:
+- ✅ **HTJ2K 지원 완료**: DICOM 업로드 시 자동 압축(J2K Fallback), 일괄 변환 커맨드 구현
+- ✅ **NIfTI 변환기 고도화**: 환자별 Study UID 통일 및 Orthanc 시각화 문제 해결
+- ✅ brain_tumor_dev RBAC + Menus 통합 완료 (Backend Django + Frontend React)
+- ✅ 권한 기반 동적 메뉴 시스템 구축
+- ✅ WebSocket 실시간 권한 알림 통합
+- ✅ React ProtectedRoute, Sidebar 컴포넌트 생성
+**이전 변경 (2025-12-30)**:
 - Phase 2 완료: 테스트 전략, 로깅 전략, 성능 최적화 문서화
 - GCP 배포 가이드 완성 (12_GCP_배포_가이드.md)
 - 아키텍처 v2.1: Secure Proxy Pattern, Multi-SPA 빌드 전략
@@ -58,13 +65,15 @@
   - HAPI FHIR (의료정보 교환)
   - AI 모델 서버
 
-### 1.2 Use Case 구성 (9개 모듈)
+### 1.2 Use Case 구성 (11개 모듈)
 
 | UC | 모듈명 | 설명 | 핵심 기능 |
 |---|---|---|---|
-| UC1 | ACCT | Accounts/Auth | JWT 인증, RBAC 권한, MFA |
-| UC2 | EMR | EMR Proxy | OpenEMR 데이터 Pull, 캐싱 |
-| UC3 | OCS | Order Communication System | 처방 전달 |
+| UC1 | ACCT | Accounts/Auth | JWT 인증, 기본 권한 | ✅ 완료 |
+| **NEW** | **RBAC** | **Role-Based Access Control** | **Role, Permission, UserRole, RolePermission 모델** | ✅ **2026-01-05 통합** |
+| **NEW** | **MENUS** | **Menu Management** | **권한 기반 동적 메뉴, 역할별 라벨, WebSocket** | ✅ **2026-01-05 통합** |
+| UC2 | EMR | EMR Proxy | OpenEMR 데이터 Pull, 캐싱 | ✅ 완료 |
+| UC3 | OCS | Order Communication System | 처방 전달 | ✅ 완료 |
 | UC04 | LIS | Lab Information System | 임상병리 검사 결과 및 이상치 알림 | ✅ 완료 |
 | UC05 | RIS | Radiology Information System | 영상 검사 오더, DICOM 연동 (OHIF Proxy) | ✅ 완료 |
 | UC06 | AI | AI Orchestration | AI 모델 호출, 결과 관리, 검토 프로세스 | ✅ 완료 |
@@ -98,6 +107,8 @@ c:\Users\gksqu\Downloads\git_hub\NeuroNova_v1/
 │   ├── 02_django_server/            # 🔥 Django 프로젝트 루트
 │   │   ├── cdss_backend/            # Django 설정
 │   │   ├── acct/                    # UC01: 인증/권한
+│   │   ├── rbac/                    # 🆕 RBAC: Role-Based Access Control
+│   │   ├── menus/                   # 🆕 MENUS: 권한 기반 동적 메뉴
 │   │   ├── emr/                     # UC02: EMR (OpenEMR 연동)
 │   │   ├── ocs/                     # UC03: 처방 (Order)
 │   │   ├── lis/                     # UC04: 검사
@@ -414,6 +425,7 @@ celery[redis]==5.3.4
 django-celery-beat==2.7.0        # 동적 스케줄 관리
 django-redis==5.4.0              # Django 캐시 백엔드
 flower==2.0.1                    # Celery 모니터링
+pydicom==3.0.1                   # DICOM 표준 (HTJ2K 지원 강화)
 ```
 
 **버전 제약 사항**:
@@ -761,10 +773,15 @@ RadiologyController (ris/views.py)
   - `get_study()`: Study 상세 정보
   - `search_studies()`: DICOM Query/Retrieve
   - `download_dicom_instance()`: DICOM 파일 다운로드
-- ✅ RIS ViewSets 구현 (`ris/views.py`)
+- ✅ **RIS ViewSets 구현 (`ris/views.py`)**
   - `RadiologyOrderViewSet`: 영상 검사 오더 CRUD
   - `RadiologyStudyViewSet`: DICOM Study 관리
   - `RadiologyReportViewSet`: 판독문 작성 및 서명
+  - **`DicomUploadView` (NEW)**: DICOM 업로드 및 HTJ2K/J2K 자동 변환 (`POST /api/ris/upload/dicom/`)
+- ✅ **NIfTI → DICOM 변환기 (Refactored)**:
+  - `scripts/convert_nifti_to_dicom.py`
+  - StudyInstanceUID 통일 (환자당 1 Study), Windowing 메타데이터 자동 삽입
+  - `manage.py convert_to_htj2k`: 기존 Orthanc 데이터 일괄 변환 명령어
 - ✅ 테스트 API 엔드포인트
   - `GET /api/ris/test/patients/`: Orthanc 환자 목록 (페이지네이션)
   - `GET /api/ris/test/studies/`: Orthanc Study 목록 (페이지네이션)
@@ -1370,6 +1387,91 @@ OpenEMR, Orthanc, HAPI FHIR는 외부 상용 서버를 사용합니다.
 | 2025-12-28 | Claude | API 품질 관리 문서 추가 및 REF_CLAUDE_CONTEXT.md 업데이트<br>- **섹션 3 추가**: 개발 품질 관리 정책 (에러 핸들링, API 자동문서화, 데이터 검증)<br>- 25_에러_핸들링_가이드.md 생성 (표준 에러 응답 형식, 에러 코드 체계)<br>- 26_API_자동문서화_가이드.md 생성 (drf-spectacular, Swagger UI, TypeScript 타입 생성)<br>- 27_데이터_검증_정책.md 생성 (4단계 검증 계층, 데이터 무결성 보장)<br>- 섹션 번호 재조정 (기존 3~9 → 4~10)<br>- README.md 업데이트 (API 품질 관리 문서 추가) |
 | 2025-12-29 | Claude | **아키텍처 오해 수정**: Nginx → Django 단일 연결 및 Django 허브 구조 반영<br>- Orthanc/OHIF 직접 연결 가이드 삭제<br>- Flask AI-Orthanc 유일한 서버간 연결 명시 |
 | 2025-12-30 | Claude | **Phase 2 완료 및 아키텍처 v2.1 업데이트**<br>- **프로젝트 위치 업데이트**: 원본 PC(`d:\1222\NeuroNova_v1`) + 임시 PC(`c:\Users\gksqu\Downloads\git_hub\NeuroNova_v1`) 명시<br>- **아키텍처 v2.1 반영**: Secure Proxy Pattern, Multi-SPA 빌드 전략, HTJ2K 파이프라인<br>- **디렉토리 구조 업데이트**: 리넘버링 완료 (`01_django_server` → `02_django_server`)<br>- **Phase 2 완료 사항 반영**: 테스트 전략, 로깅 전략, 성능 최적화 문서화<br>- **GCP 배포 가이드 완성**: 12_GCP_배포_가이드.md (1,300줄+)<br>- **React 테스트 클라이언트 구현**: 00_test_client (9개 UC 테스트 페이지)<br>- **문서 재구성 완료**: 50개 → 44개 (논리적 그룹화, 중복 제거)<br>- **담당자 역할 업데이트**: AI 코어 개발 → Django Backend API 개발 |
+| 2026-01-05 | Claude | **brain_tumor_dev RBAC + Menus 통합 완료 (Backend + Frontend)**<br>- **Backend Django 통합**:<br>  • `rbac` 앱 생성: UserProfile(acct.User 확장), Role, Permission, UserRole, RolePermission<br>  • `menus` 앱 생성: Menu, MenuLabel, MenuPermission (권한 기반 동적 메뉴)<br>  • WebSocket 설정: `ws/permissions/` 실시간 권한 알림<br>  • API: `/api/rbac/permissions/me/`, `/api/menus/my/`<br>  • 마이그레이션 생성 완료<br>- **Frontend React 통합**:<br>  • Types: menu.ts, rbac.ts<br>  • Services: rbacService, menuService, permissionSocket (WebSocket)<br>  • AuthStore 확장: menus, permissions, wsConnection, isAuthReady<br>  • Components: ProtectedRoute (menuId/permission 기반), Sidebar (동적 메뉴), Forbidden (403)<br>  • App.tsx: AppLayout + Sidebar 통합<br>- **문서화**:<br>  • brain_tumor_dev_통합_완료_보고서_20260105.md (Backend)<br>  • brain_tumor_dev_React_통합_완료_20260105.md (Frontend)<br>  • RBAC_INTEGRATION.md (통합 가이드) |
+
+---
+
+## 🆕 RBAC & Menus 시스템 (2026-01-05 통합)
+
+### 아키텍처
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Frontend (React)                                           │
+│  ┌────────────┐  ┌─────────────┐  ┌──────────────┐         │
+│  │ AuthStore  │  │ Sidebar     │  │ Protected    │         │
+│  │ (Zustand)  │  │ Component   │  │ Route        │         │
+│  │            │  │             │  │              │         │
+│  │ • menus    │←─│ 동적 렌더링  │  │ menuId 체크  │         │
+│  │ • perms    │  │ 역할별 라벨  │  │ perm 체크    │         │
+│  └────────────┘  └─────────────┘  └──────────────┘         │
+│        ↕                                                     │
+│   WebSocket (ws/permissions/)                               │
+│        ↕                                                     │
+└─────────────────────────────────────────────────────────────┘
+         │
+         │ GET /api/menus/my/
+         │ GET /api/rbac/permissions/me/
+         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Backend (Django)                                           │
+│  ┌──────────┐  ┌──────────┐  ┌─────────────┐              │
+│  │ rbac app │  │ menus app│  │ WebSocket   │              │
+│  │          │  │          │  │ Consumer    │              │
+│  │ • Role   │  │ • Menu   │  │             │              │
+│  │ • Perm   │→←│ • Label  │  │ Permission  │              │
+│  │ • UserR  │  │ • MenuP  │  │ Changed     │              │
+│  └──────────┘  └──────────┘  └─────────────┘              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 데이터 모델
+
+**RBAC App:**
+- `UserProfile`: acct.User와 OneToOne (AUTH_USER_MODEL 충돌 해결)
+- `Role`: 역할 (DOCTOR, NURSE, ADMIN, PATIENT)
+- `Permission`: 권한 코드 (VIEW_PATIENT, CREATE_ORDER)
+- `UserRole`: User-Role M2M
+- `RolePermission`: Role-Permission M2M (Menu FK 포함)
+
+**Menus App:**
+- `Menu`: 메뉴 구조 (path, icon, parent, breadcrumbOnly)
+- `MenuLabel`: 역할별 라벨 (DOCTOR: "환자 목록", NURSE: "담당 환자")
+- `MenuPermission`: Menu-Permission 매핑
+
+### API 엔드포인트
+
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/api/rbac/permissions/me/` | 현재 사용자 권한 조회 |
+| POST | `/api/rbac/permissions/user/<id>/` | 사용자 권한 업데이트 (관리자) |
+| GET | `/api/menus/my/` | 접근 가능한 메뉴 트리 조회 |
+| WS | `/ws/permissions/` | 권한 변경 실시간 알림 |
+
+### 사용 예시
+
+```tsx
+// ProtectedRoute 사용
+<Route path="/patients" element={
+  <ProtectedRoute menuId="PATIENT_LIST">
+    <PatientListPage />
+  </ProtectedRoute>
+} />
+
+// 권한 체크
+const { hasMenuAccess, checkPermission } = useAuthStore();
+if (hasMenuAccess('PATIENT_LIST')) {
+  // 메뉴 표시
+}
+if (checkPermission('CREATE_ORDER')) {
+  // 버튼 표시
+}
+```
+
+### 참고 문서
+- [brain_tumor_dev_통합_완료_보고서_20260105.md](brain_tumor_dev_통합_완료_보고서_20260105.md)
+- [brain_tumor_dev_React_통합_완료_20260105.md](brain_tumor_dev_React_통합_완료_20260105.md)
+- [RBAC_INTEGRATION.md](../NeuroNova_03_front_end_react/01_react_client/RBAC_INTEGRATION.md)
 
 ---
 

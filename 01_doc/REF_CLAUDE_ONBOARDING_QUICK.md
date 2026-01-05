@@ -1,8 +1,8 @@
 # Claude AI 빠른 온보딩 가이드 (Quick Onboarding)
 
-**최종 수정일**: 2026-01-02
+**최종 수정일**: 2026-01-05
 **목적**: 최소 토큰으로 프로젝트 핵심만 빠르게 파악
-**최신 변경**: 배포 전 문서 정비 및 자동화 완료 (2026-01-02 Day 16)
+**최신 변경**: HTJ2K 지원(자동 변환) 및 NIfTI 변환기 고도화 완료 (2026-01-05)
 
 > **원칙**: 이 문서만 읽으면 즉시 작업 가능. 상세 내용은 필요 시 참조 문서 확인.
 
@@ -443,6 +443,12 @@ A:
 A: Swagger UI URL 공유 (`http://localhost:8000/api/docs/`)
    또는 OpenAPI Schema 파일 export (`python manage.py spectacular --file schema.json`)
 
+### Q8. DICOM 파일 업로드 및 변환 방법? (2026-01-05 NEW)
+A:
+- **신규 업로드**: `POST /api/ris/upload/dicom/` (HTJ2K/J2K 자동 변환)
+- **기존 변환**: `python manage.py convert_to_htj2k --all` (일괄 변환)
+- **NIfTI 변환**: `python NeuroNova_02_back_end/02_django_server/scripts/convert_nifti_to_dicom.py`
+
 ---
 
 ## 🚨 12. 코딩 규칙 (CRITICAL)
@@ -491,7 +497,9 @@ print("[INFO] Processing...")
 - ✅ **V3.0 데이터 시딩**: BRCA1 유전체 변이 등 통합 테스트용 데이터 구축 완료
 - ✅ **프론트엔드 최적화**: React Hook 위반 수정 및 예시 데이터 연동 완료
 
-**Phase 3. 프론트엔드 고도화 진입 (진행 중) 🚀**:
+**Phase 3. 서비스 고도화 및 프론트엔드 통합 (진행 중) 🚀**:
+- [x] **HTJ2K 지원 (Backend)**: 업로드 자동 변환 API 및 일괄 변환 커맨드 (Fallback J2K)
+- [x] **NIfTI 변환 최적화**: 환자별 Study 통합 및 시각화 메타데이터 자동 보정
 - [x] **의사 워크스테이션(Built)**: 프리미엄 디자인 기반 진료 대기 명단 구현 (2026-01-02)
 - [x] **런타임 복구**: ResponseTable 전체 리팩토링으로 Hook 위반 이슈 등 완전 해결
 - [ ] **통합 진료 차트(Next)**: 환자 카드 클릭 시 EMR+RIS+AI 통합 뷰어 구현 예정

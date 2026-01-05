@@ -52,11 +52,63 @@
     - brain_tumor_dev audit 앱 내용이 NeuroNova 기존 audit 앱과 충돌
     - 기존 AuditService 유지 (ai/services.py 의존성 보존)
     - 신규 RBAC/Menus 앱과 독립적으로 운영
+  - [x] **React 코드 통합 완료**:
+    - **Types 정의**:
+      - `MenuNode`, `MenuResponse` (src/types/menu.ts)
+      - `Permission`, `Role`, `UserPermissionsResponse` (src/types/rbac.ts)
+    - **API 서비스**:
+      - rbacService: `getMyPermissions()`, `updateUserPermissions()`
+      - menuService: `getMyMenus()`
+      - permissionSocket: `connectPermissionSocket()` (WebSocket)
+    - **AuthStore 확장**:
+      - 상태 추가: `menus`, `permissions`, `wsConnection`, `isAuthReady`
+      - 액션 추가: `refreshMenusAndPermissions()`, `hasMenuAccess()`, `checkPermission()`
+      - WebSocket 통합: 로그인 시 자동 연결, 권한 변경 시 재조회
+    - **컴포넌트 생성**:
+      - ProtectedRoute: `menuId`, `permission` prop 기반 접근 제어
+      - Sidebar: 권한 기반 동적 메뉴, 역할별 라벨, 계층 구조
+      - Forbidden: 403 페이지
+    - **앱 통합**:
+      - App.tsx: AppLayout + Sidebar 통합
+      - index.tsx: 앱 시작 시 checkAuth() 호출
+      - .env.example: REACT_APP_WS_URL 설정
+    - **문서화**:
+      - RBAC_INTEGRATION.md: 통합 가이드 작성
+  - [x] **버그 수정**:
+    - ris/views.py: `views`, `parsers` import 누락 수정
+    - Django check 명령어 정상 작동 확인
+  - [x] **초기 데이터 시딩 스크립트 작성**:
+    - rbac/management/commands/seed_rbac_data.py 생성
+    - 7개 역할(DOCTOR, NURSE, ADMIN, PATIENT, LAB_TECH, RAD_TECH, INSTITUTION) 자동 생성
+    - 2개 권한(VIEW_DASHBOARD, VIEW_PATIENT_LIST) 생성
+    - 2개 메뉴(대시보드, 환자 목록) + 9개 역할별 라벨 생성
+    - 4개 테스트 사용자(doctor1, nurse1, admin1, patient1) 생성
+    - `--clear` 옵션으로 기존 데이터 삭제 후 재생성 지원
+  - [x] **시딩 가이드 문서 작성**:
+    - RBAC_초기_데이터_시딩_가이드.md 생성
+    - 단계별 시딩 절차 상세 작성
+    - 검증 및 확인 방법 (Django Admin, API, React)
+    - 트러블슈팅 가이드
+    - 확장 가이드 (새 역할/메뉴/권한 추가 방법)
+  - [x] **HTJ2K DICOM 변환 시스템 검증 및 문서화**:
+    - requirements.txt에 pydicom==3.0.1 추가
+    - 기존 구현 확인 완료:
+      - HTJ2KConverter (ris/utils/dicom_converter.py)
+      - DicomUploadView (ris/views.py:594)
+      - convert_to_htj2k 명령어 (ris/management/commands/)
+      - OrthancClient 통합
+    - HTJ2K_테스트_가이드.md 작성:
+      - 시스템 아키텍처 설명
+      - 의존성 설치 및 확인 절차
+      - 4가지 기능 테스트 (단위/API/Orthanc/일괄변환)
+      - 운영 가이드 (신규 업로드/데이터 마이그레이션)
+      - 트러블슈팅 (5가지 일반 문제)
+      - 성능 최적화 팁
   - [x] **다음 단계 준비**:
-    - [ ] React 코드 통합 (권한 기반 라우팅, 메뉴 렌더링)
     - [ ] 마이그레이션 실행 테스트
-    - [ ] 실제 데이터로 Permission/Role 시딩
+    - [ ] `python manage.py seed_rbac_data` 실행으로 초기 데이터 생성
     - [ ] Frontend-Backend 통합 테스트
+    - [ ] HTJ2K 시스템 테스트 (샘플 DICOM 업로드)
 
 ### Week 7 (2025-12-29 ~ 2026-01-03)
 
