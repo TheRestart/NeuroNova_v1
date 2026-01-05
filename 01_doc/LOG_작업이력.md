@@ -48,6 +48,18 @@
       - INSTALLED_APPS: `rbac`, `menus` 추가
       - URL 패턴: `/api/rbac/`, `/api/menus/` 추가
       - 마이그레이션 생성 완료 (`rbac/0001_initial.py`, `menus/0001_initial.py`)
+
+- **2026-01-05 (Docker 아키텍처 재구성 및 로컬 환경 최적화)**:
+  - [x] **Docker 서비스 재구성**:
+    - **Celery Worker 분리**: 단일 워커를 3개 서비스로 분리 (`default`, `ai`, `fhir`)하여 큐(`celery`, `ai_queue`, `fhir_queue`)별 독립 처리 보장.
+    - **settings.py 업데이트**: `CELERY_TASK_ROUTES` 설정을 추가하여 작업별 라우팅 명시.
+  - [x] **로컬 개발 환경 정책 변경**:
+    - **Local MySQL 사용**: Docker 컨테이너의 MySQL 대신 호스트 Windows의 로컬 MySQL Server(3306)를 사용하도록 변경 via `docker-compose.yml`.
+    - `cdss-mysql` 컨테이너 비활성화 (주석 처리) 및 의존성 제거.
+  - [x] **TSX 프론트엔드(`01_react_client`) 기반 마련**:
+    - `axios.ts`: JWT 토큰 인터셉터 및 에러 핸들링 이관 완료.
+    - `App.tsx`: 라우팅 구조 및 RBAC 기반 `ProtectedRoute` 적용.
+    - `seed_rbac_data.py`: RIS, OCS 등 전체 메뉴 구조 반영 업데이트.
   - [x] **기존 Audit 앱 보존**:
     - brain_tumor_dev audit 앱 내용이 NeuroNova 기존 audit 앱과 충돌
     - 기존 AuditService 유지 (ai/services.py 의존성 보존)

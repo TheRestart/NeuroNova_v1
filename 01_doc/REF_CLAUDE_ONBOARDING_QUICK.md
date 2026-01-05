@@ -98,6 +98,7 @@ NeuroNova_v1/
 **로컬 가상환경** (venv - Django와 동일 환경):
 - Django Server
 - Celery Worker (비동기 작업 처리)
+- **MySQL Server** (Local Install): Docker 컨테이너 대신 로컬 설치된 MySQL 사용 (Port 3306)
 - Celery Beat (주기적 작업 스케줄러)
 - Flower (Celery 모니터링 - 선택)
 
