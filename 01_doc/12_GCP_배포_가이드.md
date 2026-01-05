@@ -1,11 +1,18 @@
 # NeuroNova CDSS 배포 가이드 (GCP + Docker)
 
 **작성일**: 2025-12-30
-**버전**: 2.4
-**최종 수정**: 2026-01-03
+**버전**: 2.5
+**최종 수정**: 2026-01-05
 **환경**: GCP VM + Docker + Cloudflare + GitHub + Native Nginx
 
-**주요 변경 (v2.4, 2026-01-03)**:
+**주요 변경 (v2.5, 2026-01-05)**:
+- ✅ **배포용 docker-compose.yml 생성** (프로덕션 8개 서비스)
+- ✅ **OpenEMR 연동 방식 명확화** (Direct DB Access vs FHIR API)
+- ✅ **SKIP_OPENEMR_INTEGRATION 설정 추가** (OAuth2 불필요)
+- ✅ **Quick Start 가이드 추가** (실전 배포 9단계)
+- ✅ OpenEMR 접속 에러 해결 가이드 추가
+
+**이전 변경 (v2.4, 2026-01-03)**:
 - ✅ 아키텍처 명확화: **Nginx는 VM 네이티브 설치 (Docker 컨테이너 아님!)**
 - ✅ RAM 요구 사양 업데이트: 최소 8GB, 권장 16GB (실측 메모리 사용량 반영)
 - ✅ .env 파일 구조 정리: `.env.docker` → `.env`로 사용 명확화
@@ -247,9 +254,20 @@ CELERY_BROKER_URL=redis://redis:6379/1
 CELERY_RESULT_BACKEND=redis://redis:6379/2
 
 # ============================================
-# OpenEMR FHIR API (Skip 모드)
+# OpenEMR 연동 설정
 # ============================================
+# Skip 모드: OpenEMR API 호출 비활성화 (개발/테스트용)
+# - True: OpenEMR 없이 Django DB만 사용 (빠른 배포)
+# - False: OpenEMR MySQL DB 직접 접근 사용 (프로덕션)
 SKIP_OPENEMR_INTEGRATION=True
+
+# OpenEMR MySQL 접속 정보 (Direct DB Access 방식)
+OPENEMR_DB_HOST=openemr-mysql
+OPENEMR_DB_PORT=3306
+OPENEMR_DB_NAME=openemr
+OPENEMR_DB_USER=openemr
+OPENEMR_DB_PASSWORD=openemr
+OPENEMR_DB_ROOT_PASSWORD=root
 
 # ============================================
 # Orthanc PACS (DICOM)
@@ -284,6 +302,23 @@ LOG_LEVEL=INFO
 - `ALLOWED_HOSTS`: VM의 External IP 주소 입력 (예: `34.46.109.203`)
 - `DB_PASSWORD`, `DB_ROOT_PASSWORD`: 루트 `.env`와 동일하게 설정
 - `DEBUG=False`: 프로덕션 환경에서는 반드시 False!
+
+**💡 OpenEMR 연동 방식 설명**:
+
+NeuroNova는 **2가지 OpenEMR 연동 방식**을 지원합니다:
+
+| 방식 | 설명 | OAuth2 필요 | 사용 시기 |
+|------|------|-------------|----------|
+| **Direct DB Access** | OpenEMR MySQL DB 직접 접근 | ❌ 불필요 | 권장 (안정적, 빠름) |
+| **FHIR API Access** | OpenEMR FHIR API 호출 | ✅ 필수 | 표준 준수 필요 시 |
+
+**현재 설정 (Direct DB Access)**:
+- `SKIP_OPENEMR_INTEGRATION=True`: FHIR API 호출 비활성화
+- Django가 OpenEMR MySQL DB에 직접 INSERT/SELECT 수행
+- OAuth2 설정 불필요
+- 빠르고 안정적
+
+**배포 시 권장사항**: `SKIP_OPENEMR_INTEGRATION=True` 유지 (OAuth2 설정 불필요)
 
 #### 4.4 .env 파일 권한 설정 (보안)
 
