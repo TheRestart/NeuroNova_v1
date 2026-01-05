@@ -1,32 +1,5 @@
 # Claude AI 작업 프롬프트 (v2.0)
-
-
-@01_doc/REF_CLAUDE_ONBOARDING_QUICK.md 
-@01_doc/REF_프롬프트_프론트엔드_인수인계.md
-@NeuroNova_03_front_end_react\00_test_client\0103_문제.md
-@작업_계획_요약.md
-
-위 4개 문서를 읽고 맥락을 이해후 프론트엔드 고도화 작업을 즉시 시작
-
-===
-임시 배포전 정검 문서 : 
-01_doc\초기_데이터_시딩_가이드.md
-01_doc\12_GCP_배포_가이드.md (.env 같이 따로 옮겨야하는 파일 정리 필요)
-NeuroNova_03_front_end_react\00_test_client\사용방법_설명문서.md
-docker-compose.dev.yml
-===
-
-NeuroNova_03_front_end_react\00_test_client\FRONTEND_WORK_LOG.md
-NeuroNova_03_front_end_react\00_test_client\LOG_테스트클라이언트_정밀점검_20260102.md
-
-위 2개 문서를 보니 아직 개선해야하는 문제가 많아보인다. 
-특히 'http://localhost:3001/monitoring' 은 심각하다
-
-'00_test_client'를 동작하다보면 동작하지 않는 기능이 많다. 
-특히 f12 개발자 모드로 보면 500번대 에러가 끊임 없이 발생한다. 
-
 ---
-
 ## 🚀 1. 빠른 온보딩 (Quick Start)
 
 토큰 절약을 위해 가장 핵심적인 문서만 읽고 즉시 작업을 시작할 때 사용합니다.
